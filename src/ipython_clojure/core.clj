@@ -153,28 +153,6 @@
         (send-message iopub-socket "status" (status-content "idle")
                       parent-header {} session-id)))))
 
-;; (defn execute-request [message shell-socket iopub-socket executer]
-;;   (let [parent-header (:header message)
-;;         execution-count 1
-;;         session-id (get-in message [:header :session])]
-;;     (send-message iopub-socket "status" (status-content "busy") parent-header {} session-id)
-;;     (send-message iopub-socket "pyin" (pyin-content execution-count message)
-;;                   parent-header {} session-id)
-;;     (send-message shell-socket "execute_reply"
-;;                   {:status "ok"
-;;                    :execution_count execution-count
-;;                    :user_variables {}
-;;                    :payload [{}]
-;;                    :user_expressions {}}
-;;                   parent-header
-;;                   {:dependencies_met "True"
-;;                    :engine session-id
-;;                    :status "ok"
-;;                    :started (now)} session-id)
-;;     (send-message iopub-socket "pyout"  (pyout-content execution-count message user-ns)
-;;                   parent-header {} session-id)
-;;     (send-message iopub-socket "status" (status-content "idle") parent-header {} session-id)))
-
 (defn execute
   "evaluates s-forms"
   ([request] (execute request *ns*))
@@ -213,9 +191,6 @@
             (println "Message type" msg-type "not handled yet. Exiting.")
             (println "Message dump:" message)
             (System/exit -1)))))))
-
-; snagged from http://stackoverflow.com/questions/7684656/clojure-eval-code-in-different-namespace
-
 
 (defrecord Heartbeat [addr]
     Runnable

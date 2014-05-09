@@ -1,12 +1,10 @@
 (ns ipython-clojure.core
-  (require [clojure.data.json :as json]
-           [cheshire.core :as cheshire]
-           [clojure.walk :as walk]
-           [zeromq.zmq :as zmq]
-           [clj-time.core :as time]
-           [clj-time.format :as time-format]
-           [com.keminglabs.zmq-async.core :refer [register-socket!]]
-           [clojure.core.async :refer [sliding-buffer >! <! go chan close!]])
+  (:require [clojure.data.json :as json]
+            [cheshire.core :as cheshire]
+            [clojure.walk :as walk]
+            [zeromq.zmq :as zmq]
+            [clj-time.core :as time]
+            [clj-time.format :as time-format])
   (:import [org.jeromq ZMQ])
   (:gen-class :main true))
 
@@ -16,23 +14,13 @@
 (defn address [config service]
   (str (:transport config) "://" (:ip config) ":" (service config)))
 
-(defn get-iopub-socket [addr]
-  (let [context (zmq/context 1)]
-    (doto zmq/socket context :pub) (zmq/bind addr)))
-
-(defn get-shell-socket [addr]
-  (let [context (zmq/context 2)]
-    (doto (zmq/socket context :router) (zmq/bind addr))))
-
 (defn uuid [] (str (java.util.UUID/randomUUID)))
-
 
 (def kernel-info-content
   {:protocol_version [4 1]
    :ipython_version [2 0 0 "dev"]
    :language_version [1 5 1]
    :language "clojure"})
-
 
 (defn now []
   "Returns current ISO 8601 compliant date."
@@ -201,20 +189,6 @@
         (while (not (.. Thread currentThread isInterrupted))
           (let [message (zmq/receive socket)]
             (zmq/send socket message))))))
-
-(defrecord Shell [shell-addr iopub-addr]
-  Runnable
-  (run [this]
-    (let [context (zmq/context 1)
-          shell-socket (doto (zmq/socket context :router)
-                         (zmq/bind shell-addr))
-          iopub-socket (doto (zmq/socket context :pub)
-                         (zmq/bind iopub-addr))
-          shell-handler (configure-shell-handler shell-socket iopub-socket)]
-      (while (not (.. Thread currentThread isInterrupted))
-        (let [message (read-message shell-socket)]
-          (println "Receieved message on shell socket: " message)
-          (shell-handler message))))))
 
 (defn shell-loop [shell-addr iopub-addr]
   (let [context (zmq/context 1)

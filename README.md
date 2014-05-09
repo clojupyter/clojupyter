@@ -22,4 +22,5 @@ c.Session.keyfile = b''
 4. run the repl with `ipython console --profile clojure`
 
 ## status
-Should work for simple stuff in the REPL. Doesn't handle errors or any type of complex data from Clojure.
+Should work for simple stuff in the REPL. Doesn't handle errors or any type
+of complex data from Clojure. Also does not handle changing namespaces.

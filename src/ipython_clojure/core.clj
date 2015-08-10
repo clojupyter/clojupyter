@@ -5,7 +5,7 @@
             [zeromq.zmq :as zmq]
             [clj-time.core :as time]
             [clj-time.format :as time-format])
-  (:import [org.jeromq ZMQ])
+  (:import [org.zeromq ZMQ])
   (:gen-class :main true))
 
 (defn prep-config [args]
@@ -212,5 +212,3 @@
     (println (str "Connecting shell to " shell-addr))
     (println (str "Connecting iopub to " iopub-addr))
     (shell-loop shell-addr iopub-addr)))
-
-

@@ -6,6 +6,7 @@
                  [org.zeromq/jeromq "0.3.3"]
                  [cheshire "5.3.1"]
                  [clj-time "0.7.0"]
+                 [pandect "0.5.3"]
                  [org.zeromq/cljzmq "0.1.4" :exclusions [org.zeromq/jzmq]]
                  [org.clojure/data.json "0.2.4"]]
   :aot [ipython-clojure.core]

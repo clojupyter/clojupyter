@@ -4,7 +4,8 @@
             [clojure.walk :as walk]
             [zeromq.zmq :as zmq]
             [clj-time.core :as time]
-            [clj-time.format :as time-format])
+            [clj-time.format :as time-format]
+            [pandect.algo.sha256 :refer [sha256-hmac]])
   (:import [org.zeromq ZMQ])
   (:gen-class :main true))
 
@@ -91,6 +92,18 @@
    :metadata {}
    })
 
+(defn get-message-signer [key]
+  "returns a function used to sign a message"
+  (fn [header parent metadata content]
+    (sha256-hmac (str header parent metadata content) key)))
+
+(defn get-message-checker [signer]
+  "returns a function to check an incoming message"
+  (fn [{:keys [signature header parent-header metadata content]}]
+    (let [our-signature (signer header parent-header metadata content)]
+      (println "Our signature:" our-signature)
+      (println "Their signature:" signature)
+      (= our-signature signature))))
 
 (defn send-message [socket msg_type content parent_header metadata session-id]
   (let [header (cheshire/generate-string (new-header msg_type session-id))
@@ -106,13 +119,22 @@
     (finish-message socket content)))
 
 
-(defn read-message [socket]
+(defn read-raw-message [socket]
   {:uuid (read-until-delimiter socket)
+   :delimiter "<IDS|MSG>"
    :signature (read-blob socket)
-   :header (cheshire/parse-string (read-blob socket) keyword)
-   :parent-header (cheshire/parse-string (read-blob socket) keyword)
-   :metadata (cheshire/parse-string (read-blob socket) keyword)
-   :content (cheshire/parse-string (read-blob socket) keyword)})
+   :header (read-blob socket)
+   :parent-header (read-blob socket)
+   :metadata (read-blob socket)
+   :content (read-blob socket)})
+
+(defn parse-message [message]
+  {:uuid (:uuid message)
+   :delimiter (:delimiter message)
+   :signature (:signature message)
+   :header (cheshire/parse-string (:header message) keyword)
+   :parent-header (cheshire/parse-string (:parent-header message) keyword)
+   :content (cheshire/parse-string (:content message) keyword)})
 
 (defn execute-request-handler [shell-socket iopub-socket executer]
   (let [execution-count (atom 0N)]
@@ -166,6 +188,9 @@
          (binding [*ns* user-ns] (eval (read-string request)))
          (catch Exception e (.getLocalizedMessage e)))))))
 
+(defn history-reply [message]
+  "returns REPL history, not implemented for now and returns a dummy message"
+  {:history []})
 
 (defn configure-shell-handler [shell-socket iopub-socket]
   (let [execute-request (execute-request-handler shell-socket iopub-socket
@@ -175,10 +200,12 @@
         (case msg-type
           "kernel_info_request" (kernel-info-reply message shell-socket)
           "execute_request" (execute-request message)
+          "history_request" (history-reply message)
           (do
             (println "Message type" msg-type "not handled yet. Exiting.")
             (println "Message dump:" message)
             (System/exit -1)))))))
+
 
 (defrecord Heartbeat [addr]
     Runnable
@@ -190,7 +217,7 @@
           (let [message (zmq/receive socket)]
             (zmq/send socket message))))))
 
-(defn shell-loop [shell-addr iopub-addr]
+(defn shell-loop [shell-addr iopub-addr signer checker]
   (let [context (zmq/context 1)
         shell-socket (doto (zmq/socket context :router)
                        (zmq/bind shell-addr))
@@ -198,17 +225,23 @@
                        (zmq/bind iopub-addr))
         shell-handler (configure-shell-handler shell-socket iopub-socket)]
     (while (not (.. Thread currentThread isInterrupted))
-      (let [message (read-message shell-socket)]
-        (println "Receieved message on shell socket: " message)
-        (shell-handler message)))))
+      (let [message (read-raw-message shell-socket)
+            parsed-message (parse-message message)]
+        (println "Receieved raw message on shell socket: " message)
+        (println "Parsed message as: " parsed-message)
+        (println "Checked mesage:" (checker message))
+        (shell-handler parsed-message)))))
 
 (defn -main [& args]
   (let [hb-addr (address (prep-config args) :hb_port)
         shell-addr (address (prep-config args) :shell_port)
-        iopub-addr (address (prep-config args) :iopub_port)]
+        iopub-addr (address (prep-config args) :iopub_port)
+        key (:key (prep-config args))
+        signer (get-message-signer key)
+        checker (get-message-checker signer)]
     (println (prep-config args))
     (println (str "Connecting heartbeat to " hb-addr))
     (-> hb-addr Heartbeat. Thread. .start)
     (println (str "Connecting shell to " shell-addr))
     (println (str "Connecting iopub to " iopub-addr))
-    (shell-loop shell-addr iopub-addr)))
+    (shell-loop shell-addr iopub-addr signer checker)))

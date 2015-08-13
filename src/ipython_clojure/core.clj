@@ -69,7 +69,6 @@
   (let [preamble (doall (drop-last
                          (take-while (comp not #(= "<IDS|MSG>" %))
                                      (repeatedly #(read-blob socket)))))]
-;    (println "PREABMLE:" preamble)
     preamble))
 
 (defn new-header [msg_type session-id]
@@ -101,8 +100,6 @@
   "returns a function to check an incoming message"
   (fn [{:keys [signature header parent-header metadata content]}]
     (let [our-signature (signer header parent-header metadata content)]
-      (println "Our signature:" our-signature)
-      (println "Their signature:" signature)
       (= our-signature signature))))
 
 (defn send-message [socket msg_type content parent_header metadata session-id signer]
@@ -226,9 +223,6 @@
     (while (not (.. Thread currentThread isInterrupted))
       (let [message (read-raw-message shell-socket)
             parsed-message (parse-message message)]
-        (println "Receieved raw message on shell socket: " message)
-        (println "Parsed message as: " parsed-message)
-        (println "Checked mesage:" (checker message))
         (shell-handler parsed-message)))))
 
 (defn -main [& args]
@@ -238,7 +232,7 @@
         key (:key (prep-config args))
         signer (get-message-signer key)
         checker (get-message-checker signer)]
-    (println (prep-config args))
+    (println "Input configuration:" (prep-config args))
     (println (str "Connecting heartbeat to " hb-addr))
     (-> hb-addr Heartbeat. Thread. .start)
     (println (str "Connecting shell to " shell-addr))

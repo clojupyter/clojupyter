@@ -150,7 +150,6 @@
                       {:status "ok"
                        :execution_count @execution-count
                        :user_variables {}
-                       :payload [{}]
                        :user_expressions {}}
                       parent-header
                       {:dependencies_met "True"

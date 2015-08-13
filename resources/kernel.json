@@ -1,0 +1,5 @@
+{
+ "argv": ["HOME/.ipython/kernels/clojure/ipython-clojure", "{connection_file}"],
+ "display_name": "Clojure",
+ "language": "clojure"
+}

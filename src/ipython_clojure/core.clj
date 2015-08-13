@@ -47,14 +47,14 @@
 ;  (println "Sending message " msg)
   (zmq/send socket (.getBytes msg)))
 
-(defn kernel-info-reply [message socket]
+(defn kernel-info-reply [message socket signer]
   (let [header (kernel-info-header message)
         parent_header (cheshire/generate-string (:header message))
         metadata (cheshire/generate-string {})
         content  (cheshire/generate-string kernel-info-content)]
     (send-message-piece socket (get-in message [:header :session]))
     (send-message-piece socket "<IDS|MSG>")
-    (send-message-piece socket "")
+    (send-message-piece socket (signer header parent_header metadata content))
     (send-message-piece socket header)
     (send-message-piece socket parent_header)
     (send-message-piece socket metadata)
@@ -105,14 +105,14 @@
       (println "Their signature:" signature)
       (= our-signature signature))))
 
-(defn send-message [socket msg_type content parent_header metadata session-id]
+(defn send-message [socket msg_type content parent_header metadata session-id signer]
   (let [header (cheshire/generate-string (new-header msg_type session-id))
         parent_header (cheshire/generate-string parent_header)
         metadata (cheshire/generate-string metadata)
         content (cheshire/generate-string content)]
     (send-message-piece socket session-id)
     (send-message-piece socket "<IDS|MSG>")
-    (send-message-piece socket "")
+    (send-message-piece socket (signer header parent_header metadata content))
     (send-message-piece socket header)
     (send-message-piece socket parent_header)
     (send-message-piece socket metadata)
@@ -138,14 +138,14 @@
 
 (defn execute-request-handler [shell-socket iopub-socket executer]
   (let [execution-count (atom 0N)]
-    (fn [message]
+    (fn [message signer]
       (let [session-id (get-in message [:header :session])
             parent-header (:header message)]
         (swap! execution-count inc)
         (send-message iopub-socket "status" (status-content "busy")
-                      parent-header {} session-id)
+                      parent-header {} session-id signer)
         (send-message iopub-socket "pyin" (pyin-content @execution-count message)
-                      parent-header {} session-id)
+                      parent-header {} session-id signer)
         (send-message shell-socket "execute_reply"
                       {:status "ok"
                        :execution_count @execution-count
@@ -156,12 +156,12 @@
                       {:dependencies_met "True"
                        :engine session-id
                        :status "ok"
-                       :started (now)} session-id)
+                       :started (now)} session-id signer)
         (send-message iopub-socket "pyout"  (pyout-content @execution-count
                                                            message executer)
-                      parent-header {} session-id)
+                      parent-header {} session-id signer)
         (send-message iopub-socket "status" (status-content "idle")
-                      parent-header {} session-id)))))
+                      parent-header {} session-id signer)))))
 
 (defn execute
   "evaluates s-forms"
@@ -188,19 +188,19 @@
          (binding [*ns* user-ns] (eval (read-string request)))
          (catch Exception e (.getLocalizedMessage e)))))))
 
-(defn history-reply [message]
+(defn history-reply [message signer]
   "returns REPL history, not implemented for now and returns a dummy message"
   {:history []})
 
-(defn configure-shell-handler [shell-socket iopub-socket]
+(defn configure-shell-handler [shell-socket iopub-socket signer]
   (let [execute-request (execute-request-handler shell-socket iopub-socket
                                                  (get-executer))]
     (fn [message]
       (let [msg-type (get-in message [:header :msg_type])]
         (case msg-type
-          "kernel_info_request" (kernel-info-reply message shell-socket)
-          "execute_request" (execute-request message)
-          "history_request" (history-reply message)
+          "kernel_info_request" (kernel-info-reply message shell-socket signer)
+          "execute_request" (execute-request message signer)
+          "history_request" (history-reply message signer)
           (do
             (println "Message type" msg-type "not handled yet. Exiting.")
             (println "Message dump:" message)
@@ -223,7 +223,7 @@
                        (zmq/bind shell-addr))
         iopub-socket (doto (zmq/socket context :pub)
                        (zmq/bind iopub-addr))
-        shell-handler (configure-shell-handler shell-socket iopub-socket)]
+        shell-handler (configure-shell-handler shell-socket iopub-socket signer)]
     (while (not (.. Thread currentThread isInterrupted))
       (let [message (read-raw-message shell-socket)
             parsed-message (parse-message message)]

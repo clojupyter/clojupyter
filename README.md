@@ -1,5 +1,5 @@
-# ipython-clojure
-A IPython kernel written in Clojure, this will let you run Clojure code from the IPython console and notebook
+# clojupyter
+A Clojure kernel for Jupyter, this will let you run Clojure code from a Jupyter notebook.
 
 ![ipython-clojure](https://raw.github.com/roryk/ipython-clojure/master/images/demo.gif)
 

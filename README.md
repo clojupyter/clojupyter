@@ -12,7 +12,18 @@ IPython console and notebook.
 
 This will install a clojupyter executable and a configuration file to tell
 Jupyter how to use it in ~/.ipython/kernels/clojure.
-2. run the repl with `ipython console --profile clojure`
+
+run the REPL with:
+
+```bash
+jupyter-console --kernel=clojure
+```
+
+or the notebook with:
+
+```bash
+jupyter-notebook --kernel=clojure
+```
 
 ### status
 Should work for simple stuff in the REPL. Doesn't handle errors or any type

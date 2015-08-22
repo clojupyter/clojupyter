@@ -18,9 +18,8 @@
 (defn uuid [] (str (java.util.UUID/randomUUID)))
 
 (def kernel-info-content
-  {:protocol_version [4 1]
-   :ipython_version [2 0 0 "dev"]
-   :language_version [1 5 1]
+  {:protocol_version "5.0"
+   :language_version "1.5.1"
    :language "clojure"})
 
 (defn now []
@@ -32,11 +31,19 @@
      current-date-time)))
 
 (defn kernel-info-header [message]
-  (let [header (cheshire/generate-string {:date (get-in message [:header :date])
-                                          :msg_id (uuid)
+  (let [header (cheshire/generate-string {:msg_id (uuid)
                                           :username (get-in message [:header :username])
                                           :session (get-in message [:header :session])
-                                          :msg_type "kernel_info_reply"})]
+                                          :msg_type "kernel_info_reply"
+                                          :version "5.0"})]
+    (println message)
+    (println header)
+    header))
+
+(defn close-comm-header [message]
+  (let [header (cheshire/generate-string {:msg_id (uuid)
+                                          :data ""
+                                          :msg_type "comm_close"})]
     header))
 
 (defn send-message-piece [socket msg]
@@ -46,6 +53,20 @@
 (defn finish-message [socket msg]
 ;  (println "Sending message " msg)
   (zmq/send socket (.getBytes msg)))
+
+(defn immediately-close-comm [message socket signer]
+  "Just close a comm immediately since we don't handle it yet"
+  (let [header (close-comm-header message)
+        parent_header (cheshire/generate-string (:header message))
+        metadata (cheshire/generate-string {})
+        content  (cheshire/generate-string kernel-info-content)]
+    (send-message-piece socket (get-in message [:header :session]))
+    (send-message-piece socket "<IDS|MSG>")
+    (send-message-piece socket (signer header parent_header metadata content))
+    (send-message-piece socket header)
+    (send-message-piece socket parent_header)
+    (send-message-piece socket metadata)
+    (finish-message socket content)))
 
 (defn kernel-info-reply [message socket signer]
   (let [header (kernel-info-header message)
@@ -61,9 +82,10 @@
     (finish-message socket content)))
 
 (defn read-blob [socket]
-  (let [part (zmq/receive socket)
-        blob (apply str (map char part))]
-    blob))
+  (let [part (zmq/receive socket)]
+    (try
+      (apply str (map char part))
+      (catch Exception e (str "caught exception: " (.getMessage e) part)))))
 
 (defn read-until-delimiter [socket]
   (let [preamble (doall (drop-last
@@ -197,6 +219,7 @@
           "kernel_info_request" (kernel-info-reply message shell-socket signer)
           "execute_request" (execute-request message signer)
           "history_request" (history-reply message signer)
+          "comm_open" (immediately-close-comm message shell-socket signer)
           (do
             (println "Message type" msg-type "not handled yet. Exiting.")
             (println "Message dump:" message)

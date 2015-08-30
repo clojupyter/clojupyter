@@ -47,11 +47,9 @@
     header))
 
 (defn send-message-piece [socket msg]
-;  (println "Sending piece " msg)
   (zmq/send socket (.getBytes msg) zmq/send-more))
 
 (defn finish-message [socket msg]
-;  (println "Sending message " msg)
   (zmq/send socket (.getBytes msg)))
 
 (defn immediately-close-comm [message socket signer]
@@ -60,7 +58,12 @@
         parent_header (cheshire/generate-string (:header message))
         metadata (cheshire/generate-string {})
         content  (cheshire/generate-string kernel-info-content)]
-    (send-message-piece socket (get-in message [:header :session]))
+
+    ;; First send the client identifiers for the router socket's benefit
+    (doseq [ident (:idents message)]
+      (zmq/send socket ident zmq/send-more))
+    (zmq/send socket (byte-array 0) zmq/send-more)
+
     (send-message-piece socket "<IDS|MSG>")
     (send-message-piece socket (signer header parent_header metadata content))
     (send-message-piece socket header)
@@ -73,7 +76,12 @@
         parent_header (cheshire/generate-string (:header message))
         metadata (cheshire/generate-string {})
         content  (cheshire/generate-string kernel-info-content)]
-    (send-message-piece socket (get-in message [:header :session]))
+
+    ;; First send the client identifiers for the router socket's benefit
+    (doseq [ident (:idents message)]
+      (zmq/send socket ident zmq/send-more))
+    (zmq/send socket (byte-array 0) zmq/send-more)
+
     (send-message-piece socket "<IDS|MSG>")
     (send-message-piece socket (signer header parent_header metadata content))
     (send-message-piece socket header)
@@ -87,10 +95,15 @@
       (apply str (map char part))
       (catch Exception e (str "caught exception: " (.getMessage e) part)))))
 
+(defn try-convert-to-string [bytes]
+  (try
+    (apply str (map char bytes))
+    (catch Exception e "")))
+
 (defn read-until-delimiter [socket]
   (let [preamble (doall (drop-last
-                         (take-while (comp not #(= "<IDS|MSG>" %))
-                                     (repeatedly #(read-blob socket)))))]
+                         (take-while (comp not #(= "<IDS|MSG>" (try-convert-to-string %)))
+                                     (repeatedly #(zmq/receive socket)))))]
     preamble))
 
 (defn new-header [msg_type session-id]
@@ -115,8 +128,10 @@
 
 (defn get-message-signer [key]
   "returns a function used to sign a message"
-  (fn [header parent metadata content]
-    (sha256-hmac (str header parent metadata content) key)))
+  (if (empty? key)
+    (fn [header parent metadata content] "")
+    (fn [header parent metadata content]
+      (sha256-hmac (str header parent metadata content) key))))
 
 (defn get-message-checker [signer]
   "returns a function to check an incoming message"
@@ -124,12 +139,28 @@
     (let [our-signature (signer header parent-header metadata content)]
       (= our-signature signature))))
 
+(defn send-router-message [socket msg_type content parent_header metadata session-id signer idents]
+  (let [header (cheshire/generate-string (new-header msg_type session-id))
+        parent_header (cheshire/generate-string parent_header)
+        metadata (cheshire/generate-string metadata)
+        content (cheshire/generate-string content)]
+
+    (doseq [ident idents] ; First send the zmq identifiers for the router socket's benefit
+      (zmq/send socket ident zmq/send-more))
+    (zmq/send socket (byte-array 0) zmq/send-more)
+
+    (send-message-piece socket "<IDS|MSG>")
+    (send-message-piece socket (signer header parent_header metadata content))
+    (send-message-piece socket header)
+    (send-message-piece socket parent_header)
+    (send-message-piece socket metadata)
+    (finish-message socket content)))
+
 (defn send-message [socket msg_type content parent_header metadata session-id signer]
   (let [header (cheshire/generate-string (new-header msg_type session-id))
         parent_header (cheshire/generate-string parent_header)
         metadata (cheshire/generate-string metadata)
         content (cheshire/generate-string content)]
-    (send-message-piece socket session-id)
     (send-message-piece socket "<IDS|MSG>")
     (send-message-piece socket (signer header parent_header metadata content))
     (send-message-piece socket header)
@@ -139,7 +170,7 @@
 
 
 (defn read-raw-message [socket]
-  {:uuid (read-until-delimiter socket)
+  {:idents (read-until-delimiter socket)
    :delimiter "<IDS|MSG>"
    :signature (read-blob socket)
    :header (read-blob socket)
@@ -148,7 +179,7 @@
    :content (read-blob socket)})
 
 (defn parse-message [message]
-  {:uuid (:uuid message)
+  {:idents (:idents message)
    :delimiter (:delimiter message)
    :signature (:signature message)
    :header (cheshire/parse-string (:header message) keyword)
@@ -165,7 +196,7 @@
                       parent-header {} session-id signer)
         (send-message iopub-socket "pyin" (pyin-content @execution-count message)
                       parent-header {} session-id signer)
-        (send-message shell-socket "execute_reply"
+        (send-router-message shell-socket "execute_reply"
                       {:status "ok"
                        :execution_count @execution-count
                        :user_variables {}
@@ -174,7 +205,7 @@
                       {:dependencies_met "True"
                        :engine session-id
                        :status "ok"
-                       :started (now)} session-id signer)
+                       :started (now)} session-id signer (:idents message))
         (send-message iopub-socket "pyout"  (pyout-content @execution-count
                                                            message executer)
                       parent-header {} session-id signer)
@@ -243,6 +274,10 @@
         iopub-socket (doto (zmq/socket context :pub)
                        (zmq/bind iopub-addr))
         shell-handler (configure-shell-handler shell-socket iopub-socket signer)]
+
+    ;; Detect problems when using router socket
+    (zmq/set-router-mandatory shell-socket true)
+
     (while (not (.. Thread currentThread isInterrupted))
       (let [message (read-raw-message shell-socket)
             parsed-message (parse-message message)]

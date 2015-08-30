@@ -60,10 +60,12 @@
         content  (cheshire/generate-string kernel-info-content)]
 
     ;; First send the client identifiers for the router socket's benefit
-    (doseq [ident (:idents message)]
-      (zmq/send socket ident zmq/send-more))
-    (zmq/send socket (byte-array 0) zmq/send-more)
+    (when (not (empty? (:idents message)))
+      (doseq [ident (:idents message)]
+        (zmq/send socket ident zmq/send-more))
+      (zmq/send socket (byte-array 0) zmq/send-more))
 
+    (send-message-piece socket (get-in message [:header :session]))
     (send-message-piece socket "<IDS|MSG>")
     (send-message-piece socket (signer header parent_header metadata content))
     (send-message-piece socket header)
@@ -78,10 +80,12 @@
         content  (cheshire/generate-string kernel-info-content)]
 
     ;; First send the client identifiers for the router socket's benefit
-    (doseq [ident (:idents message)]
-      (zmq/send socket ident zmq/send-more))
-    (zmq/send socket (byte-array 0) zmq/send-more)
+    (when (not (empty? (:idents message)))
+      (doseq [ident (:idents message)]
+        (zmq/send socket ident zmq/send-more))
+      (zmq/send socket (byte-array 0) zmq/send-more))
 
+    (send-message-piece socket (get-in message [:header :session]))
     (send-message-piece socket "<IDS|MSG>")
     (send-message-piece socket (signer header parent_header metadata content))
     (send-message-piece socket header)
@@ -145,10 +149,12 @@
         metadata (cheshire/generate-string metadata)
         content (cheshire/generate-string content)]
 
-    (doseq [ident idents] ; First send the zmq identifiers for the router socket's benefit
-      (zmq/send socket ident zmq/send-more))
-    (zmq/send socket (byte-array 0) zmq/send-more)
+    (when (not (empty? idents))
+      (doseq [ident idents] ; First send the zmq identifiers for the router socket's benefit
+        (zmq/send socket ident zmq/send-more))
+      (zmq/send socket (byte-array 0) zmq/send-more))
 
+    (send-message-piece socket session-id)
     (send-message-piece socket "<IDS|MSG>")
     (send-message-piece socket (signer header parent_header metadata content))
     (send-message-piece socket header)

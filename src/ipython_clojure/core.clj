@@ -124,12 +124,6 @@
   {:execution_count execution-count
    :code (get-in message [:content :code])})
 
-(defn pyout-content [execution-count message executer]
-  {:execution_count execution-count
-   :data {:text/plain (pr-str (eval (read-string (get-in message [:content :code]))))}
-   :metadata {}
-   })
-
 (defn get-message-signer [key]
   "returns a function used to sign a message"
   (if (empty? key)
@@ -212,9 +206,34 @@
                        :engine session-id
                        :status "ok"
                        :started (now)} session-id signer (:idents message))
-        (send-message iopub-socket "pyout"  (pyout-content @execution-count
-                                                           message executer)
-                      parent-header {} session-id signer)
+
+        (let [s# (new java.io.StringWriter)
+              [output results]
+              (binding [*out* s#]
+                (let [result (pr-str (eval (load-string (get-in message [:content :code]))))
+                      output (str s#)]
+                  [output, result]
+                  )
+                )
+              ]
+
+          ;; Send stdout
+          (send-message iopub-socket "pyout"
+                        {:execution_count @execution-count
+                         :data {:text/plain output}
+                         :metadata {}
+                         }
+                        parent-header {} session-id signer)
+
+          ;; Send results
+          (send-message iopub-socket "execute_result"
+                        {:execution_count @execution-count
+                         :data {:text/plain results}
+                         :metadata {}
+                         }
+                        parent-header {} session-id signer))
+
+
         (send-message iopub-socket "status" (status-content "idle")
                       parent-header {} session-id signer)))))
 

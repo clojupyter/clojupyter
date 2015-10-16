@@ -27,7 +27,7 @@ jupyter-notebook --kernel=clojure
 
 ### status
 Should work for simple stuff in the REPL. Doesn't handle errors or any type
-of complex data from Clojure. Also does not handle changing namespaces.
+of complex data from Clojure. Also does not handle changing namespaces. We'd really like help with this.
 
 ### collaboration
 If you submit a pull request that ends up getting merged, we will give you commit access.

@@ -36,8 +36,6 @@
                                           :session (get-in message [:header :session])
                                           :msg_type "kernel_info_reply"
                                           :version "5.0"})]
-    (println message)
-    (println header)
     header))
 
 (defn close-comm-header [message]
@@ -240,8 +238,6 @@
                            :ename (.getSimpleName (.getClass e))
                            :evalue (.getLocalizedMessage e)
                            :traceback (map #(.toString %) (.getStackTrace e))
-                           :user_variables {}
-                           :user_expressions {}
                            }
                           parent-header {} session-id signer)
 
@@ -252,8 +248,7 @@
                                   :ename (.getSimpleName (.getClass e))
                                   :evalue (.getLocalizedMessage e)
                                   :traceback (map #(.toString %) (.getStackTrace e))
-                                  :user_variables {}
-                                  :user_expressions {}}
+                                  }
                                  parent-header
                                  {:dependencies_met "True"
                                   :engine session-id

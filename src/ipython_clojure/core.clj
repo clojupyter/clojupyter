@@ -207,31 +207,59 @@
                        :status "ok"
                        :started (now)} session-id signer (:idents message))
 
-        (let [s# (new java.io.StringWriter)
+        (try
+          (let [s# (new java.io.StringWriter)
               [output results]
               (binding [*out* s#]
                 (let [result (pr-str (eval (load-string (get-in message [:content :code]))))
                       output (str s#)]
                   [output, result]
-                  )
-                )
+                  ))
               ]
 
-          ;; Send stdout
-          (send-message iopub-socket "pyout"
-                        {:execution_count @execution-count
-                         :data {:text/plain output}
-                         :metadata {}
-                         }
-                        parent-header {} session-id signer)
+            ;; Send stdout
+            (send-message iopub-socket "pyout"
+                          {:execution_count @execution-count
+                           :data {:text/plain output}
+                           :metadata {}
+                           }
+                          parent-header {} session-id signer)
 
-          ;; Send results
-          (send-message iopub-socket "execute_result"
-                        {:execution_count @execution-count
-                         :data {:text/plain results}
-                         :metadata {}
-                         }
-                        parent-header {} session-id signer))
+            ;; Send results
+            (send-message iopub-socket "execute_result"
+                          {:execution_count @execution-count
+                           :data {:text/plain results}
+                           :metadata {}
+                           }
+                          parent-header {} session-id signer))
+
+          (catch Exception e
+            ;; Send error on iopub socket
+            (send-message iopub-socket "error"
+                          {:execution_count @execution-count
+                           :ename (.getSimpleName (.getClass e))
+                           :evalue (.getLocalizedMessage e)
+                           :traceback (map #(.toString %) (.getStackTrace e))
+                           :user_variables {}
+                           :user_expressions {}
+                           }
+                          parent-header {} session-id signer)
+
+            ;; Send an error execute_reply message
+            (send-router-message shell-socket "execute_reply"
+                                 {:status "error"
+                                  :execution_count @execution-count
+                                  :ename (.getSimpleName (.getClass e))
+                                  :evalue (.getLocalizedMessage e)
+                                  :traceback (map #(.toString %) (.getStackTrace e))
+                                  :user_variables {}
+                                  :user_expressions {}}
+                                 parent-header
+                                 {:dependencies_met "True"
+                                  :engine session-id
+                                  :status "ok"
+                                  :started (now)} session-id signer (:idents message)))
+          )
 
 
         (send-message iopub-socket "status" (status-content "idle")

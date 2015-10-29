@@ -104,7 +104,8 @@
 
 (defn read-until-delimiter [socket]
   (let [preamble (doall (drop-last
-                         (take-while (comp not #(= "<IDS|MSG>" (try-convert-to-string %)))
+                         (take-while (comp not #(= "<IDS|MSG>"
+                                                   (try-convert-to-string %)))
                                      (repeatedly #(zmq/receive socket)))))]
     preamble))
 
@@ -166,7 +167,6 @@
     (send-message-piece socket metadata)
     (finish-message socket content)))
 
-
 (defn read-raw-message [socket]
   {:idents (read-until-delimiter socket)
    :delimiter "<IDS|MSG>"
@@ -194,16 +194,13 @@
                       parent-header {} session-id signer)
         (send-message iopub-socket "pyin" (pyin-content @execution-count message)
                       parent-header {} session-id signer)
-
         (try
-          (let [s# (new java.io.StringWriter)
-              [output results]
+          (let [s# (new java.io.StringWriter) [output results]
               (binding [*out* s#]
-                (let [result (pr-str (eval (load-string (get-in message [:content :code]))))
+                (let [result (pr-str (eval (load-string
+                                            (get-in message [:content :code]))))
                       output (str s#)]
-                  [output, result]
-                  ))
-              ]
+                  [output, result]))]
             (send-router-message shell-socket "execute_reply"
                                  {:status "ok"
                                   :execution_count @execution-count
@@ -213,7 +210,6 @@
                                   :engine session-id
                                   :status "ok"
                                   :started (now)} session-id signer (:idents message))
-
             ;; Send stdout
             (send-message iopub-socket "pyout"
                           {:execution_count @execution-count
@@ -221,7 +217,6 @@
                            :metadata {}
                            }
                           parent-header {} session-id signer)
-
             ;; Send results
             (send-message iopub-socket "execute_result"
                           {:execution_count @execution-count
@@ -229,7 +224,6 @@
                            :metadata {}
                            }
                           parent-header {} session-id signer))
-
           (catch Exception e
             ;; Send error on iopub socket
             (send-message iopub-socket "error"
@@ -239,7 +233,6 @@
                            :traceback (map #(.toString %) (.getStackTrace e))
                            }
                           parent-header {} session-id signer)
-
             ;; Send an error execute_reply message
             (send-router-message shell-socket "execute_reply"
                                  {:status "error"
@@ -254,7 +247,6 @@
                                   :status "ok"
                                   :started (now)} session-id signer (:idents message)))
           )
-
         (send-message iopub-socket "status" (status-content "idle")
                       parent-header {} session-id signer)))))
 
@@ -301,7 +293,6 @@
             (println "Message type" msg-type "not handled yet. Exiting.")
             (println "Message dump:" message)
             (System/exit -1)))))))
-
 
 (defrecord Heartbeat [addr]
     Runnable

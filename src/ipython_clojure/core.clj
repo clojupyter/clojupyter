@@ -20,7 +20,7 @@
 (defn uuid [] (str (java.util.UUID/randomUUID)))
 
 (def kernel-info-content
-  {:protocol_version "5.0"
+  {:protocol_version protocol-version
    :language_version "1.5.1"
    :language "clojure"})
 

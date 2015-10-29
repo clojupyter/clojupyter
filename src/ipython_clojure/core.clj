@@ -9,6 +9,8 @@
   (:import [org.zeromq ZMQ])
   (:gen-class :main true))
 
+(def protocol-version "5.0")
+
 (defn prep-config [args]
   (-> args first slurp json/read-str walk/keywordize-keys))
 
@@ -32,10 +34,11 @@
 
 (defn kernel-info-header [message]
   (let [header (cheshire/generate-string {:msg_id (uuid)
+                                          :date (now)
                                           :username (get-in message [:header :username])
                                           :session (get-in message [:header :session])
                                           :msg_type "kernel_info_reply"
-                                          :version "5.0"})]
+                                          :version protocol-version})]
     header))
 
 (defn close-comm-header [message]
@@ -111,6 +114,7 @@
 
 (defn new-header [msg_type session-id]
   {:date (now)
+   :version protocol-version
    :msg_id (uuid)
    :username "kernel"
    :session session-id

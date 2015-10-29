@@ -196,7 +196,8 @@
         (swap! execution-count inc)
         (send-message iopub-socket "status" (status-content "busy")
                       parent-header {} session-id signer)
-        (send-message iopub-socket "pyin" (pyin-content @execution-count message)
+        (send-message iopub-socket "execute-content"
+                      (pyin-content @execution-count message)
                       parent-header {} session-id signer)
         (try
           (let [s# (new java.io.StringWriter) [output results]

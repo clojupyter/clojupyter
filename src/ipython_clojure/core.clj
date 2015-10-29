@@ -194,16 +194,6 @@
                       parent-header {} session-id signer)
         (send-message iopub-socket "pyin" (pyin-content @execution-count message)
                       parent-header {} session-id signer)
-        (send-router-message shell-socket "execute_reply"
-                      {:status "ok"
-                       :execution_count @execution-count
-                       :user_variables {}
-                       :user_expressions {}}
-                      parent-header
-                      {:dependencies_met "True"
-                       :engine session-id
-                       :status "ok"
-                       :started (now)} session-id signer (:idents message))
 
         (try
           (let [s# (new java.io.StringWriter)
@@ -214,6 +204,16 @@
                   [output, result]
                   ))
               ]
+            (send-router-message shell-socket "execute_reply"
+                                 {:status "ok"
+                                  :execution_count @execution-count
+                                  :user_variables {}
+                                  :user_expressions {}}
+                                 parent-header
+                                 {:dependencies_met "True"
+                                  :engine session-id
+                                  :status "ok"
+                                  :started (now)} session-id signer (:idents message))
 
             ;; Send stdout
             (send-message iopub-socket "pyout"

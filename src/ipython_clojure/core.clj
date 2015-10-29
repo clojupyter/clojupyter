@@ -207,7 +207,6 @@
             (send-router-message shell-socket "execute_reply"
                                  {:status "ok"
                                   :execution_count @execution-count
-                                  :user_variables {}
                                   :user_expressions {}}
                                  parent-header
                                  {:dependencies_met "True"
@@ -255,7 +254,6 @@
                                   :status "ok"
                                   :started (now)} session-id signer (:idents message)))
           )
-
 
         (send-message iopub-socket "status" (status-content "idle")
                       parent-header {} session-id signer)))))

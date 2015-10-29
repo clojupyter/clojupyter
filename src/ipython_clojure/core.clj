@@ -283,6 +283,9 @@
   "returns REPL history, not implemented for now and returns a dummy message"
   {:history []})
 
+(defn shutdown-reply [message signer]
+  {:restart true})
+
 (defn configure-shell-handler [shell-socket iopub-socket signer]
   (let [execute-request (execute-request-handler shell-socket iopub-socket
                                                  (get-executer))]
@@ -292,6 +295,7 @@
           "kernel_info_request" (kernel-info-reply message shell-socket signer)
           "execute_request" (execute-request message signer)
           "history_request" (history-reply message signer)
+          "shutdown_request" (shutdown-reply message signer)
           "comm_open" (immediately-close-comm message shell-socket signer)
           (do
             (println "Message type" msg-type "not handled yet. Exiting.")

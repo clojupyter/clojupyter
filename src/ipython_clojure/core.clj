@@ -216,11 +216,7 @@
                                   :status "ok"
                                   :started (now)} session-id signer (:idents message))
             ;; Send stdout
-            (send-message iopub-socket "pyout"
-                          {:execution_count @execution-count
-                           :data {:text/plain output}
-                           :metadata {}
-                           }
+            (send-message iopub-socket "stream" {:name "stdout",:text output}
                           parent-header {} session-id signer)
             ;; Send results
             (send-message iopub-socket "execute_result"

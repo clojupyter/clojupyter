@@ -9,6 +9,7 @@ IPython console and notebook.
 1. git clone https://github.com/roryk/clojupyter
 2. cd clojupyter
 3. make
+4. make install
 
 This will install a clojupyter executable and a configuration file to tell
 Jupyter how to use it in ~/.ipython/kernels/clojure.

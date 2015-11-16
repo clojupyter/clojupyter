@@ -1,9 +1,14 @@
 all:
-	mkdir -p ~/.ipython/kernels/clojure
-	rm -f target/*.jar
 	lein uberjar
-	cat bin/ipython-clojure.template target/*-standalone.jar > bin/ipython-clojure
+	cat bin/ipython-clojure.template $$(find . -maxdepth 2 -type f | grep -e ".*standalone.*\.jar") > bin/ipython-clojure
 	chmod +x bin/ipython-clojure
+
+clean:
+	rm -f *.jar
+	rm -f target/*.jar
+
+install:
+	mkdir -p ~/.ipython/kernels/clojure
 	cp bin/ipython-clojure ~/.ipython/kernels/clojure/ipython-clojure
 	@if [ ! -f ~/.ipython/kernels/clojure/kernel.json ]; then\
 		sed 's|HOME|'${HOME}'|' resources/kernel.json > ~/.ipython/kernels/clojure/kernel.json;\

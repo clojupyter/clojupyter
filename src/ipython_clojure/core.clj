@@ -202,7 +202,7 @@
         (try
           (let [s# (new java.io.StringWriter) [output results]
               (binding [*out* s#]
-                (let [result (pr-str (eval (load-string
+                (let [result (pr-str (eval (read-string
                                             (get-in message [:content :code]))))
                       output (str s#)]
                   [output, result]))]

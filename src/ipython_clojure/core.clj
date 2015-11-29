@@ -11,6 +11,37 @@
 
 (def protocol-version "5.0")
 
+(defmacro try-let
+  "A combination of try and let such that exceptions thrown in the binding or
+   body can be handled by catch clauses in the body, and all bindings are
+   available to the catch and finally clauses. If an exception is thrown while
+   evaluating a binding value, it and all subsequent binding values will be nil.
+   Example:
+   (try-let [x (f a)
+             y (f b)]
+     (g x y)
+     (catch Exception e (println a b x y e)))"
+  {:arglists '([[bindings*] exprs* catch-clauses* finally-clause?])}
+  [bindings & exprs]
+  (when-not (even? (count bindings))
+    (throw (IllegalArgumentException. "try-let requires an even number of forms in binding vector")))
+  (let [names  (take-nth 2 bindings)
+        values (take-nth 2 (next bindings))
+        ex     (gensym "ex__")]
+    `(let [~ex nil
+           ~@(interleave names (repeat nil))
+           ~@(interleave
+               (map vector names (repeat ex))
+               (for [v values]
+                 `(if ~ex
+                    [nil ~ex]
+                    (try [~v nil]
+                      (catch Throwable ~ex [nil ~ex])))))]
+      (try
+        (when ~ex (throw ~ex))
+        ~@exprs))))
+
+
 (defn prep-config [args]
   (-> args first slurp json/read-str walk/keywordize-keys))
 
@@ -188,22 +219,30 @@
    :parent-header (cheshire/parse-string (:parent-header message) keyword)
    :content (cheshire/parse-string (:content message) keyword)})
 
+(defn get-busy-handler [iopub-socket]
+  "handles setting the engine to busy when executing a request"
+  (fn [message signer execution-count]
+    (let [session-id (get-in message [:header :session])
+          parent-header (:header message)]
+      (send-message iopub-socket "status" (status-content "busy")
+                    parent-header {} session-id signer)
+      (send-message iopub-socket "execute-content"
+                    (pyin-content @execution-count message)
+                    parent-header {} session-id signer))))
+
 (defn execute-request-handler [shell-socket iopub-socket executer]
-  (let [execution-count (atom 0N)]
+  (let [execution-count (atom 0N)
+        busy-handler (get-busy-handler iopub-socket)]
     (fn [message signer]
       (let [session-id (get-in message [:header :session])
             parent-header (:header message)]
         (swap! execution-count inc)
-        (send-message iopub-socket "status" (status-content "busy")
-                      parent-header {} session-id signer)
-        (send-message iopub-socket "execute-content"
-                      (pyin-content @execution-count message)
-                      parent-header {} session-id signer)
+        (busy-handler message signer execution-count)
         (try
           (let [s# (new java.io.StringWriter) [output results]
-              (binding [*out* s#]
-                (let [result (pr-str (eval (read-string
-                                            (get-in message [:content :code]))))
+                (binding [*out* s#]
+                  (let [result (pr-str (eval (read-string
+                                              (get-in message [:content :code]))))
                       output (str s#)]
                   [output, result]))]
             (send-router-message shell-socket "execute_reply"

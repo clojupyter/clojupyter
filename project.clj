@@ -2,7 +2,7 @@
   :description "An IPython kernel for executing Clojure code"
   :url "http://github.com/roryk/ipython-clojure"
   :license {:name "MIT"}
-  :dependencies [[org.clojure/clojure "1.5.1"]
+  :dependencies [[org.clojure/clojure "1.7.0"]
                  [org.zeromq/jeromq "0.3.3"]
                  [cheshire "5.3.1"]
                  [clj-time "0.7.0"]

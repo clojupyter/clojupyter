@@ -6,6 +6,7 @@ all:
 clean:
 	rm -f *.jar
 	rm -f target/*.jar
+	rm -f bin/ipython-clojure
 
 install:
 	mkdir -p ~/.ipython/kernels/clojure

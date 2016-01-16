@@ -23,8 +23,10 @@ jupyter-console --kernel=clojure
 or the notebook with:
 
 ```bash
-jupyter-notebook --kernel=clojure
+jupyter-notebook
 ```
+
+and select the Clojure kernel.
 
 ### status
 Should work for simple stuff in the REPL. Doesn't handle errors or any type

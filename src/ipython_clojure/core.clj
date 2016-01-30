@@ -356,9 +356,6 @@
                        (zmq/bind iopub-addr))
         shell-handler (configure-shell-handler shell-socket iopub-socket signer)]
 
-    ;; Detect problems when using router socket
-    (zmq/set-router-mandatory shell-socket true)
-
     (while (not (.. Thread currentThread isInterrupted))
       (let [message (read-raw-message shell-socket)
             parsed-message (parse-message message)]

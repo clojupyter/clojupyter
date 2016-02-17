@@ -1,46 +1,35 @@
 (ns ipython-clojure.core
-  (:require [clojure.data.json :as json]
+  (:require 
+            [ipython-clojure.middleware.pprint]
+            [ipython-clojure.middleware.stacktrace]
+            [clojure.data.json :as json]
+            [clojure.java.io :as io]
             [cheshire.core :as cheshire]
             [clojure.walk :as walk]
             [zeromq.zmq :as zmq]
             [clj-time.core :as time]
             [clj-time.format :as time-format]
-            [pandect.algo.sha256 :refer [sha256-hmac]])
-  (:import [org.zeromq ZMQ])
+            [pandect.algo.sha256 :refer [sha256-hmac]]
+            [clojure.tools.nrepl :as repl]
+            [clojure.tools.nrepl.server :as nrepl-server])
+  (:import [org.zeromq ZMQ]
+           [java.net ServerSocket])
   (:gen-class :main true))
 
 (def protocol-version "5.0")
 
-(defmacro try-let
-  "A combination of try and let such that exceptions thrown in the binding or
-   body can be handled by catch clauses in the body, and all bindings are
-   available to the catch and finally clauses. If an exception is thrown while
-   evaluating a binding value, it and all subsequent binding values will be nil.
-   Example:
-   (try-let [x (f a)
-             y (f b)]
-     (g x y)
-     (catch Exception e (println a b x y e)))"
-  {:arglists '([[bindings*] exprs* catch-clauses* finally-clause?])}
-  [bindings & exprs]
-  (when-not (even? (count bindings))
-    (throw (IllegalArgumentException. "try-let requires an even number of forms in binding vector")))
-  (let [names  (take-nth 2 bindings)
-        values (take-nth 2 (next bindings))
-        ex     (gensym "ex__")]
-    `(let [~ex nil
-           ~@(interleave names (repeat nil))
-           ~@(interleave
-               (map vector names (repeat ex))
-               (for [v values]
-                 `(if ~ex
-                    [nil ~ex]
-                    (try [~v nil]
-                      (catch Throwable ~ex [nil ~ex])))))]
-      (try
-        (when ~ex (throw ~ex))
-        ~@exprs))))
+;;; Map of sockets used; useful for debug shutdown
+(defonce jup-sockets  (atom {}))
 
+(defn get-free-port! 
+  "Get a free port. Problem?: might be taken before I use it."
+  []
+  (let [socket (ServerSocket. 0)
+        port (.getLocalPort socket)]
+    (.close socket)
+    port))
+
+(def the-nrepl (atom nil))
 
 (defn prep-config [args]
   (-> args first slurp json/read-str walk/keywordize-keys))
@@ -52,7 +41,7 @@
 
 (def kernel-info-content
   {:protocol_version protocol-version
-   :language_version "1.5.1"
+   :language_version "1.8"
    :language "clojure"})
 
 (defn now []
@@ -176,7 +165,6 @@
         parent_header (cheshire/generate-string parent_header)
         metadata (cheshire/generate-string metadata)
         content (cheshire/generate-string content)]
-
     (when (not (empty? idents))
       (doseq [ident idents] ; First send the zmq identifiers for the router socket's benefit
         (zmq/send socket ident zmq/send-more))
@@ -230,7 +218,58 @@
                     (pyin-content @execution-count message)
                     parent-header {} session-id signer))))
 
-(defn execute-request-handler [shell-socket iopub-socket executer]
+(def nrepl-session (atom nil))
+
+(defn set-session! 
+  "All interaction will occur in one session; this sets atom nrepl-session to it."
+  []
+  (reset! nrepl-session
+          (with-open [conn (repl/connect :port (:port @the-nrepl))]
+            (-> (repl/client conn 10000) 
+                (repl/message {:op :clone})
+                doall
+                repl/combine-responses
+                :new-session))))
+
+(defn request-trace
+  "Request a stacktrace for the most recent exception."
+  [transport]
+  (-> (repl/client transport 10000)
+      (repl/message {:op "stacktrace" :session @nrepl-session})
+      repl/combine-responses
+      doall))
+
+(defn stacktrace-string
+  "Return a nicely formatted string."
+  [msg]
+  (when-let [st (:stacktrace msg)]
+    (let [clean (->> st
+                     (filter (fn [f] (not-any? #(= "dup" %) (:flags f))))
+                     (filter (fn [f] (not-any? #(= "tooling" %) (:flags f))))
+                     (filter (fn [f] (not-any? #(= "repl" %) (:flags f))))
+                     (filter :file))
+          max-file (apply max (map count (map :file clean)))
+          max-name (apply max (map count (map :name clean)))]
+      (str (format "%s (%s)\n\n" (:message msg) (:class msg))
+           (apply str
+                  (map #(format (str "%" max-file "s: %5d %-" max-name "s  \n") 
+                                (:file %) (:line %) (:name %)) 
+
+                       clean))))))
+
+(defn nrepl-eval
+  "Send message to nrepl and process response."
+  [code transport] 
+  (let [result (-> (repl/client transport 3000) ; timeout=3sec. 
+                   (repl/message {:op :eval :session @nrepl-session :code code})
+                   repl/combine-responses)]
+    (cond (empty? result) "Clojure: Unbalanced parentheses or kernel timed-out while processing form.", 
+          (seq (:ex result)) (stacktrace-string (request-trace transport))
+          :else (if-let [vals (:value result)]
+                  (apply str (interpose " " vals)) ; could have sent multiple forms
+                  "Unexpected response from Clojure."))))
+
+(defn execute-request-handler [shell-socket iopub-socket transport]
   (let [execution-count (atom 0N)
         busy-handler (get-busy-handler iopub-socket)]
     (fn [message signer]
@@ -238,82 +277,33 @@
             parent-header (:header message)]
         (swap! execution-count inc)
         (busy-handler message signer execution-count)
-        (try
-          (let [s# (new java.io.StringWriter) [output results]
-                (binding [*out* s#]
-                  (let [result (pr-str (eval (read-string
-                                              (get-in message [:content :code]))))
+        (let [s# (new java.io.StringWriter) 
+              [output results] 
+              (binding [*out* s#]
+                (let [result (nrepl-eval (get-in message [:content :code]) transport)
                       output (str s#)]
                   [output, result]))]
-            (send-router-message shell-socket "execute_reply"
-                                 {:status "ok"
-                                  :execution_count @execution-count
-                                  :user_expressions {}}
-                                 parent-header
-                                 {:dependencies_met "True"
-                                  :engine session-id
-                                  :status "ok"
-                                  :started (now)} session-id signer (:idents message))
-            ;; Send stdout
-            (send-message iopub-socket "stream" {:name "stdout" :text output}
-                          parent-header {} session-id signer)
-            ;; Send results
-            (send-message iopub-socket "execute_result"
-                          {:execution_count @execution-count
-                           :data {:text/plain results}
-                           :metadata {}
-                           }
-                          parent-header {} session-id signer))
-          (catch Exception e
-            ;; Send error on iopub socket
-            (send-message iopub-socket "error"
-                          {:execution_count @execution-count
-                           :ename (.getSimpleName (.getClass e))
-                           :evalue (.getLocalizedMessage e)
-                           :traceback (map #(.toString %) (.getStackTrace e))
-                           }
-                          parent-header {} session-id signer)
-            ;; Send an error execute_reply message
-            (send-router-message shell-socket "execute_reply"
-                                 {:status "error"
-                                  :execution_count @execution-count
-                                  :ename (.getSimpleName (.getClass e))
-                                  :evalue (.getLocalizedMessage e)
-                                  :traceback (map #(.toString %) (.getStackTrace e))
-                                  }
-                                 parent-header
-                                 {:dependencies_met "True"
-                                  :engine session-id
-                                  :status "ok"
-                                  :started (now)} session-id signer (:idents message)))
-          )
+          (send-router-message shell-socket "execute_reply"
+                               {:status "ok"
+                                :execution_count @execution-count
+                                :user_expressions {}}
+                               parent-header
+                               {:dependencies_met "True"
+                                :engine session-id
+                                :status "ok"
+                                :started (now)} session-id signer (:idents message))
+          ;; Send stdout
+          (send-message iopub-socket "stream" {:name "stdout" :text output}
+                        parent-header {} session-id signer)
+          ;; Send results
+          (send-message iopub-socket "execute_result"
+                        {:execution_count @execution-count
+                         :data {:text/plain results}
+                         :metadata {}
+                         }
+                        parent-header {} session-id signer))
         (send-message iopub-socket "status" (status-content "idle")
                       parent-header {} session-id signer)))))
-
-(defn execute
-  "evaluates s-forms"
-  ([request] (execute request *ns*))
-  ([request user-ns]
-    (str
-      (try
-        (binding [*ns* user-ns] (eval (read-string request)))
-        (catch Exception e (.getLocalizedMessage e))))))
-
-(defn generate-ns []
-  "generates ns for client connection"
-  (let [user-ns (create-ns (gensym "client-"))]
-    (execute (str "(clojure.core/refer 'clojure.core)") user-ns)
-    user-ns))
-
-
-(defn get-executer []
-  "evaluates s-forms"
-  (let [user-ns (generate-ns)]
-    (fn [request]
-      (str
-       (try
-         (binding [*ns* user-ns] (eval (read-string request)))
-         (catch Exception e (.getLocalizedMessage e)))))))
 
 (defn history-reply [message signer]
   "returns REPL history, not implemented for now and returns a dummy message"
@@ -322,9 +312,8 @@
 (defn shutdown-reply [message signer]
   {:restart true})
 
-(defn configure-shell-handler [shell-socket iopub-socket signer]
-  (let [execute-request (execute-request-handler shell-socket iopub-socket
-                                                 (get-executer))]
+(defn configure-shell-handler [shell-socket iopub-socket signer nrepl-transport]
+  (let [execute-request (execute-request-handler shell-socket iopub-socket nrepl-transport)]
     (fn [message]
       (let [msg-type (get-in message [:header :msg_type])]
         (case msg-type
@@ -342,24 +331,47 @@
     Runnable
     (run [this]
       (let [context (zmq/context 1)
-            socket (doto (zmq/socket context :rep)
+            socket (doto (:hb (swap! jup-sockets assoc :hb (zmq/socket context :rep)))
                      (zmq/bind addr))]
         (while (not (.. Thread currentThread isInterrupted))
           (let [message (zmq/receive socket)]
             (zmq/send socket message))))))
 
+(def clojupyter-middleware
+  "A vector containing all Clojupyters middleware (additions to nrepl default)."
+  '[ipython-clojure.middleware.pprint/wrap-pprint
+    ipython-clojure.middleware.pprint/wrap-pprint-fn
+    ipython-clojure.middleware.stacktrace/wrap-stacktrace])
+
+(def clojupyer-nrepl-handler
+  "Clojupyters nREPL handler."
+  (apply nrepl-server/default-handler (map resolve clojupyter-middleware)))
+
+(defn start-nrepl 
+  "Start an nrepl server. Stop the existing one, if any (only possible when debugging)."
+  []
+  (when-let [server @the-nrepl]
+    (nrepl-server/stop-server server))
+  (reset! the-nrepl
+          (nrepl-server/start-server 
+           :port (get-free-port!)
+           :handler clojupyer-nrepl-handler))
+  (set-session!))
+
 (defn shell-loop [shell-addr iopub-addr signer checker]
-  (let [context (zmq/context 1)
-        shell-socket (doto (zmq/socket context :router)
-                       (zmq/bind shell-addr))
-        iopub-socket (doto (zmq/socket context :pub)
-                       (zmq/bind iopub-addr))
-        shell-handler (configure-shell-handler shell-socket iopub-socket signer)]
+  (start-nrepl)
+  (with-open [transport (repl/connect :port (:port @the-nrepl))]
+    (let [context (zmq/context 1)
+          shell-socket (doto (:sh (swap! jup-sockets assoc :sh (zmq/socket context :router)))
+                         (zmq/bind shell-addr))
+          iopub-socket (doto (:io (swap! jup-sockets assoc :io (zmq/socket context :pub)))
+                         (zmq/bind iopub-addr))
+          shell-handler (configure-shell-handler shell-socket iopub-socket signer transport)]
 
     (while (not (.. Thread currentThread isInterrupted))
       (let [message (read-raw-message shell-socket)
             parsed-message (parse-message message)]
-        (shell-handler parsed-message)))))
+        (shell-handler parsed-message))))))
 
 (defn -main [& args]
   (let [hb-addr (address (prep-config args) :hb_port)

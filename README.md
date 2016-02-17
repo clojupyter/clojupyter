@@ -28,9 +28,15 @@ jupyter-notebook
 
 and select the Clojure kernel.
 
-### status
-Should work for simple stuff in the REPL. Doesn't handle errors or any type
-of complex data from Clojure. Also does not handle changing namespaces. We'd really like help with this.
+### Status
+Works. See the 'to do' list below, however.
 
-### collaboration
+###To Do:
+ * Shut down cleanly.
+ * Do syntax checking. It currently returns nil on unbalanced form. Borrow cider-nrepl middleware for this.
+ * Allow controls from Jupyter, including timeout and what classes of stack frames to show.
+ * Test (implement?) interrupt handling. Default middleware for interruptible-eval is loaded. 
+ * Implement file load. Use cider-nrepl middleware.
+
+### Collaboration
 If you submit a pull request that ends up getting merged, we will give you commit access.

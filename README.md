@@ -12,7 +12,7 @@ IPython console and notebook.
 4. make install
 
 This will install a clojupyter executable and a configuration file to tell
-Jupyter how to use it in ~/.ipython/kernels/clojure.
+Jupyter how to use it in `~/.ipython/kernels/clojure`.
 
 run the REPL with:
 
@@ -35,7 +35,7 @@ Works. See the 'to do' list below, however.
  * Shut down cleanly.
  * Do syntax checking. It currently returns nil on unbalanced form. Borrow cider-nrepl middleware for this.
  * Allow controls from Jupyter, including timeout and what classes of stack frames to show.
- * Test (implement?) interrupt handling. Default middleware for interruptible-eval is loaded. 
+ * Test (implement?) interrupt handling. Default middleware for interruptible-eval is loaded.
  * Implement file load. Use cider-nrepl middleware.
 
 ### Collaboration

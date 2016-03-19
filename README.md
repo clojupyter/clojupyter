@@ -2,7 +2,7 @@
 A Jupyter kernel for Clojure. This will let you run Clojure code from the
 IPython console and notebook.
 
-![clojupyter](https://raw.github.com/roryk/clojupyter/master/images/demo.gif)
+![clojupyter](https://raw.github.com/roryk/clojupyter/master/images/demo.png)
 
 ### installation
 

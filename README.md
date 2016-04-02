@@ -1,6 +1,6 @@
 ## clojupyter
 A Jupyter kernel for Clojure. This will let you run Clojure code from the
-IPython console and notebook.
+Jupyter console and notebook.
 
 ![clojupyter](https://raw.github.com/roryk/clojupyter/master/images/demo.png)
 

@@ -1,5 +1,5 @@
 (ns ipython-clojure.core
-  (:require 
+  (:require
             [ipython-clojure.middleware.pprint]
             [ipython-clojure.middleware.stacktrace]
             [clojure.data.json :as json]
@@ -21,7 +21,7 @@
 ;;; Map of sockets used; useful for debug shutdown
 (defonce jup-sockets  (atom {}))
 
-(defn get-free-port! 
+(defn get-free-port!
   "Get a free port. Problem?: might be taken before I use it."
   []
   (let [socket (ServerSocket. 0)
@@ -214,18 +214,18 @@
           parent-header (:header message)]
       (send-message iopub-socket "status" (status-content "busy")
                     parent-header {} session-id signer)
-      (send-message iopub-socket "execute-content"
+      (send-message iopub-socket "execute_input"
                     (pyin-content @execution-count message)
                     parent-header {} session-id signer))))
 
 (def nrepl-session (atom nil))
 
-(defn set-session! 
+(defn set-session!
   "All interaction will occur in one session; this sets atom nrepl-session to it."
   []
   (reset! nrepl-session
           (with-open [conn (repl/connect :port (:port @the-nrepl))]
-            (-> (repl/client conn 10000) 
+            (-> (repl/client conn 10000)
                 (repl/message {:op :clone})
                 doall
                 repl/combine-responses
@@ -252,18 +252,18 @@
           max-name (apply max (map count (map :name clean)))]
       (str (format "%s (%s)\n\n" (:message msg) (:class msg))
            (apply str
-                  (map #(format (str "%" max-file "s: %5d %-" max-name "s  \n") 
-                                (:file %) (:line %) (:name %)) 
+                  (map #(format (str "%" max-file "s: %5d %-" max-name "s  \n")
+                                (:file %) (:line %) (:name %))
 
                        clean))))))
 
 (defn nrepl-eval
   "Send message to nrepl and process response."
-  [code transport] 
-  (let [result (-> (repl/client transport 3000) ; timeout=3sec. 
+  [code transport]
+  (let [result (-> (repl/client transport 3000) ; timeout=3sec.
                    (repl/message {:op :eval :session @nrepl-session :code code})
                    repl/combine-responses)]
-    (cond (empty? result) "Clojure: Unbalanced parentheses or kernel timed-out while processing form.", 
+    (cond (empty? result) "Clojure: Unbalanced parentheses or kernel timed-out while processing form.",
           (seq (:ex result)) (stacktrace-string (request-trace transport))
           :else (if-let [vals (:value result)]
                   (apply str (interpose " " vals)) ; could have sent multiple forms
@@ -277,8 +277,8 @@
             parent-header (:header message)]
         (swap! execution-count inc)
         (busy-handler message signer execution-count)
-        (let [s# (new java.io.StringWriter) 
-              [output result] 
+        (let [s# (new java.io.StringWriter)
+              [output result]
               (binding [*out* s#]
                 (let [result (nrepl-eval (get-in message [:content :code]) transport)
                       output (str s#)]
@@ -354,13 +354,13 @@
   "Clojupyters nREPL handler."
   (apply nrepl-server/default-handler (map resolve clojupyter-middleware)))
 
-(defn start-nrepl 
+(defn start-nrepl
   "Start an nrepl server. Stop the existing one, if any (only possible when debugging)."
   []
   (when-let [server @the-nrepl]
     (nrepl-server/stop-server server))
   (reset! the-nrepl
-          (nrepl-server/start-server 
+          (nrepl-server/start-server
            :port (get-free-port!)
            :handler clojupyer-nrepl-handler))
   (set-session!))

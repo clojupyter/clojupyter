@@ -31,6 +31,13 @@ and select the Clojure kernel.
 ### Status
 Works. See the 'to do' list below, however.
 
+### Removing OSX cache
+Recently `clojupyter` was renamed from `ipython-clojure` because `clojupyter` is more accurate and, 
+more importantly, sounds cooler. OSX caches the kernels you choose in `$USER/Library/jupyter/kernels`,
+so it will look for `ipython-clojure` even if you've installed the new version. Remove 
+the `clojure` directory in there and it will pick up the `clojupyter` executable instead if
+you're having some troubles after installing.
+
 ###To Do:
  * Shut down cleanly.
  * Do syntax checking. It currently returns nil on unbalanced form. Borrow cider-nrepl middleware for this.

@@ -291,7 +291,6 @@
                 (let [fullresult (nrepl-eval (get-in message [:content :code]) transport)
                       result (reformat-values fullresult)
                       output (:out fullresult)]
-                  (spit "/Users/rory/cache/clojupyter/log.log" fullresult)
 ;                      output (str s#)]
                   [output, result]))]
           (send-router-message shell-socket "execute_reply"

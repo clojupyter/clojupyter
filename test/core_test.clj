@@ -1,7 +1,7 @@
-(ns ipython-clojure.core-test
+(ns clojupyter.core-test
   "Tests nrepl evaluation and error handling."
   {:author "Peter Denno"}
-  (:require [ipython-clojure.core :refer :all]
+  (:require [clojupyter.core :refer :all]
             [clojure.pprint :refer (pprint)]
             [clojure.test :refer :all]
             [clojure.java.io :as io]

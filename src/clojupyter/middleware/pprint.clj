@@ -1,4 +1,4 @@
-(ns ipython-clojure.middleware.pprint
+(ns clojupyter.middleware.pprint
   (:require [clojure.pprint :refer [pprint *print-right-margin*]]
             [clojure.tools.nrepl.middleware.interruptible-eval :refer [*msg*]]
             [clojure.tools.nrepl.middleware.pr-values :refer [pr-values]]
@@ -88,7 +88,7 @@
     ;; PrintWriter (as created by `pprint-writer`), which the client requires to
     ;; handle the response correctly.
     (binding [*msg* msg *out* writer]
-      (let [value (:value response) 
+      (let [value (:value response)
             print-fn (if (string? value) println pprint-fn)]
         (print-fn value))))
   (transport/send transport (response-for msg :pprint-sentinel {})))

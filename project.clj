@@ -1,6 +1,6 @@
-(defproject ipython-clojure "0.1.0-SNAPSHOT"
+(defproject clojupyter "0.1.0-SNAPSHOT"
   :description "An IPython kernel for executing Clojure code"
-  :url "http://github.com/roryk/ipython-clojure"
+  :url "http://github.com/roryk/clojupyter"
   :license {:name "MIT"}
   :dependencies [[org.clojure/clojure "1.8.0"]
                  [org.zeromq/jeromq "0.3.4"] ; "0.3.5" (modern) fails on zmq/bind.
@@ -13,7 +13,7 @@
                  [mvxcvi/puget "1.0.0"]
                  [fipp "0.6.4"]
                  [org.clojure/tools.nrepl "0.2.12"]]
-  :aot [ipython-clojure.core]
-  :main ipython-clojure.core
+  :aot [clojupyter.core]
+  :main clojupyter.core
   :jvm-opts ["-Xmx250m"]
   :keep-non-project-classes true)

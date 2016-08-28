@@ -1,7 +1,7 @@
-(ns ipython-clojure.middleware.stacktrace
+(ns clojupyter.middleware.stacktrace
   "Cause and stacktrace analysis for exceptions"
   {:author "Jeff Valk"}
-  (:require [ipython-clojure.middleware.pprint :as pprint]
+  (:require [clojupyter.middleware.pprint :as pprint]
             [clojure.repl :as repl]
             [clojure.string :as str]
             [clojure.tools.nrepl.middleware :refer [set-descriptor!]]
@@ -174,10 +174,10 @@
 ;; nREPL middleware descriptor info
 (set-descriptor!
  #'wrap-stacktrace
-  {:requires #{#'session #'pprint/wrap-pprint-fn} 
+  {:requires #{#'session #'pprint/wrap-pprint-fn}
    :expects #{}
    :handles {"stacktrace"
              {:doc (str "Return messages describing each cause and stack frame "
                         "of the most recent exception.")
-              :optional pprint/wrap-pprint-fn-optional-arguments 
+              :optional pprint/wrap-pprint-fn-optional-arguments
               :returns {"status" "\"done\", or \"no-error\" if `*e` is nil"}}}})

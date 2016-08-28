@@ -1,7 +1,7 @@
-(ns ipython-clojure.core
+(ns clojupyter.core
   (:require
-            [ipython-clojure.middleware.pprint]
-            [ipython-clojure.middleware.stacktrace]
+            [clojupyter.middleware.pprint]
+            [clojupyter.middleware.stacktrace]
             [clojure.data.json :as json]
             [clojure.java.io :as io]
             [cheshire.core :as cheshire]
@@ -346,9 +346,9 @@
 
 (def clojupyter-middleware
   "A vector containing all Clojupyters middleware (additions to nrepl default)."
-  '[ipython-clojure.middleware.pprint/wrap-pprint
-    ipython-clojure.middleware.pprint/wrap-pprint-fn
-    ipython-clojure.middleware.stacktrace/wrap-stacktrace])
+  '[clojupyter.middleware.pprint/wrap-pprint
+    clojupyter.middleware.pprint/wrap-pprint-fn
+    clojupyter.middleware.stacktrace/wrap-stacktrace])
 
 (def clojupyer-nrepl-handler
   "Clojupyters nREPL handler."

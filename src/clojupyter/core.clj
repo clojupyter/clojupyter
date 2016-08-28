@@ -286,13 +286,13 @@
         (swap! execution-count inc)
         (busy-handler message signer execution-count)
         (let [s# (new java.io.StringWriter)
-              [output result]
+              [output result error]
               (binding [*out* s#]
                 (let [fullresult (nrepl-eval (get-in message [:content :code]) transport)
                       result (reformat-values fullresult)
-                      output (:out fullresult)]
-;                      output (str s#)]
-                  [output, result]))]
+                      output (:out fullresult)
+                      error (:err fullresult)]
+                  [output result error]))]
           (send-router-message shell-socket "execute_reply"
                                {:status "ok"
                                 :execution_count @execution-count
@@ -303,9 +303,14 @@
                                 :status "ok"
                                 :started (now)} session-id signer (:idents message))
           ;; Send stdout
-          (when  output
+          (when output
             (send-message iopub-socket "stream" {:name "stdout" :text output}
                           parent-header {} session-id signer))
+          ;; Send stderr
+          (when error
+            (send-message iopub-socket "stream" {:name "stderr" :text error}
+                          parent-header {} session-id signer))
+
           ;; Send result
           (send-message iopub-socket "execute_result"
                         {:execution_count @execution-count

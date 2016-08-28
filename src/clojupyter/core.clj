@@ -304,8 +304,9 @@
                                 :status "ok"
                                 :started (now)} session-id signer (:idents message))
           ;; Send stdout
-          (send-message iopub-socket "stream" {:name "stdout" :text output}
-                        parent-header {} session-id signer)
+          (when  output
+            (send-message iopub-socket "stream" {:name "stdout" :text output}
+                          parent-header {} session-id signer))
           ;; Send result
           (send-message iopub-socket "execute_result"
                         {:execution_count @execution-count

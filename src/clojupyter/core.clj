@@ -263,11 +263,19 @@
   (let [result (-> (repl/client transport 3000) ; timeout=3sec.
                    (repl/message {:op :eval :session @nrepl-session :code code})
                    repl/combine-responses)]
-    (cond (empty? result) "Clojure: Unbalanced parentheses or kernel timed-out while processing form.",
-          (seq (:ex result)) (stacktrace-string (request-trace transport))
-          :else (if-let [vals (:value result)]
-                  (apply str (interpose " " vals)) ; could have sent multiple forms
-                  "Unexpected response from Clojure."))))
+    (cond
+      (empty? result) "Clojure: Unbalanced parentheses or kernel timed-out while processing form.",
+      (seq (:ex result)) (stacktrace-string (request-trace transport))
+      :else result)))
+;      (if-let [vals (:value result)]
+;              (apply str (interpose " " vals)) ; could have sent multiple forms
+                                        ;              "Unexpected response from Clojure."))))
+
+(defn reformat-values [result]
+  (if-let [vals (:value result)]
+    (apply str (interpose " " vals)) ; could have sent multiple forms
+    ))
+
 
 (defn execute-request-handler [shell-socket iopub-socket transport]
   (let [execution-count (atom 0N)
@@ -280,8 +288,11 @@
         (let [s# (new java.io.StringWriter)
               [output result]
               (binding [*out* s#]
-                (let [result (nrepl-eval (get-in message [:content :code]) transport)
-                      output (str s#)]
+                (let [fullresult (nrepl-eval (get-in message [:content :code]) transport)
+                      result (reformat-values fullresult)
+                      output (:out fullresult)]
+                  (spit "/Users/rory/cache/clojupyter/log.log" fullresult)
+;                      output (str s#)]
                   [output, result]))]
           (send-router-message shell-socket "execute_reply"
                                {:status "ok"

@@ -7,4 +7,4 @@ pom.xml.asc
 *.class
 /.lein-*
 /.nrepl-port
-bin/*
+bin/clojupyter

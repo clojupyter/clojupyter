@@ -330,9 +330,16 @@
 
 (defn is-complete-reply
   "Returns whether or not what the user has typed is complete (ready for execution).
-   Not yet implemented. May be  that it is just used by jupyter-console."
+   Not yet implemented. May be that it is just used by jupyter-console."
   [message signer]
-  true)
+  {:status "unknown"})
+
+(defn complete-reply
+  [message signer]
+  {:matches nil
+   :cursor_start (:cursor_pos message)
+   :cursor_end (:cursor_pos message)
+   :status "ok"})
 
 (defn configure-shell-handler [shell-socket iopub-socket signer nrepl-transport]
   (let [execute-request (execute-request-handler shell-socket iopub-socket nrepl-transport)]
@@ -345,6 +352,7 @@
           "shutdown_request" (shutdown-reply message signer)
           "comm_open" (immediately-close-comm message shell-socket signer)
           "is_complete_request" (is-complete-reply message signer)
+          "complete_request" (complete-reply message signer)
           (do
             (println "Message type" msg-type "not handled yet. Exiting.")
             (println "Message dump:" message)

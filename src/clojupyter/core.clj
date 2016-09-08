@@ -2,6 +2,7 @@
   (:require
             [clojupyter.middleware.pprint]
             [clojupyter.middleware.stacktrace]
+            [clojupyter.middleware.completion :as completion]
             [clojure.data.json :as json]
             [clojure.java.io :as io]
             [cheshire.core :as cheshire]
@@ -52,20 +53,18 @@
                             (.getZone current-date-time))
      current-date-time)))
 
-(defn kernel-info-header [message]
-  (let [header (cheshire/generate-string {:msg_id (uuid)
-                                          :date (now)
-                                          :username (get-in message [:header :username])
-                                          :session (get-in message [:header :session])
-                                          :msg_type "kernel_info_reply"
-                                          :version protocol-version})]
-    header))
+(defn message-header [message msgtype]
+  (cheshire/generate-string
+   {:msg_id (uuid)
+    :date (now)
+    :username (get-in message [:header :username])
+    :session (get-in message [:header :session])
+    :msg_type msgtype
+    :version protocol-version}))
 
-(defn close-comm-header [message]
-  (let [header (cheshire/generate-string {:msg_id (uuid)
-                                          :data ""
-                                          :msg_type "comm_close"})]
-    header))
+(defn immediately-close-content [message]
+  {:comm_id (get-in message [:content :comm_id])
+   :data {}})
 
 (defn send-message-piece [socket msg]
   (zmq/send socket (.getBytes msg) zmq/send-more))
@@ -75,10 +74,10 @@
 
 (defn immediately-close-comm [message socket signer]
   "Just close a comm immediately since we don't handle it yet"
-  (let [header (close-comm-header message)
+  (let [header (message-header message "comm_close")
         parent_header (cheshire/generate-string (:header message))
         metadata (cheshire/generate-string {})
-        content  (cheshire/generate-string kernel-info-content)]
+        content  (cheshire/generate-string (immediately-close-content message))]
 
     ;; First send the client identifiers for the router socket's benefit
     (when (not (empty? (:idents message)))
@@ -95,7 +94,7 @@
     (finish-message socket content)))
 
 (defn kernel-info-reply [message socket signer]
-  (let [header (kernel-info-header message)
+  (let [header (message-header message "kernel_info_reply")
         parent_header (cheshire/generate-string (:header message))
         metadata (cheshire/generate-string {})
         content  (cheshire/generate-string kernel-info-content)]
@@ -328,18 +327,37 @@
 (defn shutdown-reply [message signer]
   {:restart true})
 
-(defn is-complete-reply
+(defn is-complete-reply-content
   "Returns whether or not what the user has typed is complete (ready for execution).
    Not yet implemented. May be that it is just used by jupyter-console."
-  [message signer]
-  {:status "unknown"})
+  [message]
+  (if (completion/complete? (:code (:content message)))
+    {:status "complete"}
+    {:status "incomplete"}))
 
 (defn complete-reply
   [message signer]
-  {:matches nil
-   :cursor_start (:cursor_pos message)
-   :cursor_end (:cursor_pos message)
-   :status "ok"})
+  {:status "ok"})
+
+(defn is-complete-info-reply [message socket signer]
+  (let [header (message-header message "is_complete_reply")
+        parent_header (cheshire/generate-string (:header message))
+        metadata (cheshire/generate-string {})
+        content  (cheshire/generate-string (is-complete-reply-content message))]
+
+    ;; First send the client identifiers for the router socket's benefit
+    (when (not (empty? (:idents message)))
+      (doseq [ident (:idents message)]
+        (zmq/send socket ident zmq/send-more))
+      (zmq/send socket (byte-array 0) zmq/send-more))
+
+    (send-message-piece socket (get-in message [:header :session]))
+    (send-message-piece socket "<IDS|MSG>")
+    (send-message-piece socket (signer header parent_header metadata content))
+    (send-message-piece socket header)
+    (send-message-piece socket parent_header)
+    (send-message-piece socket metadata)
+    (finish-message socket content)))
 
 (defn configure-shell-handler [shell-socket iopub-socket signer nrepl-transport]
   (let [execute-request (execute-request-handler shell-socket iopub-socket nrepl-transport)]
@@ -351,7 +369,7 @@
           "history_request" (history-reply message signer)
           "shutdown_request" (shutdown-reply message signer)
           "comm_open" (immediately-close-comm message shell-socket signer)
-          "is_complete_request" (is-complete-reply message signer)
+          "is_complete_request" (is-complete-info-reply message shell-socket signer)
           "complete_request" (complete-reply message signer)
           (do
             (println "Message type" msg-type "not handled yet. Exiting.")

@@ -28,6 +28,23 @@ jupyter-notebook
 
 and select the Clojure kernel.
 
+#### Installation on Windows
+
+_all these following commands must run in bash (recommend git bash)_
+
+1. Install MinGW, install packages: mingw32-base, mingw-developer-toolkit
+2. add the absolute path of 'MinGW/bin' to the path system environment variable.
+3. Rename 'MinGW/bin/mingw32-make.exe' to 'MinGW/bin/make.exe'
+4. `git clone https://github.com/roryk/clojupyter`
+5. `cd clojupyter`
+6. `make`
+7. Copy two files 'clojupyter/resources/kernel.json' and 'clojupyter/bin/clojupyter' to the folder '%APPDATA%/jupyter/kernels/clojure' *(create folder if missing)*
+8. Edit 'kernel.json' line 2: 
+
+>   "argv": ["bash", "**full-path-to-APPDATA/clojupyter/bin/clojupyter**", "{connection_file}"]
+
+_if you want run jupyter in cmd, replace "bash" to the full path of bash.exe_
+
 ### Removing the stale OSX kernel cache
 Recently `clojupyter` was renamed from `ipython-clojure` because `clojupyter` is more accurate and, 
 more importantly, sounds cooler. OSX caches the kernels you choose in `$USER/Library/jupyter/kernels`,

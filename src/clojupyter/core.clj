@@ -11,8 +11,8 @@
             [clj-time.core :as time]
             [clj-time.format :as time-format]
             [pandect.algo.sha256 :refer [sha256-hmac]]
-            [clojure.tools.nrepl :as repl]
-            [clojure.tools.nrepl.server :as nrepl-server])
+            [clojure.tools.nrepl :as repl :refer [connect client message combine-responses]]
+            [clojure.tools.nrepl.server :as nrepl-server :refer [default-handler start-server stop-server]])
   (:import [org.zeromq ZMQ]
            [java.net ServerSocket])
   (:gen-class :main true))
@@ -259,22 +259,21 @@
 (defn nrepl-eval
   "Send message to nrepl and process response."
   [code transport]
-  (let [result (-> (repl/client transport 3000) ; timeout=3sec.
-                   (repl/message {:op :eval :session @nrepl-session :code code})
-                   repl/combine-responses)]
-    (cond
-      (empty? result) "Clojure: Unbalanced parentheses or kernel timed-out while processing form.",
-      (seq (:ex result)) (stacktrace-string (request-trace transport))
-      :else result)))
-;      (if-let [vals (:value result)]
-;              (apply str (interpose " " vals)) ; could have sent multiple forms
-                                        ;              "Unexpected response from Clojure."))))
+  (binding [*out* (new java.io.StringWriter)]
+    (let [result (-> (repl/client transport 3000) ; timeout=3sec.
+                     (repl/message {:op :eval :session @nrepl-session :code code})
+                     repl/combine-responses)]
+      (cond
+        (empty? result) {:stream-string "Clojure: Unbalanced parentheses or kernel timed-out while processing form."},
+        (seq (:ex result)) {:nrepl-result result :stream-string (stacktrace-string (request-trace transport))} 
+        :else {:nrepl-result result :stream-string (str *out*)}))))
 
-(defn reformat-values [result]
+(defn reformat-values
+  "Interpose spaces when multi-forms were sent."
+  [result]
   (if-let [vals (:value result)]
-    (apply str (interpose " " vals)) ; could have sent multiple forms
-    ))
-
+    (apply str (interpose " " vals))
+    "; no value returned")) 
 
 (defn execute-request-handler [shell-socket iopub-socket transport]
   (let [execution-count (atom 0N)
@@ -284,14 +283,11 @@
             parent-header (:header message)]
         (swap! execution-count inc)
         (busy-handler message signer execution-count)
-        (let [s# (new java.io.StringWriter)
-              [output result error]
-              (binding [*out* s#]
-                (let [fullresult (nrepl-eval (get-in message [:content :code]) transport)
-                      result (reformat-values fullresult)
-                      output (:out fullresult)
-                      error (:err fullresult)]
-                  [output result error]))]
+        (let [nrepl-map (nrepl-eval (get-in message [:content :code]) transport)
+              fullresult (:nrepl-result nrepl-map)
+              result (reformat-values fullresult)
+              output (:stream-string nrepl-map)
+              error (:err fullresult)]
           (send-router-message shell-socket "execute_reply"
                                {:status "ok"
                                 :execution_count @execution-count

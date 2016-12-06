@@ -10,11 +10,21 @@
             [clojure.tools.nrepl.server :refer [stop-server]])
   (:import (clojure.lang Compiler$CompilerException)))
 
+;;; I typically follow these steps while developing code here:
+;;;    (1) In a shell: jupyter-console --existing=$HOME/Documents/clojure/clojupyter/resources/connect.json --debug"
+;;;    (2) In my clojure environment (which is emacs/cider): (test-start)
+;;;    (3) In the jupyter console: <Run some clojure, testing whatever I'm testing.>
+;;;    (4) In the jupyter console: (clojupyter.core-test/test-disconnect) 
+;;;    (5) Modify code and restart one or both sides. That may entail starting over at Step 1
+;;;        (if console crashed) or Step 2 (otherwise).
+;;;
+;;; If someone knows a better way, please describe your process on the project's github repository.
+
 (defn test-start 
   "Start (e.g. from a CIDER REPL) either an NREPL (:nrepl-only? true) or a full
   kernel (no args). The latter uses information in resources/connect.json and, e.g.,
   jupyter-console --existing=$HOME/clojupyter/resources/connect.json --debug"
-  [& {:keys [repl-only? nrepl-only? ]}]
+  [& {:keys [repl-only?]}]
   (if repl-only?
     (start-nrepl)
     (-main (-> "connect.json" io/resource io/file))))

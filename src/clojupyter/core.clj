@@ -286,7 +286,7 @@
         (let [nrepl-map (nrepl-eval (get-in message [:content :code]) transport)
               fullresult (:nrepl-result nrepl-map)
               result (reformat-values fullresult)
-              output (:stream-string nrepl-map)
+              output (:out fullresult)
               error (:err fullresult)]
           (send-router-message shell-socket "execute_reply"
                                {:status "ok"
@@ -418,6 +418,8 @@
             parsed-message (parse-message message)]
         (shell-handler parsed-message))))))
 
+;;; We have not implemented stdin and Control sockets.
+;;; (See http://jupyter-client.readthedocs.io/en/latest/messaging.html)
 (defn -main [& args]
   (let [hb-addr (address (prep-config args) :hb_port)
         shell-addr (address (prep-config args) :shell_port)

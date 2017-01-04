@@ -287,7 +287,7 @@
               fullresult (:nrepl-result nrepl-map)
               result (reformat-values fullresult)
               output (:out fullresult)
-              error (:err fullresult)]
+              error (:stream-string nrepl-map)]
           (send-router-message shell-socket "execute_reply"
                                {:status "ok"
                                 :execution_count @execution-count
@@ -302,7 +302,7 @@
             (send-message iopub-socket "stream" {:name "stdout" :text output}
                           parent-header {} session-id signer))
           ;; Send stderr
-          (when error
+          (when (and error (not= error ""))
             (send-message iopub-socket "stream" {:name "stderr" :text error}
                           parent-header {} session-id signer))
 

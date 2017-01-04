@@ -11,10 +11,10 @@
   (:import (clojure.lang Compiler$CompilerException)))
 
 ;;; I typically follow these steps while developing code here:
-;;;    (1) In a shell: jupyter-console --existing=$HOME/Documents/clojure/clojupyter/resources/connect.json --debug"
+;;;    (1) In a shell: jupyter-console --existing=$HOME/Documents/clojure/clojupyter/resources/connect.json --debug
 ;;;    (2) In my clojure environment (which is emacs/cider): (test-start)
 ;;;    (3) In the jupyter console: <Run some clojure, testing whatever I'm testing.>
-;;;    (4) In the jupyter console: (clojupyter.core-test/test-disconnect) 
+;;;    (4) In the jupyter console: (clojupyter.core-test/test-disconnect)
 ;;;    (5) Modify code and restart one or both sides. That may entail starting over at Step 1
 ;;;        (if console crashed) or Step 2 (otherwise).
 ;;;

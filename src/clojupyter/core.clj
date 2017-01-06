@@ -17,6 +17,8 @@
            [java.net ServerSocket])
   (:gen-class :main true))
 
+(declare send-router-message)
+
 (def protocol-version "5.0")
 
 ;;; Map of sockets used; useful for debug shutdown
@@ -71,6 +73,16 @@
 
 (defn finish-message [socket msg]
   (zmq/send socket (.getBytes msg)))
+
+(defn empty-comms-info-reply [message socket signer]
+      "Just close a comm immediately since we don't handle it yet"
+      (let [parent_header (cheshire/generate-string (:header message))
+            session_id (:header :session)
+            metadata (cheshire/generate-string {})
+            idents (:idents message)
+            content (cheshire/generate-string {:comms {}})]
+
+           (send-router-message socket "comm_info_reply" content parent_header metadata session_id signer idents message)))
 
 (defn immediately-close-comm [message socket signer]
   "Just close a comm immediately since we don't handle it yet"
@@ -367,6 +379,7 @@
           "comm_open" (immediately-close-comm message shell-socket signer)
           "is_complete_request" (is-complete-info-reply message shell-socket signer)
           "complete_request" (complete-reply message signer)
+          "comm_info_request" (empty-comms-info-reply message shell-socket signer)
           (do
             (println "Message type" msg-type "not handled yet. Exiting.")
             (println "Message dump:" message)

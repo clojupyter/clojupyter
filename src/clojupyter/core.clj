@@ -13,7 +13,8 @@
    [clj-time.format :as time-format]
    [pandect.algo.sha256 :refer [sha256-hmac]]
    [clojure.string :as str]
-   [clojure.tools.nrepl :as repl :refer [connect client message combine-responses]]
+   [clojure.tools.nrepl :as repl]
+   [clojure.tools.nrepl.transport :as trans]
    [clojure.tools.nrepl.server :as nrepl-server :refer [default-handler start-server stop-server]])
   (:import [org.zeromq ZMQ]
            [java.net ServerSocket])
@@ -22,8 +23,6 @@
 (def protocol-version "5.0")
 
 ;;; Map of sockets used; useful for debug shutdown
-(defonce jup-sockets  (atom {}))
-
 (defn get-free-port!
   "Get a free port. Problem?: might be taken before I use it."
   []
@@ -32,8 +31,10 @@
     (.close socket)
     port))
 
+(def config-file (atom ""))
 (def alive (atom true))
 (def the-nrepl (atom nil))
+(def current-ns (atom (str *ns*)))
 
 (defn prep-config [args]
   (-> args first slurp json/read-str walk/keywordize-keys))
@@ -44,7 +45,9 @@
 (defn uuid [] (str (java.util.UUID/randomUUID)))
 
 (def kernel-info-content
-  {:protocol_version protocol-version
+  {
+   :status "ok"
+   :protocol_version protocol-version
    :language_version "1.8"
    :language "clojure"
    :banner "Clojupyters-0.1.0"})
@@ -93,7 +96,7 @@
         content (cheshire/generate-string content)]
     (when (not (empty? idents))
       (doseq [ident idents];
-        (send-message-piece socket ident)))
+        (zmq/send socket ident zmq/send-more)))
     (send-message-piece socket "<IDS|MSG>")
     (send-message-piece socket (signer header parent_header metadata content))
     (send-message-piece socket header)
@@ -107,6 +110,7 @@
         parent_header (cheshire/generate-string parent_header)
         metadata (cheshire/generate-string metadata)
         content (cheshire/generate-string content)]
+    (send-message-piece socket msg_type)
     (send-message-piece socket "<IDS|MSG>")
     (send-message-piece socket (signer header parent_header metadata content))
     (send-message-piece socket header)
@@ -118,7 +122,7 @@
   "Just close a comm immediately since we don't handle it yet"
   (let [parent_header (:header message)
         session-id (get-in message [:header :session])
-        ident (into [session-id] (:idents message))
+        ident (:idents message)
         metadata {}
         content  (immediately-close-content message)]
     (send-router-message socket
@@ -126,36 +130,20 @@
                          content parent_header session-id metadata signer ident)))
 
 (defn kernel-info-reply [message socket signer]
-  (println message)
   (let [parent_header (:header message)
         session-id (get-in message [:header :session])
-        ident (into [session-id] (:idents message))
+        ident (:idents message)
         metadata {}
         content  kernel-info-content]
-    (log/error "IN kernel-info-request REPLY")
     (send-router-message socket
                          "kernel_info_reply"
-                         content parent_header session-id metadata signer ident)
-    (log/error "REPLY kernel-info-request with" ident))
-  )
+                         content parent_header session-id metadata signer ident)))
 
 (defn read-blob [socket]
   (let [part (zmq/receive socket)]
     (try
       (apply str (map char part))
       (catch Exception e (str "caught exception: " (.getMessage e) part)))))
-
-(defn try-convert-to-string [bytes]
-  (try
-    (apply str (map char bytes))
-    (catch Exception e "")))
-
-(defn read-until-delimiter [socket]
-  (let [preamble (doall (drop-last
-                         (take-while (comp not #(= "<IDS|MSG>"
-                                                   (try-convert-to-string %)))
-                                     (repeatedly #(zmq/receive socket)))))]
-    preamble))
 
 (defn status-content [status]
   {:execution_state status})
@@ -178,13 +166,22 @@
       (= our-signature signature))))
 
 (defn read-raw-message [socket]
-  {:idents (read-until-delimiter socket)
-   :delimiter "<IDS|MSG>"
-   :signature (read-blob socket)
-   :header (read-blob socket)
-   :parent-header (read-blob socket)
-   :metadata (read-blob socket)
-   :content (read-blob socket)})
+  (let [delim "<IDS|MSG>"
+        delim-byte (byte-array (map byte delim))
+        parts (zmq/receive-all socket)
+        delim-idx (first
+                   (map first (filter #(apply = (map seq [(second %) delim-byte]))
+                                      (map-indexed vector parts))))
+        idents (take delim-idx parts)
+        blobs (map #(apply str (map char %1))
+                   (drop (+ 1 delim-idx) parts))
+        blob-names [:signature :header :parent-header :metadata :content]
+        n-blobs (count blob-names)
+        message (merge
+                 {:idents idents :delimiter delim}
+                 (zipmap blob-names (take n-blobs blobs))
+                 {:buffers (drop n-blobs blobs)})]
+    message))
 
 (defn parse-message [message]
   {:idents (:idents message)
@@ -233,68 +230,69 @@
                        clean))))))
 
 (defn nrepl-eval
-  "Send message to nrepl and process response."
-  [code transport]
-  (binding [*out* (new java.io.StringWriter)]
-    (let [result (-> (repl/client transport 3000) ; timeout=3sec.
-                     (repl/message {:op :eval :session @nrepl-session :code code})
-                     repl/combine-responses)]
-      (cond
-        (empty? result) {:stream-string "Clojure: Unbalanced parentheses or kernel timed-out while processing form."},
-        (seq (:ex result)) {:nrepl-result result :stream-string (stacktrace-string (request-trace transport))}
-        :else {:nrepl-result result :stream-string (str *out*)}))))
+  [code parent-header session-id signer iopub-socket transport]
+  (let [pending (atom #{})
+        result (atom {})
+        send-input (fn  [client session pending]
+                     (let [id (str (java.util.UUID/randomUUID))]
+                       (swap! pending conj id)
+                       (repl/message client {:id id :op "stdin" :stdin (str (read-line) "\n")
+                                             :session session})))
+        done?      (fn [{:keys [id status] :as msg} pending]
+                     (let [pending? (@pending id)]
+                       (swap! pending disj id)
+                       (and (not pending?) (some #{"done" "interrupted" "error"} status))))
+        client (repl/client transport Long/MAX_VALUE)]
+    (repl/message client {:op :eval :session @nrepl-session :code code})
+    (doseq [{:keys [out err status session ex value] :as msg} (repeatedly
+                                                             #(trans/recv transport 100))
+          :while (not (done? msg pending))]
+      (do
+        (when out
+          (send-message iopub-socket "stream"
+                        {:name "stdout" :text out}
+                        parent-header {} session-id signer))
+        (when err
+          (send-message iopub-socket "stream"
+                        {:name "stderr" :text err}
+                        parent-header {} session-id signer))
+        ;; (when (some #{"need-input"} status)
+        ;;   (send-input repl/client session pending))
+        (when ex
+          (swap! result assoc :nrepl-result ex)
+          )
+        (when value
+          (swap! result assoc :nrepl-result value))))
+    @result))
 
 (defn nrepl-complete
   [code transport]
-  (binding [*out* (new java.io.StringWriter)]
-    (let [;; TODO: is there a better way to find out the current namespace?
-          ns (str/replace (first (get-in (nrepl-eval "(str *ns*)" transport) [:nrepl-result :value]))
-                          "\"" "")
-          result (-> (repl/client transport 3000) ; timeout=3sec.
+    (let [ns @current-ns
+          result (-> (repl/client transport 3000)
                      (repl/message {:op :complete
                                     :session @nrepl-session
                                     :symbol code
-                                    :ns ns
-                                    })
+                                    :ns ns})
                      repl/combine-responses)]
-      (cond
-        (empty? result) {:stream-string "Clojure: Unbalanced parentheses or kernel timed-out while processing form."},
-        (seq (:ex result)) {:nrepl-result result :stream-string (stacktrace-string (request-trace transport))}
-        :else (->> result 
-                   :completions
-                   (map :candidate)
-                   (into []))))))
-
-(defn nrepl-close-session
-  [transport]
-  (-> (repl/client transport 3000) ; timeout=3sec.
-      (repl/message {:op :close})
-      repl/combine-responses)
-  )
-
-
-(defn reformat-values
-  "Interpose spaces when multi-forms were sent."
-  [result]
-  (if-let [vals (:value result)]
-    (apply str (interpose " " vals))
-    "; no value returned"))
+      (->> result
+           :completions
+           (map :candidate)
+           (into []))))
 
 (defn execute-request-handler [shell-socket iopub-socket transport]
   (let [execution-count (atom 0N)]
     (fn [message signer]
       (let [session-id (get-in message [:header :session])
-            ident (into [session-id] (:idents message))
-            parent-header (:header message)]
+            ident (:idents message)
+            parent-header (:header message)
+            code (get-in message [:content :code])]
         (swap! execution-count inc)
         (send-message iopub-socket "execute_input"
                       (pyin-content @execution-count message)
                       parent-header {} session-id signer)
-        (let [nrepl-map (nrepl-eval (get-in message [:content :code]) transport)
-              fullresult (:nrepl-result nrepl-map)
-              result (reformat-values fullresult)
-              output (:out fullresult)
-              error (:err fullresult)]
+        (let [nrepl-map (nrepl-eval code parent-header session-id signer
+                                        iopub-socket transport)
+              result (:nrepl-result nrepl-map)]
           (send-router-message shell-socket "execute_reply"
                                {:status "ok"
                                 :execution_count @execution-count
@@ -306,48 +304,32 @@
                                 :status "ok"
                                 :started (now)}
                                signer ident)
-          ;; Send stdout
-          (when output
-            (send-message iopub-socket "stream" {:name "stdout" :text output}
-                          parent-header {} session-id signer))
-
-          ;; Send stderr
-          (when error
-            (send-message iopub-socket "stream" {:name "stderr" :text error}
-                          parent-header {} session-id signer))
-
-          ;; Send result
-          (send-message iopub-socket "execute_result"
-                        {:execution_count @execution-count
-                         :data {:text/plain result}
-                         :metadata {}
-                         }
-                        parent-header {} session-id signer))))))
+          (when-not (= result "nil")
+            (send-message iopub-socket "execute_result"
+                          {:execution_count @execution-count
+                           :data {:text/plain result}
+                           :metadata {}}
+                          parent-header {} session-id signer)))))))
 
 (defn history-reply [message signer]
   "returns REPL history, not implemented for now and returns a dummy message"
   {:history []})
 
 (defn shutdown-reply
-  [message socket signer transport]
+  [message socket signer]
   (let [parent_header (:header message)
         metadata {}
         restart (get-in message message [:content :restart])
         content {:restart restart :status "ok"}
         session-id (get-in message [:header :session])
-        ident (into [session-id] (:idents message))
+        ident (:idents message)
         server @the-nrepl]
-
-    (nrepl-close-session transport)
+    (reset! alive false)
     (nrepl-server/stop-server server)
     (send-router-message socket
                          "shutdown_reply"
                          content parent_header session-id metadata signer ident)
-    (reset! alive false)
-    (Thread/sleep 100)
-    (System/exit 0)
-    )
-  )
+    (Thread/sleep 100)))
 
 (defn is-complete-reply-content
   "Returns whether or not what the user has typed is complete (ready for execution).
@@ -365,8 +347,7 @@
         prefix (second (re-find #".*[\( ](\w*)" code))]
     {:matches (nrepl-complete prefix transport)
      :cursor_start (- (:cursor_pos content) (count prefix))
-     :status "ok"}
-    ))
+     :status "ok"}))
 
 (defn comm-info-reply
   [message socket signer]
@@ -390,10 +371,10 @@
         metadata {}
         content  (is-complete-reply-content message)
         session-id (get-in message [:header :session])
-        ident (into [session-id] (:idents message))]
+        ident (:idents message)]
     (send-router-message socket
                          "is_complete_reply"
-                          content parent_header session-id metadata signer ident)))
+                         content parent_header session-id metadata signer ident)))
 
 (defn complete-reply
   [message socket signer transport]
@@ -401,7 +382,7 @@
         metadata {}
         content  (complete-reply-content message transport)
         session-id (get-in message [:header :session])
-        ident (into [session-id] (:idents message))]
+        ident (:idents message)]
     (send-router-message socket
                          "complete_reply"
                          content parent_header session-id metadata signer ident)))
@@ -410,34 +391,30 @@
   (let [execute-request (execute-request-handler shell-socket iopub-socket nrepl-transport)]
     (fn [message]
       (let [msg-type (get-in message [:header :msg_type])]
-        (log/info "SHELL:  " msg-type (get-in message [:header :session]))
         (case msg-type
           "kernel_info_request" (kernel-info-reply message shell-socket signer)
           "execute_request" (execute-request message signer)
           "history_request" (history-reply message signer)
-          "shutdown_request" (shutdown-reply message shell-socket signer nrepl-transport)
+          "shutdown_request" (shutdown-reply message shell-socket signer)
           "comm_open" (immediately-close-comm message shell-socket signer)
           "comm_info_request" (comm-info-reply message shell-socket signer)
           "comm_msg" (comm-msg-reply message shell-socket signer)
           "is_complete_request" (is-complete-reply message shell-socket signer)
           "complete_request" (complete-reply message shell-socket signer nrepl-transport)
           (do
-            (println "Message type" msg-type "not handled yet. Exiting.")
-            (println "Message dump:" message)
-            (System/exit -1)))
-        (log/info "DONE" msg-type)
-        ))))
+            (log/error "Message type" msg-type "not handled yet. Exiting.")
+            (log/error "Message dump:" message)
+            (System/exit -1)))))))
 
-(defn configure-control-handler [control-socket signer nrepl-transport]
+(defn configure-control-handler [control-socket signer]
   (fn [message]
     (let [msg-type (get-in message [:header :msg_type])]
-      (log/info "CONTORL: " msg-type (get-in message [:header :session]))
       (case msg-type
         "kernel_info_request" (kernel-info-reply message control-socket signer)
-        "shutdown_request" (shutdown-reply message control-socket signer nrepl-transport)
+        "shutdown_request" (shutdown-reply message control-socket signer)
         (do
-          (println "Message type" msg-type "not handled yet. Exiting.")
-          (println "Message dump:" message)
+          (log/error "Message type" msg-type "not handled yet. Exiting.")
+          (log/error "Message dump:" message)
           (System/exit -1))))))
 
 (def clojupyter-middleware
@@ -445,27 +422,23 @@
   '[clojupyter.middleware.pprint/wrap-pprint
     clojupyter.middleware.pprint/wrap-pprint-fn
     clojupyter.middleware.stacktrace/wrap-stacktrace
-    clojupyter.middleware.completion/wrap-complete
-    ])
+    clojupyter.middleware.completion/wrap-complete])
 
 (def clojupyer-nrepl-handler
-  "Clojupyters nREPL handler."
   (apply nrepl-server/default-handler (map resolve clojupyter-middleware)))
 
 (defn start-nrepl
-  "Start an nrepl server. Stop the existing one, if any (only possible when debugging)."
   []
   (when-let [server @the-nrepl]
     (nrepl-server/stop-server server))
   (reset! the-nrepl
           (nrepl-server/start-server
-           :port (get-free-port!)
+           :port 3010;; (get-free-port!)
            :handler clojupyer-nrepl-handler))
   (set-session!))
 
 (defn event-loop [socket iopub-socket signer handler]
-  (while (and @alive
-              (not (.. Thread currentThread isInterrupted)))
+  (while @alive
     (let [message (read-raw-message @socket)
           parsed-message (parse-message message)
           parent-header (:header parsed-message)
@@ -478,8 +451,7 @@
       )))
 
 (defn heartbeat-loop [hb-socket]
-  (while (and @alive
-              (not (.. Thread currentThread isInterrupted)))
+  (while @alive
     (let [hb-socket @hb-socket
           message (zmq/receive hb-socket)]
       (zmq/send hb-socket message))))
@@ -492,39 +464,34 @@
       )))
 
 (defn control-loop [control-socket iopub-socket signer checker]
-  (with-open [transport (repl/connect :port (:port @the-nrepl))]
-    (let [control-handler (configure-control-handler control-socket signer transport)]
+    (let [control-handler (configure-control-handler control-socket signer)]
       (event-loop control-socket iopub-socket signer control-handler)
-      )))
+      ))
 
 (defn -main [& args]
-  (let [hb-addr (address (prep-config args) :hb_port)
-        shell-addr (address (prep-config args) :shell_port)
-        iopub-addr (address (prep-config args) :iopub_port)
+  (let [hb-addr      (address (prep-config args) :hb_port)
+        shell-addr   (address (prep-config args) :shell_port)
+        iopub-addr   (address (prep-config args) :iopub_port)
         control-addr (address (prep-config args) :control_port)
-        key (:key (prep-config args))
-        signer (get-message-signer key)
-        checker (get-message-checker signer)]
-    (println "Input configuration:" (prep-config args))
+        key          (:key (prep-config args))
+        signer       (get-message-signer key)
+        checker      (get-message-checker signer)]
+    (reset! config-file args)
     (let [context (zmq/context 1)
-          shell-socket (atom (doto (:sh (swap! jup-sockets assoc :sh (zmq/socket context :router)))
-                               (zmq/bind shell-addr)))
-          iopub-socket (atom (doto (:io (swap! jup-sockets assoc
-                                               :io (zmq/socket context :pub))) (zmq/bind iopub-addr)))
-          control-socket (atom (doto (:ctrl (swap! jup-sockets assoc :ctrl (zmq/socket context :router)))
+          shell-socket   (atom (doto (zmq/socket context :router)
+                                 (zmq/bind shell-addr)))
+          iopub-socket   (atom (doto (zmq/socket context :pub)
+                                 (zmq/bind iopub-addr)))
+          control-socket (atom (doto (zmq/socket context :router)
                                  (zmq/bind control-addr)))
-          hb-socket (atom (doto (:hb (swap! jup-sockets assoc :hb (zmq/socket context :rep)))
-                            (zmq/bind hb-addr)))]
-      (println (str "Connecting shell to " shell-addr))
-      (println (str "Connecting iopub to " iopub-addr))
-      (println (str "Connecting control to " control-addr))
-      (println (str "Connecting heartbeat to " hb-addr))
+          hb-socket      (atom (doto (zmq/socket context :rep)
+                                 (zmq/bind hb-addr)))]
       (try
         (future (shell-loop shell-socket iopub-socket signer checker))
         (future (control-loop control-socket iopub-socket signer checker))
         (future (heartbeat-loop hb-socket))
-        (while @alive)
-        (finally (for [[k v] jup-sockets] (.close v))
-                 (println "Exit"))
-        )
-      )))
+        (while @alive (Thread/sleep 1000))
+        (finally (doseq [socket [shell-socket iopub-socket control-socket hb-socket]]
+                   (zmq/set-linger @socket 0)
+                   (zmq/close @socket))
+                 (System/exit 0))))))

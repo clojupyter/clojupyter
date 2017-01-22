@@ -1,5 +1,7 @@
 (ns clojupyter.core
   (:require
+   [spyscope.core]
+   [beckon]
    [clojupyter.middleware.pprint]
    [clojupyter.middleware.stacktrace]
    [clojupyter.middleware.completion :as completion]
@@ -13,9 +15,10 @@
    [clj-time.format :as time-format]
    [pandect.algo.sha256 :refer [sha256-hmac]]
    [clojure.string :as str]
-   [clojure.tools.nrepl :as repl]
-   [clojure.tools.nrepl.transport :as trans]
-   [clojure.tools.nrepl.server :as nrepl-server :refer [default-handler start-server stop-server]])
+   [clojure.tools.nrepl.misc :as nrepl.misc]
+   [clojure.tools.nrepl.transport :as nrepl.trans]
+   [clojure.tools.nrepl.server :as nrepl.server]
+   [clojure.tools.nrepl :as nrepl])
   (:import [org.zeromq ZMQ]
            [java.net ServerSocket])
   (:gen-class :main true))
@@ -31,9 +34,11 @@
     (.close socket)
     port))
 
-(def config-file (atom ""))
 (def alive (atom true))
-(def the-nrepl (atom nil))
+(def nrepl-server (atom nil))
+(def nrepl-session (atom nil))
+(def current-session (atom nil))
+(def current-commnad-id (atom nil))
 (def current-ns (atom (str *ns*)))
 
 (defn prep-config [args]
@@ -48,9 +53,13 @@
   {
    :status "ok"
    :protocol_version protocol-version
-   :language_version "1.8"
-   :language "clojure"
-   :banner "Clojupyters-0.1.0"})
+   :implementation "clojupyter"
+   :language_info {:name "clojure"
+                   :version (clojure-version)
+                   :mimetype "application/clojure"
+                   :file_extension ".clj"}
+   :banner "Clojupyters-0.1.0"
+   :help_links []})
 
 (defn now []
   "Returns current ISO 8601 compliant date."
@@ -191,27 +200,6 @@
    :parent-header (cheshire/parse-string (:parent-header message) keyword)
    :content (cheshire/parse-string (:content message) keyword)})
 
-(def nrepl-session (atom nil))
-
-(defn set-session!
-  "All interaction will occur in one session; this sets atom nrepl-session to it."
-  []
-  (reset! nrepl-session
-          (with-open [conn (repl/connect :port (:port @the-nrepl))]
-            (-> (repl/client conn 10000)
-                (repl/message {:op :clone})
-                doall
-                repl/combine-responses
-                :new-session))))
-
-(defn request-trace
-  "Request a stacktrace for the most recent exception."
-  [transport]
-  (-> (repl/client transport 10000)
-      (repl/message {:op "stacktrace" :session @nrepl-session})
-      repl/combine-responses
-      doall))
-
 (defn stacktrace-string
   "Return a nicely formatted string."
   [msg]
@@ -226,60 +214,87 @@
       (str (format "%s (%s)\nn" (:message msg) (:class msg))
            (apply str
                   (map #(format (str "%" max-file "s: %5d %-" max-name "s  \n")
-                                (:file %) (:line %) (:name %)) 
+                                (:file %) (:line %) (:name %))
                        clean))))))
 
+(defn nrepl-trace
+  [nrepl-client]
+    (-> nrepl-client
+        (nrepl/message {:op :stacktrace
+                        :session @nrepl-session})
+        nrepl/combine-responses))
+
+(defn nrepl-interrupt
+  [nrepl-client]
+  (-> nrepl-client
+      (nrepl/message {:op :interrupt
+                      :session @nrepl-session})))
+
 (defn nrepl-eval
-  [code parent-header session-id signer iopub-socket transport]
+  [code parent-header session-id signer iopub-socket nrepl-client]
   (let [pending (atom #{})
-        result (atom {})
-        send-input (fn  [client session pending]
+        command-id (nrepl.misc/uuid)
+        result (atom {:nrepl-result "nil"})
+        io-sleep   5
+        send-input (fn  [nrepl-client session pending]
                      (let [id (str (java.util.UUID/randomUUID))]
                        (swap! pending conj id)
-                       (repl/message client {:id id :op "stdin" :stdin (str (read-line) "\n")
-                                             :session session})))
+                       (nrepl/message nrepl-client {:id id
+                                                    :op "stdin"
+                                                    :stdin (str (read-line) "\n")
+                                                   :session session})))
         done?      (fn [{:keys [id status] :as msg} pending]
                      (let [pending? (@pending id)]
                        (swap! pending disj id)
                        (and (not pending?) (some #{"done" "interrupted" "error"} status))))
-        client (repl/client transport Long/MAX_VALUE)]
-    (repl/message client {:op :eval :session @nrepl-session :code code})
-    (doseq [{:keys [out err status session ex value] :as msg} (repeatedly
-                                                             #(trans/recv transport 100))
-          :while (not (done? msg pending))]
+        stdout     (fn [msg]
+                     (Thread/sleep io-sleep)
+                     (send-message iopub-socket "stream"
+                                   {:name "stdout" :text msg}
+                                   parent-header {} session-id signer))
+        stderr     (fn [msg]
+                     (Thread/sleep io-sleep)
+                     (send-message iopub-socket "stream"
+                                   {:name "stdout" :text msg}
+                                   parent-header {} session-id signer))
+        ]
+    (doseq [{:keys [out err status session ex value] :as msg}
+            (nrepl/message nrepl-client
+                           {:id command-id
+                            :op :eval
+                            :session @nrepl-session
+                            :code code})
+            :while (not (done? msg pending))]
       (do
-        (when out
-          (send-message iopub-socket "stream"
-                        {:name "stdout" :text out}
-                        parent-header {} session-id signer))
-        (when err
-          (send-message iopub-socket "stream"
-                        {:name "stderr" :text err}
-                        parent-header {} session-id signer))
+        (when out (stdout out))
+        (when err (stderr err))
         ;; (when (some #{"need-input"} status)
-        ;;   (send-input repl/client session pending))
-        (when ex
-          (swap! result assoc :nrepl-result ex)
-          )
-        (when value
-          (swap! result assoc :nrepl-result value))))
-    @result))
+        ;;   (send-input client session pending))
+        (when ex (swap! result assoc :ex ex))
+        (when value (swap! result assoc :nrepl-result value))))
+
+    (if-let [ex (:ex @result)]
+      (do
+        (stderr ex)
+        (stderr (stacktrace-string (nrepl-trace nrepl-client))
+        ))
+    @result)))
 
 (defn nrepl-complete
-  [code transport]
-    (let [ns @current-ns
-          result (-> (repl/client transport 3000)
-                     (repl/message {:op :complete
-                                    :session @nrepl-session
-                                    :symbol code
-                                    :ns ns})
-                     repl/combine-responses)]
-      (->> result
-           :completions
-           (map :candidate)
-           (into []))))
+  [code nrepl-client]
+  (let [ns @current-ns
+        result (-> nrepl-client
+                   (nrepl/message {:op :complete
+                                  :session @nrepl-session
+                                  :symbol code
+                                  :ns ns})
+                   nrepl/combine-responses)]
+    (->> result
+         :completions
+         (map :candidate)
+         (into []))))
 
-(defn execute-request-handler [shell-socket iopub-socket transport]
+(defn execute-request-handler [shell-socket iopub-socket nrepl-client]
   (let [execution-count (atom 0N)]
     (fn [message signer]
       (let [session-id (get-in message [:header :session])
@@ -291,7 +306,7 @@
                       (pyin-content @execution-count message)
                       parent-header {} session-id signer)
         (let [nrepl-map (nrepl-eval code parent-header session-id signer
-                                        iopub-socket transport)
+                                    iopub-socket nrepl-client)
               result (:nrepl-result nrepl-map)]
           (send-router-message shell-socket "execute_reply"
                                {:status "ok"
@@ -323,9 +338,9 @@
         content {:restart restart :status "ok"}
         session-id (get-in message [:header :session])
         ident (:idents message)
-        server @the-nrepl]
+        server @nrepl-server]
     (reset! alive false)
-    (nrepl-server/stop-server server)
+    (nrepl.server/stop-server server)
     (send-router-message socket
                          "shutdown_reply"
                          content parent_header session-id metadata signer ident)
@@ -340,13 +355,14 @@
     {:status "incomplete"}))
 
 (defn complete-reply-content
-  [message transport]
+  [message nrepl-client]
   (let [content (:content message)
         cursor_pos (:cursor_pos content)
         code (subs (:code content) 0 cursor_pos)
         prefix (second (re-find #".*[\( ](\w*)" code))]
-    {:matches (nrepl-complete prefix transport)
-     :cursor_start (- (:cursor_pos content) (count prefix))
+    {:matches (nrepl-complete prefix nrepl-client)
+     :cursor_start (- cursor_pos (count prefix))
+     :cursor_end cursor_pos
      :status "ok"}))
 
 (defn comm-info-reply
@@ -387,8 +403,8 @@
                          "complete_reply"
                          content parent_header session-id metadata signer ident)))
 
-(defn configure-shell-handler [shell-socket iopub-socket signer nrepl-transport]
-  (let [execute-request (execute-request-handler shell-socket iopub-socket nrepl-transport)]
+(defn configure-shell-handler [shell-socket iopub-socket signer nrepl-client]
+  (let [execute-request (execute-request-handler shell-socket iopub-socket nrepl-client)]
     (fn [message]
       (let [msg-type (get-in message [:header :msg_type])]
         (case msg-type
@@ -400,7 +416,7 @@
           "comm_info_request" (comm-info-reply message shell-socket signer)
           "comm_msg" (comm-msg-reply message shell-socket signer)
           "is_complete_request" (is-complete-reply message shell-socket signer)
-          "complete_request" (complete-reply message shell-socket signer nrepl-transport)
+          "complete_request" (complete-reply message shell-socket signer nrepl-client)
           (do
             (log/error "Message type" msg-type "not handled yet. Exiting.")
             (log/error "Message dump:" message)
@@ -425,17 +441,15 @@
     clojupyter.middleware.completion/wrap-complete])
 
 (def clojupyer-nrepl-handler
-  (apply nrepl-server/default-handler (map resolve clojupyter-middleware)))
+  (apply nrepl.server/default-handler (map resolve clojupyter-middleware)))
 
-(defn start-nrepl
+(defn start-nrepl-server
   []
-  (when-let [server @the-nrepl]
-    (nrepl-server/stop-server server))
-  (reset! the-nrepl
-          (nrepl-server/start-server
-           :port 3010;; (get-free-port!)
-           :handler clojupyer-nrepl-handler))
-  (set-session!))
+  (when-let [server @nrepl-server]
+    (nrepl.server/stop-server server))
+  (nrepl.server/start-server
+   :port (get-free-port!)
+   :handler clojupyer-nrepl-handler))
 
 (defn event-loop [socket iopub-socket signer handler]
   (while @alive
@@ -447,8 +461,7 @@
                     parent-header {} session-id signer)
       (handler parsed-message)
       (send-message iopub-socket "status" (status-content "idle")
-                    parent-header {} session-id signer)
-      )))
+                    parent-header {} session-id signer))))
 
 (defn heartbeat-loop [hb-socket]
   (while @alive
@@ -457,16 +470,21 @@
       (zmq/send hb-socket message))))
 
 (defn shell-loop [shell-socket iopub-socket signer checker]
-  (start-nrepl)
-  (with-open [transport (repl/connect :port (:port @the-nrepl))]
-    (let [shell-handler (configure-shell-handler shell-socket iopub-socket signer transport)]
-      (event-loop shell-socket iopub-socket signer shell-handler)
-      )))
+  (with-open [server    (start-nrepl-server)
+              transport (nrepl/connect :port (:port server))
+              client    (nrepl/client transport Integer/MAX_VALUE)
+              session   (nrepl/new-session client)]
+    (reset! nrepl-server server)
+    (reset! nrepl-session session)
+    (let [shell-handler     (configure-shell-handler
+                             shell-socket iopub-socket signer client)
+          sigint-handle (fn [] (nrepl-interrupt client))]
+      (reset! (beckon/signal-atom "INT") #{sigint-handle})
+      (event-loop shell-socket iopub-socket signer shell-handler))))
 
 (defn control-loop [control-socket iopub-socket signer checker]
-    (let [control-handler (configure-control-handler control-socket signer)]
-      (event-loop control-socket iopub-socket signer control-handler)
-      ))
+  (let [control-handler (configure-control-handler control-socket signer)]
+    (event-loop control-socket iopub-socket signer control-handler)))
 
 (defn -main [& args]
   (let [hb-addr      (address (prep-config args) :hb_port)
@@ -476,7 +494,6 @@
         key          (:key (prep-config args))
         signer       (get-message-signer key)
         checker      (get-message-checker signer)]
-    (reset! config-file args)
     (let [context (zmq/context 1)
           shell-socket   (atom (doto (zmq/socket context :router)
                                  (zmq/bind shell-addr)))

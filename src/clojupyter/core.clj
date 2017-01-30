@@ -96,63 +96,68 @@
 (defn finish-message [socket msg]
   (zmq/send socket (.getBytes msg)))
 
-(defn send-router-message [socket msg_type content parent_header
+(defn send-router-message [socket msg_type content parent-header
                            session-id metadata signer idents]
   (let [socket @socket
         header (cheshire/generate-string (new-header msg_type session-id))
-        parent_header (cheshire/generate-string parent_header)
+        parent-header (cheshire/generate-string parent-header)
         metadata (cheshire/generate-string metadata)
         content (cheshire/generate-string content)]
     (when (not (empty? idents))
       (doseq [ident idents];
         (zmq/send socket ident zmq/send-more)))
     (send-message-piece socket "<IDS|MSG>")
-    (send-message-piece socket (signer header parent_header metadata content))
+    (send-message-piece socket (signer header parent-header metadata content))
     (send-message-piece socket header)
-    (send-message-piece socket parent_header)
+    (send-message-piece socket parent-header)
     (send-message-piece socket metadata)
     (finish-message socket content)))
 
-(defn send-message [socket msg_type content parent_header metadata session-id signer]
+(defn send-message [socket msg_type content parent-header metadata session-id signer]
   (let [socket @socket
         header (cheshire/generate-string (new-header msg_type session-id))
-        parent_header (cheshire/generate-string parent_header)
+        parent-header (cheshire/generate-string parent-header)
         metadata (cheshire/generate-string metadata)
         content (cheshire/generate-string content)]
     (send-message-piece socket msg_type)
     (send-message-piece socket "<IDS|MSG>")
-    (send-message-piece socket (signer header parent_header metadata content))
+    (send-message-piece socket (signer header parent-header metadata content))
     (send-message-piece socket header)
-    (send-message-piece socket parent_header)
+    (send-message-piece socket parent-header)
     (send-message-piece socket metadata)
     (finish-message socket content)))
 
 (defn immediately-close-comm [message socket signer]
   "Just close a comm immediately since we don't handle it yet"
-  (let [parent_header (:header message)
+  (let [parent-header (:header message)
         session-id (get-in message [:header :session])
         ident (:idents message)
         metadata {}
         content  (immediately-close-content message)]
     (send-router-message socket
                          "comm_close"
-                         content parent_header session-id metadata signer ident)))
+                         content parent-header session-id metadata signer ident)))
+
+(defn input-request [socket parent-header session-id signer ident]
+  (let [metadata {}
+        content  {:prompt ">> "
+                  :password false}]
+    (send-router-message socket
+                         "input_request"
+                         content parent-header session-id metadata signer ident)))
+
+(defn input-reply [message]
+  (println "in input reply"))
 
 (defn kernel-info-reply [message socket signer]
-  (let [parent_header (:header message)
+  (let [parent-header (:header message)
         session-id (get-in message [:header :session])
         ident (:idents message)
         metadata {}
         content  kernel-info-content]
     (send-router-message socket
                          "kernel_info_reply"
-                         content parent_header session-id metadata signer ident)))
-
-(defn read-blob [socket]
-  (let [part (zmq/receive socket)]
-    (try
-      (apply str (map char part))
-      (catch Exception e (str "caught exception: " (.getMessage e) part)))))
+                         content parent-header session-id metadata signer ident)))
 
 (defn status-content [status]
   {:execution_state status})
@@ -231,17 +236,26 @@
                       :session @nrepl-session})))
 
 (defn nrepl-eval
-  [code parent-header session-id signer iopub-socket nrepl-client]
+  [code parent-header session-id signer ident
+   shell-socket stdin-socket iopub-socket
+   nrepl-client]
   (let [pending (atom #{})
         command-id (nrepl.misc/uuid)
         result (atom {:nrepl-result "nil"})
         io-sleep   5
+        get-input (fn []
+                    (input-request stdin-socket
+                                   parent-header session-id signer ident))
         send-input (fn  [nrepl-client session pending]
-                     (let [id (str (java.util.UUID/randomUUID))]
-                       (swap! pending conj id)
-                       (nrepl/message nrepl-client {:id id
+                     (get-input)
+                     (let [message (read-raw-message @stdin-socket)
+                           parsed-message (parse-message message)
+                           input (get-in parsed-message [:content :value])
+                           command-id (nrepl.misc/uuid)]
+                       (swap! pending conj command-id)
+                       (nrepl/message nrepl-client {:id command-id
                                                     :op "stdin"
-                                                    :stdin (str (read-line) "\n")
+                                                    :stdin (str input "\n")
                                                    :session session})))
         done?      (fn [{:keys [id status] :as msg} pending]
                      (let [pending? (@pending id)]
@@ -268,8 +282,8 @@
       (do
         (when out (stdout out))
         (when err (stderr err))
-        ;; (when (some #{"need-input"} status)
-        ;;   (send-input client session pending))
+        (when (some #{"need-input"} status)
+          (send-input nrepl-client session pending))
         (when ex (swap! result assoc :ex ex))
         (when value (swap! result assoc :nrepl-result value))))
 
@@ -279,9 +293,7 @@
         (stderr (stacktrace-string (nrepl-trace nrepl-client))
         ))
     @result)))
-
-(defn nrepl-complete
-  [code nrepl-client]
+(defn nrepl-complete [code nrepl-client]
   (let [ns @current-ns
         result (-> nrepl-client
                    (nrepl/message {:op :complete
@@ -294,7 +306,7 @@
          (map :candidate)
          (into []))))
 
-(defn execute-request-handler [shell-socket iopub-socket nrepl-client]
+(defn execute-request-handler [shell-socket stdin-socket iopub-socket nrepl-client]
   (let [execution-count (atom 0N)]
     (fn [message signer]
       (let [session-id (get-in message [:header :session])
@@ -305,9 +317,12 @@
         (send-message iopub-socket "execute_input"
                       (pyin-content @execution-count message)
                       parent-header {} session-id signer)
-        (let [nrepl-map (nrepl-eval code parent-header session-id signer
-                                    iopub-socket nrepl-client)
-              result (:nrepl-result nrepl-map)]
+        (let [nrepl-resp (nrepl-eval code
+                                     parent-header
+                                     session-id signer ident
+                                     shell-socket stdin-socket iopub-socket
+                                     nrepl-client)
+              result (:nrepl-result nrepl-resp)]
           (send-router-message shell-socket "execute_reply"
                                {:status "ok"
                                 :execution_count @execution-count
@@ -332,7 +347,7 @@
 
 (defn shutdown-reply
   [message socket signer]
-  (let [parent_header (:header message)
+  (let [parent-header (:header message)
         metadata {}
         restart (get-in message message [:content :restart])
         content {:restart restart :status "ok"}
@@ -343,7 +358,7 @@
     (nrepl.server/stop-server server)
     (send-router-message socket
                          "shutdown_reply"
-                         content parent_header session-id metadata signer ident)
+                         content parent-header session-id metadata signer ident)
     (Thread/sleep 100)))
 
 (defn is-complete-reply-content
@@ -367,44 +382,45 @@
 
 (defn comm-info-reply
   [message socket signer]
-  (let [parent_header (:header message)
+  (let [parent-header (:header message)
         metadata {}
         content  {:comms
                   {:comm_id {:target_name ""}}}
         session-id (get-in message [:header :session])]
-    (send-message socket "comm_info_reply" content parent_header metadata session-id signer)))
+    (send-message socket "comm_info_reply" content parent-header metadata session-id signer)))
 
 (defn comm-msg-reply
   [message socket signer]
-  (let [parent_header (:header message)
+  (let [parent-header (:header message)
         metadata {}
         content  {}
         session-id (get-in message [:header :session])]
-    (send-message socket "comm_msg_reply" content parent_header metadata session-id signer)))
+    (send-message socket "comm_msg_reply" content parent-header metadata session-id signer)))
 
 (defn is-complete-reply [message socket signer]
-  (let [parent_header (:header message)
+  (let [parent-header (:header message)
         metadata {}
         content  (is-complete-reply-content message)
         session-id (get-in message [:header :session])
         ident (:idents message)]
     (send-router-message socket
                          "is_complete_reply"
-                         content parent_header session-id metadata signer ident)))
+                         content parent-header session-id metadata signer ident)))
 
 (defn complete-reply
   [message socket signer transport]
-  (let [parent_header (:header message)
+  (let [parent-header (:header message)
         metadata {}
         content  (complete-reply-content message transport)
         session-id (get-in message [:header :session])
         ident (:idents message)]
     (send-router-message socket
                          "complete_reply"
-                         content parent_header session-id metadata signer ident)))
+                         content parent-header session-id metadata signer ident)))
 
-(defn configure-shell-handler [shell-socket iopub-socket signer nrepl-client]
-  (let [execute-request (execute-request-handler shell-socket iopub-socket nrepl-client)]
+(defn configure-shell-handler [shell-socket stdin-socket iopub-socket signer nrepl-client]
+  (let [execute-request (execute-request-handler shell-socket stdin-socket iopub-socket
+                                                 nrepl-client)]
     (fn [message]
       (let [msg-type (get-in message [:header :msg_type])]
         (case msg-type
@@ -469,7 +485,7 @@
           message (zmq/receive hb-socket)]
       (zmq/send hb-socket message))))
 
-(defn shell-loop [shell-socket iopub-socket signer checker]
+(defn shell-loop [shell-socket stdin-socket iopub-socket signer checker]
   (with-open [server    (start-nrepl-server)
               transport (nrepl/connect :port (:port server))
               client    (nrepl/client transport Integer/MAX_VALUE)
@@ -477,7 +493,7 @@
     (reset! nrepl-server server)
     (reset! nrepl-session session)
     (let [shell-handler     (configure-shell-handler
-                             shell-socket iopub-socket signer client)
+                             shell-socket stdin-socket iopub-socket signer client)
           sigint-handle (fn [] (nrepl-interrupt client))]
       (reset! (beckon/signal-atom "INT") #{sigint-handle})
       (event-loop shell-socket iopub-socket signer shell-handler))))
@@ -491,6 +507,7 @@
         shell-addr   (address (prep-config args) :shell_port)
         iopub-addr   (address (prep-config args) :iopub_port)
         control-addr (address (prep-config args) :control_port)
+        stdin-addr   (address (prep-config args) :stdin_port)
         key          (:key (prep-config args))
         signer       (get-message-signer key)
         checker      (get-message-checker signer)]
@@ -501,10 +518,12 @@
                                  (zmq/bind iopub-addr)))
           control-socket (atom (doto (zmq/socket context :router)
                                  (zmq/bind control-addr)))
+          stdin-socket   (atom (doto (zmq/socket context :router)
+                                 (zmq/bind stdin-addr)))
           hb-socket      (atom (doto (zmq/socket context :rep)
                                  (zmq/bind hb-addr)))]
       (try
-        (future (shell-loop shell-socket iopub-socket signer checker))
+        (future (shell-loop shell-socket stdin-socket iopub-socket signer checker))
         (future (control-loop control-socket iopub-socket signer checker))
         (future (heartbeat-loop hb-socket))
         (while @alive (Thread/sleep 1000))

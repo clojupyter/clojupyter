@@ -1,26 +1,25 @@
 (ns clojupyter.core
-  (:require
-   [spyscope.core]
-   [beckon]
-   [clojupyter.middleware.pprint]
-   [clojupyter.middleware.stacktrace]
-   [clojupyter.middleware.completion :as completion]
-   [clojure.data.json :as json]
-   [clojure.java.io :as io]
-   [clojure.tools.logging :as log]
-   [cheshire.core :as cheshire]
-   [clojure.walk :as walk]
-   [zeromq.zmq :as zmq]
-   [clj-time.core :as time]
-   [clj-time.format :as time-format]
-   [pandect.algo.sha256 :refer [sha256-hmac]]
-   [clojure.string :as str]
-   [clojure.tools.nrepl.misc :as nrepl.misc]
-   [clojure.tools.nrepl.transport :as nrepl.trans]
-   [clojure.tools.nrepl.server :as nrepl.server]
-   [clojure.tools.nrepl :as nrepl])
-  (:import [org.zeromq ZMQ]
-           [java.net ServerSocket])
+  (:require [spyscope.core]
+            [beckon]
+            [cheshire.core :as cheshire]
+            [cider.nrepl :as cider]
+            [clj-time.core :as time]
+            [clj-time.format :as time-format]
+            [clojupyter.middleware.mime-values]
+            [clojure.data.json :as json]
+            [clojure.java.io :as io]
+            [clojure.string :as str]
+            [clojure.tools.logging :as log]
+            [clojure.tools.nrepl :as nrepl]
+            [clojure.tools.nrepl.misc :as nrepl.misc]
+            [clojure.tools.nrepl.server :as nrepl.server]
+            [clojure.tools.nrepl.transport :as nrepl.trans]
+            [clojupyter.misc.complete :as complete]
+            [clojure.walk :as walk]
+            [pandect.algo.sha256 :refer [sha256-hmac]]
+            [zeromq.zmq :as zmq]
+            )
+  (:import [java.net ServerSocket])
   (:gen-class :main true))
 
 (def protocol-version "5.0")
@@ -35,6 +34,8 @@
     port))
 
 (def alive (atom true))
+(def in-eval (atom nil))
+(def interrupted (atom nil))
 (def nrepl-server (atom nil))
 (def nrepl-session (atom nil))
 (def current-session (atom nil))
@@ -56,7 +57,7 @@
    :implementation "clojupyter"
    :language_info {:name "clojure"
                    :version (clojure-version)
-                   :mimetype "application/clojure"
+                   :mimetype "text/x-clojure"
                    :file_extension ".clj"}
    :banner "Clojupyters-0.1.0"
    :help_links []})
@@ -216,21 +217,21 @@
                      (filter :file))
           max-file (apply max (map count (map :file clean)))
           max-name (apply max (map count (map :name clean)))]
-      (str (format "%s (%s)\nn" (:message msg) (:class msg))
-           (apply str
-                  (map #(format (str "%" max-file "s: %5d %-" max-name "s  \n")
-                                (:file %) (:line %) (:name %))
-                       clean))))))
+      (map #(format (str "%" max-file "s: %5d %-" max-name "s")
+                    (:file %) (:line %) (:name %))
+           clean))))
 
 (defn nrepl-trace
   [nrepl-client]
-    (-> nrepl-client
-        (nrepl/message {:op :stacktrace
-                        :session @nrepl-session})
-        nrepl/combine-responses))
+  (-> nrepl-client
+      (nrepl/message {:op :stacktrace
+                      :session @nrepl-session})
+      nrepl/combine-responses
+      doall))
 
 (defn nrepl-interrupt
   [nrepl-client]
+  (reset! interrupted true)
   (-> nrepl-client
       (nrepl/message {:op :interrupt
                       :session @nrepl-session})))
@@ -241,8 +242,8 @@
    nrepl-client]
   (let [pending (atom #{})
         command-id (nrepl.misc/uuid)
-        result (atom {:nrepl-result "nil"})
-        io-sleep   5
+        result (atom {:result "nil"})
+        io-sleep   50
         get-input (fn []
                     (input-request stdin-socket
                                    parent-header session-id signer ident))
@@ -256,11 +257,14 @@
                        (nrepl/message nrepl-client {:id command-id
                                                     :op "stdin"
                                                     :stdin (str input "\n")
-                                                   :session session})))
+                                                    :session session})))
         done?      (fn [{:keys [id status] :as msg} pending]
                      (let [pending? (@pending id)]
                        (swap! pending disj id)
-                       (and (not pending?) (some #{"done" "interrupted" "error"} status))))
+                       (and (not pending?) (some #{"done"
+                                                   "interrupted"
+                                                   "error"}
+                                                 status))))
         stdout     (fn [msg]
                      (Thread/sleep io-sleep)
                      (send-message iopub-socket "stream"
@@ -270,36 +274,41 @@
                      (Thread/sleep io-sleep)
                      (send-message iopub-socket "stream"
                                    {:name "stdout" :text msg}
-                                   parent-header {} session-id signer))
-        ]
-    (doseq [{:keys [out err status session ex value] :as msg}
+                                   parent-header {} session-id signer))]
+
+    (reset! in-eval true)
+    (doseq [{:keys [ns out err status session ex value] :as msg}
             (nrepl/message nrepl-client
                            {:id command-id
                             :op :eval
                             :session @nrepl-session
                             :code code})
-            :while (not (done? msg pending))]
+            :while (and (not @interrupted)
+                        (not (done? msg pending)))]
       (do
+        (when ns (reset! current-ns ns))
         (when out (stdout out))
         (when err (stderr err))
         (when (some #{"need-input"} status)
           (send-input nrepl-client session pending))
-        (when ex (swap! result assoc :ex ex))
-        (when value (swap! result assoc :nrepl-result value))))
+        (when ex (swap! result assoc :ename ex))
+        (when value (swap! result assoc :result value))))
+    (reset! in-eval false)
+    (reset! interrupted false)
 
-    (if-let [ex (:ex @result)]
-      (do
-        (stderr ex)
-        (stderr (stacktrace-string (nrepl-trace nrepl-client))
-        ))
-    @result)))
+    (when-let [ex (:ename @result)]
+      (swap! result assoc :traceback
+             (if (re-find #"StackOverflowError" ex) []
+                 (stacktrace-string (nrepl-trace nrepl-client)))))
+    @result))
+
 (defn nrepl-complete [code nrepl-client]
   (let [ns @current-ns
         result (-> nrepl-client
                    (nrepl/message {:op :complete
-                                  :session @nrepl-session
-                                  :symbol code
-                                  :ns ns})
+                                   :session @nrepl-session
+                                   :symbol code
+                                   :ns ns})
                    nrepl/combine-responses)]
     (->> result
          :completions
@@ -312,8 +321,8 @@
       (let [session-id (get-in message [:header :session])
             ident (:idents message)
             parent-header (:header message)
-            code (get-in message [:content :code])]
-        (swap! execution-count inc)
+            code (get-in message [:content :code])
+            silent (str/ends-with? code ";")]
         (send-message iopub-socket "execute_input"
                       (pyin-content @execution-count message)
                       parent-header {} session-id signer)
@@ -322,24 +331,34 @@
                                      session-id signer ident
                                      shell-socket stdin-socket iopub-socket
                                      nrepl-client)
-              result (:nrepl-result nrepl-resp)]
+              {:keys [result ename traceback]} nrepl-resp
+              error (if ename
+                      {:status "error"
+                       :ename ename
+                       :evalue ""
+                       :execution_count @execution-count
+                       :traceback traceback}
+                      nil)]
+          (when-not error (swap! execution-count inc))
           (send-router-message shell-socket "execute_reply"
-                               {:status "ok"
-                                :execution_count @execution-count
-                                :user_expressions {}}
+                               (if error
+                                 error
+                                 {:status "ok"
+                                  :execution_count @execution-count
+                                  :user_expressions {}})
                                parent-header
                                session-id
-                               {:dependencies_met "True"
-                                :engine session-id
-                                :status "ok"
-                                :started (now)}
+                               {}
                                signer ident)
-          (when-not (= result "nil")
-            (send-message iopub-socket "execute_result"
-                          {:execution_count @execution-count
-                           :data {:text/plain result}
-                           :metadata {}}
-                          parent-header {} session-id signer)))))))
+          (if error
+            (send-message iopub-socket "error"
+                          error parent-header {} session-id signer)
+            (when-not (or (= result "nil") silent)
+              (send-message iopub-socket "execute_result"
+                            {:execution_count @execution-count
+                             :data (cheshire/parse-string result true)
+                             :metadata {}}
+                            parent-header {} session-id signer))))))))
 
 (defn history-reply [message signer]
   "returns REPL history, not implemented for now and returns a dummy message"
@@ -365,16 +384,17 @@
   "Returns whether or not what the user has typed is complete (ready for execution).
    Not yet implemented. May be that it is just used by jupyter-console."
   [message]
-  (if (completion/complete? (:code (:content message)))
+  (if (complete/complete? (:code (:content message)))
     {:status "complete"}
-    {:status "incomplete"}))
+    {:status "incomplete"})
+  )
 
 (defn complete-reply-content
   [message nrepl-client]
   (let [content (:content message)
         cursor_pos (:cursor_pos content)
         code (subs (:code content) 0 cursor_pos)
-        prefix (second (re-find #".*[\( ](\w*)" code))]
+        prefix (second (re-find #".*[\( ]([/-_*+!?\w]*)" code))]
     {:matches (nrepl-complete prefix nrepl-client)
      :cursor_start (- cursor_pos (count prefix))
      :cursor_end cursor_pos
@@ -450,14 +470,13 @@
           (System/exit -1))))))
 
 (def clojupyter-middleware
-  "A vector containing all Clojupyters middleware (additions to nrepl default)."
-  '[clojupyter.middleware.pprint/wrap-pprint
-    clojupyter.middleware.pprint/wrap-pprint-fn
-    clojupyter.middleware.stacktrace/wrap-stacktrace
-    clojupyter.middleware.completion/wrap-complete])
+  '[clojupyter.middleware.mime-values/mime-values])
 
 (def clojupyer-nrepl-handler
-  (apply nrepl.server/default-handler (map resolve clojupyter-middleware)))
+  (apply nrepl.server/default-handler
+         (map resolve
+              (concat cider/cider-middleware
+                      clojupyter-middleware))))
 
 (defn start-nrepl-server
   []

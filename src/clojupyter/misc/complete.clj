@@ -1,8 +1,8 @@
 (ns clojupyter.misc.complete
-  (require [clojure.edn :as edn]))
+  (require [net.cgrand.sjacket.parser :as p]))
 
 (defn complete? [code]
-  (try
-    (edn/read-string code)
-    true
-    (catch RuntimeException e false)))
+  (not (some  #(= :net.cgrand.parsley/unfinished %)
+             (map :tag (tree-seq :tag  
+                                 :content
+                                 (p/parser code))))))

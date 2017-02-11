@@ -391,12 +391,31 @@
 
 (defn complete-reply-content
   [message nrepl-client]
-  (let [content (:content message)
+  (let [find-symbol (fn [code] 
+					" reverse the code string
+					  until ( or \" to deteermine 
+					  the symbol for completion"
+					  (loop 
+					   [pairs (map-indexed vector (reverse code))
+						symbol ""
+						delimiter  nil]
+					   (let [character (second (first pairs))
+							 delimiter-map {\( :code
+											\" :string
+											\% :magic}
+							 delimiter (get delimiter-map character)]
+						(println character delimiter)
+						(if (and (not-empty pairs) 
+							  (nil? delimiter))
+						  (recur (rest pairs) (str character symbol) delimiter)
+						  [symbol delimiter]))))
+        content (:content message)
         cursor_pos (:cursor_pos content)
         code (subs (:code content) 0 cursor_pos)
-        prefix (second (re-find #".*[\( ]([/-_*+!?\w]*)" code))]
-    {:matches (nrepl-complete prefix nrepl-client)
-     :cursor_start (- cursor_pos (count prefix))
+        [sym sym_type] (find-symbol code)]
+         
+    {:matches (nrepl-complete sym nrepl-client)
+     :cursor_start (- cursor_pos (count sym))
      :cursor_end cursor_pos
      :status "ok"}))
 

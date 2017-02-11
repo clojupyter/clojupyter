@@ -1,4 +1,4 @@
-(ns clojupyter.middleware.completion
+(ns clojupyter.misc.complete
   (require [clojure.edn :as edn]))
 
 (defn complete? [code]

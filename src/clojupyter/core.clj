@@ -243,7 +243,7 @@
   (let [pending (atom #{})
         command-id (nrepl.misc/uuid)
         result (atom {:result "nil"})
-        io-sleep   50
+        io-sleep   10
         get-input (fn []
                     (input-request stdin-socket
                                    parent-header session-id signer ident))

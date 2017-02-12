@@ -35,9 +35,12 @@
 
 (def alive (atom true))
 (def in-eval (atom nil))
+(def display-queue (atom []))
+
 (def interrupted (atom nil))
 (def nrepl-server (atom nil))
 (def nrepl-session (atom nil))
+
 (def current-session (atom nil))
 (def current-commnad-id (atom nil))
 (def current-ns (atom (str *ns*)))
@@ -295,6 +298,12 @@
         (when value (swap! result assoc :result value))))
     (reset! in-eval false)
     (reset! interrupted false)
+    (doseq [data @display-queue]
+      (send-message iopub-socket "display_data"
+                    {:data (cheshire/parse-string data true)
+                     :metadata {}}
+                    parent-header {} session-id signer))
+    (reset! display-queue [])
 
     (when-let [ex (:ename @result)]
       (swap! result assoc :traceback
@@ -404,7 +413,6 @@
 											\" :string
 											\% :magic}
 							 delimiter (get delimiter-map character)]
-						(println character delimiter)
 						(if (and (not-empty pairs) 
 							  (nil? delimiter))
 						  (recur (rest pairs) (str character symbol) delimiter)

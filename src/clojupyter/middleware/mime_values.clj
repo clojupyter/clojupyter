@@ -2,7 +2,7 @@
   (:require [spyscope.core]
             [clojure.tools.nrepl.transport :as t]
             [clojupyter.protocol.mime-convertible :as mime]
-            )
+            [clojure.tools.nrepl.middleware.pr-values])
   (:use [clojure.tools.nrepl.middleware :only (set-descriptor!)])
   (:import clojure.tools.nrepl.transport.Transport))
 

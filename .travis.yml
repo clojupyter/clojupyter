@@ -1,0 +1,4 @@
+language: clojure
+clojure:
+    - 1.8.0
+script: lein test

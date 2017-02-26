@@ -1,73 +1,159 @@
 (ns clojupyter.core-test
   "Tests nrepl evaluation and error handling."
   {:author "Peter Denno"}
-  (:require [clojupyter.core :refer :all]
-            [clojure.pprint :refer (pprint)]
-            [clojure.test :refer :all]
-            [clojure.java.io :as io]
+  (:require [clojure.test :refer :all]
+            [clojure.tools.nrepl.server :as nrepl.server]
+            [clojure.pprint :as p]
+            [clojupyter.core :refer :all]
+            [clojupyter.misc.messages :refer :all]
+            [clojupyter.misc.zmq-comm :as mzmq]
+            [clojupyter.protocol.zmq-comm :as pzmq]
+            [clojupyter.protocol.nrepl-comm :as pnrepl]
+            [clojupyter.misc.states :as states]
+            [taoensso.timbre :as log]
             [zeromq.zmq :as zmq]
-            [clojure.tools.nrepl :as repl]
-            [clojure.tools.nrepl.server :refer [stop-server]])
-  (:import (clojure.lang Compiler$CompilerException)))
+            [cheshire.core :as cheshire]))
 
-;;; I typically follow these steps while developing code here:
-;;;    (1) In a shell: jupyter-console --existing=$HOME/Documents/clojure/clojupyter/resources/connect.json --debug
-;;;    (2) In my clojure environment (which is emacs/cider): (test-start)
-;;;    (3) In the jupyter console: <Run some clojure, testing whatever I'm testing.>
-;;;    (4) In the jupyter console: (clojupyter.core-test/test-disconnect)
-;;;    (5) Modify code and restart one or both sides. That may entail starting over at Step 1
-;;;        (if console crashed) or Step 2 (otherwise).
-;;;
-;;; If someone knows a better way, please describe your process on the project's github repository.
+(defrecord MockZmqComm [input output messages current-message]
+  pzmq/PZmqComm
+  (zmq-send [self socket message]
+    (swap! output conj message)
+    (swap! current-message conj message)
+    (swap! messages conj @current-message)
+    (reset! current-message []))
+  (zmq-send [self socket message zmq-flag]
+    (swap! output conj message)
+    (swap! current-message conj message))
+  (zmq-read-raw-message [self socket]
+    (let [out (first @input)]
+      (if (not-empty @input)
+        (swap! input pop))
+      out))
+  (zmq-recv [self socket]
+    (let [out (first @input)]
+      (if (not-empty @input)
+        (swap! input pop))
+      out))
+  (zmq-recv-all [self socket]
+    (let [out (first @input)]
+      (if (not-empty @input)
+        (swap! input pop))
+      out)))
 
-(defn test-start 
-  "Start (e.g. from a CIDER REPL) either an NREPL (:nrepl-only? true) or a full
-  kernel (no args). The latter uses information in resources/connect.json and, e.g.,
-  jupyter-console --existing=$HOME/clojupyter/resources/connect.json --debug"
-  [& {:keys [repl-only?]}]
-  (if repl-only?
-    (start-nrepl)
-    (-main (-> "connect.json" io/resource io/file))))
+(defn make-mock-zmq-comm [input output message]
+  (MockZmqComm. input output message (atom [])))
 
-(defn test-stop
-  []
-  (when-let [server @the-nrepl]
-    (stop-server server)
-    (reset! the-nrepl nil)))
+(defrecord MockNreplComm [nrepl-server]
+  pnrepl/PNreplComm
+  (nrepl-trace [self])
+  (nrepl-interrupt [self])
+  (nrepl-eval [self states zmq-comm code parent-header session-id signer ident])
+  (nrepl-complete [self code]))
 
-(defn test-disconnect 
-  "This can be called from jupyter to disconnect. It attempts to set things back to the way they 
-   would be before -main is called. As of this writing, it won't be pretty but it WILL disconnect."
-  []
-  (test-stop)
-  (let [pargs (-> "connect.json" io/resource io/file list prep-config)
-        hb-addr (address pargs :hb_port)
-        shell-addr (address pargs :shell_port)
-        iopub-addr (address pargs :iopub_port)
-        context (zmq/context 1)]
-    (doto (:hb @jup-sockets)
-      (zmq/unbind hb-addr)
-      (zmq/disconnect hb-addr)
-      (zmq/close))
-    (doto (:sh @jup-sockets)
-      (zmq/unbind shell-addr)
-      (zmq/disconnect shell-addr)
-      (zmq/close))
-    (doto (:io @jup-sockets)
-      (zmq/unbind iopub-addr)
-      (zmq/disconnect iopub-addr)
-      (zmq/close))))
+(defn make-mock-nrepl-comm []
+  (MockNreplComm. (atom nil)))
 
-(defn test-send-form 
-  [ & {:keys [form stacktrace clone session ls]}]
-  (with-open [conn (repl/connect :port (:port @the-nrepl))]
-    (doall 
-     (repl/combine-responses        
-      (let [transport (repl/client conn 10000)
-            session (or session @nrepl-session)]
-        (if session
-          (cond form       (repl/message transport {:op "eval" :session session :code form}),
-                ls         (repl/message transport {:op "ls-sessions"}),
-                stacktrace (repl/message transport {:op "stacktrace" :session session}),
-                clone      (repl/message transport {:op :clone}))
-          :no-session))))))
+(deftest test-process-heartbeat
+  (let [socket       :hb-socket
+        states       (states/make-states)
+        in           '(1 2 3 4)
+        zmq-in       (atom in)
+        zmq-out      (atom [])
+        zmq-messages (atom [])
+        zmq-comm     (make-mock-zmq-comm zmq-in zmq-out zmq-messages)]
+    (doseq [_ @zmq-in]
+      (process-heartbeat zmq-comm socket))
+    (is (= in @zmq-out))))
+
+(deftest test-kernel-info-request
+  (let [socket      :hb-socket
+        signer      (get-message-signer "TEST-KEY")
+        states      (states/make-states)
+        in          (list
+                     {:header
+                      (cheshire/generate-string
+                       {
+                        :msg_type "kernel_info_request"
+                        })
+                      }
+                     )
+        zmq-in       (atom in)
+        zmq-out      (atom [])
+        zmq-messages (atom [])
+        nrepl-comm   (make-mock-nrepl-comm)
+        zmq-comm     (make-mock-zmq-comm zmq-in zmq-out zmq-messages)
+        handler      (configure-shell-handler states zmq-comm nrepl-comm
+                                              socket signer)]
+    (try
+      (log/set-level! :error)
+      (doseq [_ @zmq-in]
+        (process-event states zmq-comm socket signer handler))
+      (is (= "busy" (get-in ((comp parse-message mzmq/parts-to-message)
+                             (get @zmq-messages 0))
+                            [:content :execution_state]
+                            )))
+      (is (= {:status "ok",
+              :protocol_version "5.0",
+              :implementation "clojupyter",
+              :language_info
+              {:name "clojure",
+               :version "1.8.0",
+               :mimetype "text/x-clojure",
+               :file_extension ".clj"},
+              :banner "Clojupyters-0.1.0",
+              :help_links []}
+             (get-in ((comp parse-message mzmq/parts-to-message)
+                      (get @zmq-messages 1))
+                     [:content]
+                     )))
+      (is (= "idle" (get-in ((comp parse-message mzmq/parts-to-message)
+                             (get @zmq-messages 2))
+                            [:content :execution_state]
+                            ))))))
+
+(deftest test-shutdown-request
+  (let [socket      :hb-socket
+        signer      (get-message-signer "TEST-KEY")
+        states      (states/make-states)
+        in          (list
+                     {:idents []
+                      :header
+                      (cheshire/generate-string
+                       {
+                        :msg_type "shutdown_request"
+                        :session  "123456"
+                        })
+                      :content
+                      (cheshire/generate-string
+                       {:restart false}
+                       )
+                      }
+                     )
+        zmq-in       (atom in)
+        zmq-out      (atom [])
+        zmq-messages (atom [])
+        nrepl-comm   (make-mock-nrepl-comm)
+        zmq-comm     (make-mock-zmq-comm zmq-in zmq-out zmq-messages)
+        handler      (configure-shell-handler states zmq-comm nrepl-comm
+                                              socket signer)]
+    (try
+      (log/set-level! :error)
+      (def stopped (atom false))
+      (with-redefs [nrepl.server/stop-server (fn [a] (reset! stopped true))]
+        (doseq [_ @zmq-in]
+          (process-event states zmq-comm socket signer handler)))
+      (is (= @stopped true))
+      (is (= "busy" (get-in ((comp parse-message mzmq/parts-to-message)
+                             (get @zmq-messages 0))
+                            [:content :execution_state]
+                            )))
+      (is (= {:restart ["content" "restart"],
+              :status "ok"}
+             (get-in ((comp parse-message mzmq/parts-to-message)
+                      (get @zmq-messages 1))
+                     [:content]
+                     )))
+      (is (= "idle" (get-in ((comp parse-message mzmq/parts-to-message)
+                             (get @zmq-messages 2))
+                            [:content :execution_state]
+                            ))))))

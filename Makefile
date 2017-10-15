@@ -1,3 +1,14 @@
+kernelDir = $(HOME)/.local/share/jupyter/kernels/clojure
+
+ifeq ($(shell uname -s), Linux)
+        kernelDir:=$(HOME)/.local/share/jupyter/kernels/clojure
+endif
+
+ifeq ($(shell uname -s), Darwin)
+        kernelDir:=$(HOME)/Library/Jupyter/kernels/clojure
+endif
+
+
 all:
 	lein uberjar
 	cat bin/clojupyter.template $$(find . -maxdepth 2 -type f | grep -e ".*standalone.*\.jar") > bin/clojupyter
@@ -9,8 +20,9 @@ clean:
 	rm -f bin/clojuypyter
 
 install:
-	mkdir -p ~/.ipython/kernels/clojure
-	cp bin/clojupyter ~/.ipython/kernels/clojure/clojupyter
-	@if [ ! -f ~/.ipython/kernels/clojure/kernel.json ]; then\
-		sed 's|HOME|'${HOME}'|' resources/kernel.json > ~/.ipython/kernels/clojure/kernel.json;\
+	mkdir -p $(kernelDir)
+	cp bin/clojupyter $(kernelDir)/clojupyter
+	@if [ ! -f $(kernelDir)/kernel.json ]; then\
+		sed 's|KERNEL|'${kernelDir}/clojupyter'|' resources/kernel.json > $(kernelDir)/kernel.json;\
 	fi
+

@@ -73,10 +73,10 @@
                      {:header
                       (cheshire/generate-string
                        {
-                        :msg_type "kernel_info_request"
-                        })
-                      }
-                     )
+                        :msg_type "kernel_info_request"})})
+
+
+
         zmq-in       (atom in)
         zmq-out      (atom [])
         zmq-messages (atom [])
@@ -90,8 +90,8 @@
         (process-event states zmq-comm socket signer handler))
       (is (= "busy" (get-in ((comp parse-message mzmq/parts-to-message)
                              (get @zmq-messages 0))
-                            [:content :execution_state]
-                            )))
+                            [:content :execution_state])))
+
       (is (= {:status "ok",
               :protocol_version "5.0",
               :implementation "clojupyter",
@@ -104,12 +104,37 @@
               :help_links []}
              (get-in ((comp parse-message mzmq/parts-to-message)
                       (get @zmq-messages 1))
-                     [:content]
-                     )))
+                     [:content])))
+
       (is (= "idle" (get-in ((comp parse-message mzmq/parts-to-message)
                              (get @zmq-messages 2))
-                            [:content :execution_state]
-                            ))))))
+                            [:content :execution_state]))))))
+
+
+(deftest test-utf-8-support
+  (let [socket      :hb-socket
+        signer      (get-message-signer "TEST-KEY")
+        states      (states/make-states)
+        in          (list
+                      {:header
+                       (cheshire/generate-string
+                         {
+                          :msg_type "kernel_info_request"
+                          :not-ascii "Здравствуйте"})})
+        zmq-in       (atom in)
+        zmq-out      (atom [])
+        zmq-messages (atom [])
+        nrepl-comm   (make-mock-nrepl-comm)
+        zmq-comm     (make-mock-zmq-comm zmq-in zmq-out zmq-messages)
+        handler      (configure-shell-handler states zmq-comm nrepl-comm
+                                              socket signer)]
+    (try
+      (log/set-level! :error)
+      (doseq [_ @zmq-in]
+        (process-event states zmq-comm socket signer handler))
+      (is (= "idle" (get-in ((comp parse-message mzmq/parts-to-message)
+                             (last @zmq-messages))
+                            [:content :execution_state]))))))
 
 (deftest test-shutdown-request
   (let [socket      :hb-socket
@@ -121,14 +146,14 @@
                       (cheshire/generate-string
                        {
                         :msg_type "shutdown_request"
-                        :session  "123456"
-                        })
+                        :session  "123456"})
+
                       :content
                       (cheshire/generate-string
-                       {:restart false}
-                       )
-                      }
-                     )
+                       {:restart false})})
+
+
+
         zmq-in       (atom in)
         zmq-out      (atom [])
         zmq-messages (atom [])
@@ -145,15 +170,15 @@
       (is (= @stopped true))
       (is (= "busy" (get-in ((comp parse-message mzmq/parts-to-message)
                              (get @zmq-messages 0))
-                            [:content :execution_state]
-                            )))
+                            [:content :execution_state])))
+
       (is (= {:restart ["content" "restart"],
               :status "ok"}
              (get-in ((comp parse-message mzmq/parts-to-message)
                       (get @zmq-messages 1))
-                     [:content]
-                     )))
+                     [:content])))
+
       (is (= "idle" (get-in ((comp parse-message mzmq/parts-to-message)
                              (get @zmq-messages 2))
-                            [:content :execution_state]
-                            ))))))
+                            [:content :execution_state]))))))
+

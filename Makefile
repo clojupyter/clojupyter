@@ -19,7 +19,7 @@ clean:
 	rm -f target/*.jar
 	rm -f bin/clojuypyter
 
-install:
+install: all
 	mkdir -p $(kernelDir)
 	cp bin/clojupyter $(kernelDir)/clojupyter
 	@if [ ! -f $(kernelDir)/kernel.json ]; then\

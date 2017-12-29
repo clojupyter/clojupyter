@@ -204,7 +204,7 @@
                 (get @zmq-messages 1))
                [:content])
        => {:code "(println 10)"
-           :execution_count 0}
+           :execution_count 1}
        (get-in ((comp parse-message mzmq/parts-to-message)
                (get @zmq-messages 2))
               [:header :msg_type ])

@@ -15,8 +15,7 @@
             [clojure.tools.nrepl.server :as nrepl.server]
             [clojure.walk :as walk]
             [taoensso.timbre :as log]
-            [zeromq.zmq :as zmq]
-            [spyscope.core])
+            [zeromq.zmq :as zmq])
   (:import [java.net ServerSocket])
   (:gen-class :main true))
 

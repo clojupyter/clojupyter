@@ -284,7 +284,7 @@
 
 (defn execute-request-handler
   [states zmq-comm nrepl-comm socket]
-  (let [execution-count (atom 0N)]
+  (let [execution-count (atom 1N)]
     (fn [message signer]
       (let [session-id (get-in message [:header :session])
             ident (:idents message)
@@ -303,9 +303,7 @@
                        :ename ename
                        :evalue ""
                        :execution_count @execution-count
-                       :traceback traceback}
-                      nil)]
-          (swap! execution-count inc)
+                       :traceback traceback})]
           (send-router-message zmq-comm :shell-socket "execute_reply"
                                (if error
                                  error
@@ -324,4 +322,5 @@
                             {:execution_count @execution-count
                              :data (cheshire/parse-string result true)
                              :metadata {}}
-                            parent-header {} session-id signer))))))))
+                            parent-header {} session-id signer)))
+          (swap! execution-count inc))))))

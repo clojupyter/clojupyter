@@ -4,15 +4,18 @@
             [taoensso.timbre :as log]
             [zeromq.zmq :as zmq]))
 
+(defn- string-to-bytes [s]
+  (. (. (java.nio.charset.Charset/forName "UTF-8") encode s) array))
+
 (defn parts-to-message [parts]
   (let [delim "<IDS|MSG>"
-        delim-byte (byte-array (map byte delim))
+        delim-byte (string-to-bytes delim)
         delim-idx (first
                    (map first (filter #(apply = (map seq [(second %) delim-byte]))
                                       (map-indexed vector parts))))
         idents (take delim-idx parts)
-        blobs (map #(apply str (map char %1))
-                   (drop (+ 1 delim-idx) parts))
+        blobs (map #(new String % "UTF-8")
+                   (drop (inc delim-idx) parts))
         blob-names [:signature :header :parent-header :metadata :content]
         n-blobs (count blob-names)
         message (merge

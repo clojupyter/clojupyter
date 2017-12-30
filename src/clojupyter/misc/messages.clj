@@ -47,18 +47,16 @@
 (defn send-message-piece
   [zmq-comm
    socket msg]
-  (log/info "Sending"
-            (with-out-str (pp/pprint msg)))
+  (log/debug "Sending" (with-out-str (pp/pprint msg)))
   (pzmq/zmq-send zmq-comm socket (.getBytes msg) zmq/send-more)
-  (log/info "Finished sending part"))
+  (log/debug "Finished sending part"))
 
 (defn finish-message
   [zmq-comm
    socket msg]
-  (log/info "Sending"
-            (with-out-str (pp/pprint msg)))
+  (log/debug "Sending" (with-out-str (pp/pprint msg)))
   (pzmq/zmq-send zmq-comm socket (.getBytes msg))
-  (log/info "Finished sending all"))
+  (log/debug "Finished sending all"))
 
 (defn send-router-message
   [zmq-comm
@@ -69,7 +67,7 @@
         parent-header (cheshire/generate-string parent-header)
         metadata      (cheshire/generate-string metadata)
         content       (cheshire/generate-string content)]
-    (when (not (empty? idents))
+   (when (not (empty? idents))
       (doseq [ident idents];
         (pzmq/zmq-send zmq-comm socket ident zmq/send-more)))
     (send-message-piece zmq-comm socket "<IDS|MSG>")
@@ -182,8 +180,7 @@
 ;; Request and reply messages
 
 (defn input-request
-  [zmq-comm
-   parent-header session-id signer ident]
+  [zmq-comm parent-header session-id signer ident]
   (let [metadata {}
         content  {:prompt ">> "
                   :password false}]
@@ -286,9 +283,8 @@
 ;; Handlers
 
 (defn execute-request-handler
-  [states zmq-comm nrepl-comm
-   socket]
-  (let [execution-count (atom 0N)]
+  [states zmq-comm nrepl-comm socket]
+  (let [execution-count (atom 1N)]
     (fn [message signer]
       (let [session-id (get-in message [:header :session])
             ident (:idents message)
@@ -307,9 +303,7 @@
                        :ename ename
                        :evalue ""
                        :execution_count @execution-count
-                       :traceback traceback}
-                      nil)]
-          (when-not error (swap! execution-count inc))
+                       :traceback traceback})]
           (send-router-message zmq-comm :shell-socket "execute_reply"
                                (if error
                                  error
@@ -328,4 +322,5 @@
                             {:execution_count @execution-count
                              :data (cheshire/parse-string result true)
                              :metadata {}}
-                            parent-header {} session-id signer))))))))
+                            parent-header {} session-id signer)))
+          (swap! execution-count inc))))))

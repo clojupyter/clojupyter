@@ -12,7 +12,9 @@ Jupyter console and notebook.
 4. make install
 
 This will install a clojupyter executable and a configuration file to tell
-Jupyter how to use it in `~/.ipython/kernels/clojure`.
+Jupyter how to use clojupyter in from jupyter's user kernel location (
+`~/.local/share/jupyter/kernels` on linux and `~/Library/Jupyter/kernels`
+on Mac).
 
 run the REPL with:
 

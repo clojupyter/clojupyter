@@ -15,8 +15,7 @@
             [clojure.tools.nrepl.server :as nrepl.server]
             [clojure.walk :as walk]
             [taoensso.timbre :as log]
-            [zeromq.zmq :as zmq]
-            [spyscope.core])
+            [zeromq.zmq :as zmq])
   (:import [java.net ServerSocket])
   (:gen-class :main true))
 
@@ -96,7 +95,7 @@
           (System/exit -1))))))
 
 (defn process-event [states zmq-comm socket signer handler]
-  (let [message        (pzmq/zmq-read-raw-message zmq-comm socket)
+  (let [message        (pzmq/zmq-read-raw-message zmq-comm socket 0)
         parsed-message (parse-message message)
         parent-header  (:header parsed-message)
         session-id     (:session parent-header)]
@@ -127,7 +126,7 @@
 (defn shell-loop [states zmq-comm nrepl-comm signer checker]
   (let [socket        :shell-socket
         shell-handler (configure-shell-handler states zmq-comm nrepl-comm socket signer)
-        sigint-handle (fn [] (pnrepl/nrepl-interrupt nrepl-comm))]
+        sigint-handle (fn [] (pp/pprint (pnrepl/nrepl-interrupt nrepl-comm)))]
     (reset! (beckon/signal-atom "INT") #{sigint-handle})
     (event-loop states zmq-comm socket signer shell-handler)))
 
@@ -157,19 +156,22 @@
                                  (zmq/bind stdin-addr)))
           hb-socket      (atom (doto (zmq/socket context :rep)
                                  (zmq/bind hb-addr)))
-          zmq-comm       (zmq-comm/make-zmq-comm shell-socket iopub-socket
+          zmq-comm       (zmq-comm/make-zmq-comm shell-socket iopub-socket stdin-socket
                                                  control-socket hb-socket)]
-      (with-open [nrepl-server       (start-nrepl-server)
-                  nrepl-transport    (nrepl/connect :port (:port nrepl-server))]
-        (let [nrepl-client       (nrepl/client nrepl-transport Integer/MAX_VALUE)
-              nrepl-session      (nrepl/new-session nrepl-client)
-              nrepl-comm (nrepl-comm/make-nrepl-comm nrepl-server nrepl-transport
-                                                     nrepl-client nrepl-session)]
+      (with-open [nrepl-server    (start-nrepl-server)
+                  nrepl-transport (nrepl/connect :port (:port nrepl-server))]
+        (let [nrepl-client  (nrepl/client nrepl-transport Integer/MAX_VALUE)
+              nrepl-session (nrepl/new-session nrepl-client)
+              nrepl-comm    (nrepl-comm/make-nrepl-comm nrepl-server nrepl-transport
+                                                        nrepl-client nrepl-session)
+              status-sleep  1000]
           (try
             (future (shell-loop     states zmq-comm nrepl-comm signer checker))
             (future (control-loop   states zmq-comm nrepl-comm signer checker))
             (future (heartbeat-loop states zmq-comm))
-            (while @(:alive states) (Thread/sleep 1000))
+            ;; check every second if state
+            ;; has changed to anything other than alive
+            (while @(:alive states) (Thread/sleep status-sleep))
             (catch Exception e
               (exception-handler e))
             (finally (doseq [socket [shell-socket iopub-socket control-socket hb-socket]]

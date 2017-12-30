@@ -6,7 +6,6 @@
                  [cheshire "5.7.0"]
                  [cider/cider-nrepl "0.15.1"]
                  [clj-time "0.11.0"]
-                 [com.cemerick/pomegranate "0.3.0"]
                  [com.cemerick/pomegranate "0.3.1"]
                  [com.taoensso/timbre "4.8.0"]
                  [net.cgrand/parsley "0.9.3" :exclusions [org.clojure/clojure]]

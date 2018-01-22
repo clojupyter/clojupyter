@@ -70,7 +70,7 @@ so it will look for `ipython-clojure` even if you've installed the new version. 
 the `clojure` directory in there and it will pick up the `clojupyter` executable instead if
 you're having some troubles after installing.
 
-###To Do:
+### To Do:
  * Shut down cleanly.
  * Do syntax checking. It currently returns nil on unbalanced form. Borrow cider-nrepl middleware for this.
  * Allow controls from Jupyter, including timeout and what classes of stack frames to show.

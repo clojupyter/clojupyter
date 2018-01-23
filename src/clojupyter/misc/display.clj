@@ -47,10 +47,24 @@
 (defrecord Latex [latex])
 
 (extend-protocol mc/PMimeConvertible
-    Latex
-    (to-mime [self]
-      (mc/stream-to-string
-       {:text/latex (:latex self)})))
+  Latex
+  (to-mime [self]
+    (mc/stream-to-string
+      {:text/latex (:latex self)})))
 
 (defn make-latex [latex]
   (Latex. latex))
+
+
+;; Markdown
+
+(defrecord Markdown [markdown])
+
+(extend-protocol mc/PMimeConvertible
+  Markdown
+  (to-mime [self]
+    (mc/stream-to-string
+      {:text/markdown (:markdown self)})))
+
+(defn make-markdown [latex]
+  (Markdown. latex))

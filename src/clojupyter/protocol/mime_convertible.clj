@@ -13,7 +13,7 @@
 (extend-protocol PMimeConvertible
   Object
   (to-mime [o]
-    (stream-to-string {:text/plain (str o)}))
+    (stream-to-string {:text/plain (pr-str o)}))
 
   nil
   (to-mime [o]

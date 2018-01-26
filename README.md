@@ -4,9 +4,18 @@ Jupyter console and notebook.
 
 ![clojupyter](https://raw.github.com/roryk/clojupyter/master/images/demo.png)
 
+### Getting Started 
+
+See [this notebook](https://raw.github.com/roryk/clojupyter/master/examples/html-demo.ipynb) for examples of what you can do and [this one](https://raw.github.com/roryk/clojupyter/master/examples/incanter-demo.ipynb) for an example using Incanter for plotting. Below are some screen shots to whet your appetite:
+
+![](https://raw.githubusercontent.com/aria42/clojupyter/mime-improvements/images/html-demo.png =600x400)
+
+![](https://raw.githubusercontent.com/aria42/clojupyter/mime-improvements/images/incanter-demo.png =600x400)
+
+
 ### Installation
 
-1. git clone https://github.com/roryk/clojupyter
+1. git clone https://github.com/clojupyter/clojupyter
 2. cd clojupyter
 3. make
 4. make install

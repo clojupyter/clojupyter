@@ -1,70 +1,68 @@
 (ns clojupyter.misc.display
   (:require [clojupyter.protocol.mime-convertible :as mc]
             [clojupyter.misc.states :as states]
-            [cheshire.core :as cheshire]
-            [clojure.data.codec.base64 :as b64]
-            [clojure.java.io :as io])
-  (:import [javax.imageio ImageIO]))
+            [hiccup.core :as hiccup]))
 
 (defn display [obj]
   (swap! (:display-queue @states/current-global-states) conj (mc/to-mime obj))
   nil)
 
-;; Incanter Plot
-
-(defrecord IncanterPlot [chart width height])
-
-(extend-protocol mc/PMimeConvertible
-  IncanterPlot
-  (to-mime [plot]
-    (let [out (io/java.io.ByteArrayOutputStream.)
-          {:keys [chart width height]} plot]
-      (ImageIO/write (.createBufferedImage chart width height)
-                     "png" out)
-      (mc/stream-to-string
-       {:image/png (str (apply str (map char (b64/encode (.toByteArray out)))))}))))
-
-(defn make-incanter-plot [chart & {:keys [width height]
-                                   :or {width 600 height 400}}]
-  (IncanterPlot. chart width height))
-
 
 ;; Html
 
-(defrecord Html [html])
+(defrecord HtmlString [html]
 
-(extend-protocol mc/PMimeConvertible
-  Html
-  (to-mime [self]
-      (mc/stream-to-string
-       {:text/html (:html self)})))
+  mc/PMimeConvertible
+  (to-mime [_]
+    (mc/stream-to-string
+     {:text/html html})))
 
-(defn make-html [html]
-  (Html. html))
+(defn html [html-str]
+  (HtmlString. html-str))
+
+(defn ^:deprecated make-html
+  [html-str]
+  (html html-str))
+
+(defrecord HiccupHTML [html-data]
+
+  mc/PMimeConvertible
+  (to-mime [_]
+    (mc/stream-to-string
+     {:text/html (hiccup/html html-data)})))
+
+(defn hiccup-html [html-data]
+  (HiccupHTML. html-data))
 
 ;; Latex
 
-(defrecord Latex [latex])
+(defrecord Latex [latex]
 
-(extend-protocol mc/PMimeConvertible
-  Latex
-  (to-mime [self]
+  mc/PMimeConvertible
+  (to-mime [_]
     (mc/stream-to-string
-      {:text/latex (:latex self)})))
+     {:text/latex latex})))
 
-(defn make-latex [latex]
-  (Latex. latex))
+(defn latex [latex-str]
+  (Latex. latex-str))
+
+(defn ^:deprecated make-latex
+  [latex-str]
+  (latex latex-str))
 
 
 ;; Markdown
 
-(defrecord Markdown [markdown])
+(defrecord Markdown [markdown]
 
-(extend-protocol mc/PMimeConvertible
-  Markdown
-  (to-mime [self]
+  mc/PMimeConvertible
+  (to-mime [_]
     (mc/stream-to-string
-      {:text/markdown (:markdown self)})))
+     {:text/markdown markdown})))
 
-(defn make-markdown [latex]
-  (Markdown. latex))
+(defn markdown [markdown-str]
+  (Markdown. markdown-str))
+
+(defn ^:deprecated make-markdown
+  [markdown-str]
+  (markdown markdown-str))

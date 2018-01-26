@@ -1,12 +1,22 @@
-## clojupyter
+# clojupyter
 A Jupyter kernel for Clojure. This will let you run Clojure code from the
 Jupyter console and notebook.
 
 ![clojupyter](https://raw.github.com/roryk/clojupyter/master/images/demo.png)
 
+### Getting Started 
+
+See [this notebook](https://github.com/aria42/clojupyter/blob/mime-improvements/examples/html-demo.ipynb) for examples of how you can display HTML and use external Javascript:
+
+<img src="https://raw.githubusercontent.com/aria42/clojupyter/mime-improvements/images/html-demo.png" width="100%"/>
+
+You can also use existing JVM charting libraries since you can render any Java BufferedImage. Here's a [sample notebook](https://github.com/aria42/clojupyter/blob/mime-improvements/examples/incanter-demo.ipynb) using the Clojure-based [Incanter](https://github.com/incanter/incanter) library:
+
+<img src="https://raw.githubusercontent.com/aria42/clojupyter/mime-improvements/images/incanter-demo.png" width="100%"/>
+
 ### Installation
 
-1. git clone https://github.com/roryk/clojupyter
+1. git clone https://github.com/clojupyter/clojupyter
 2. cd clojupyter
 3. make
 4. make install

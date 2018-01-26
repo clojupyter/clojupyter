@@ -1,6 +1,9 @@
 (ns clojupyter.protocol.mime-convertible-test
   (:require [clojupyter.protocol.mime-convertible :refer :all]
-            [midje.sweet :refer :all]))
+            [midje.sweet :refer :all]
+            [clojure.java.io :as io])
+  (:import [javax.imageio ImageIO]
+           [java.awt.image.BufferedImage]))
 
 (fact "Should render strings, keywords, and numbers"
       (to-mime 1) => "{\"text/plain\":\"1\"}"
@@ -23,3 +26,8 @@
 (fact "Should render deftype toString"
       (to-mime (Custom.)) => "{\"text/plain\":\"my-custom\"}")
 
+(fact "BufferedImage to-mime should at least not blow up"
+      (-> (io/input-stream "images/demo.png")
+          ImageIO/read
+          to-mime
+          nil?) => false)

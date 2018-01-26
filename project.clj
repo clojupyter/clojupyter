@@ -1,4 +1,4 @@
-(defproject clojupyter "0.1.2"
+(defproject clojupyter "0.2.0-SNAPSHOT"
   :description "An IPython kernel for executing Clojure code"
   :url "http://github.com/roryk/clojupyter"
   :license {:name "MIT"}
@@ -18,7 +18,8 @@
                  [org.clojure/tools.nrepl "0.2.12"]
                  [org.zeromq/cljzmq "0.1.4" :exclusions [org.zeromq/jzmq]]
                  [org.zeromq/jeromq "0.3.4"] ; "0.3.5" (modern) fails on zmq/bind.
-                 [pandect "0.5.4"]]
+                 [pandect "0.5.4"]
+                 [hiccup "1.0.5"]]
   :aot [clojupyter.core]
   :main clojupyter.core
   :jvm-opts ["-Xmx250m"]

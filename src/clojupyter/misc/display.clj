@@ -38,8 +38,12 @@
     (mc/stream-to-string
      {:text/html html})))
 
-(defn make-html [html]
-  (HtmlString. html))
+(defn html [html-str]
+  (HtmlString. html-str))
+
+(defn ^:deprecated make-html
+  [html-str]
+  (html html-str))
 
 (defrecord HiccupHTML [html-data]
 
@@ -60,8 +64,12 @@
     (mc/stream-to-string
      {:text/latex latex})))
 
-(defn make-latex [latex]
-  (Latex. latex))
+(defn latex [latex-str]
+  (Latex. latex-str))
+
+(defn ^:deprecated make-latex
+  [latex-str]
+  (latex latex-str))
 
 
 ;; Markdown
@@ -73,5 +81,9 @@
     (mc/stream-to-string
      {:text/markdown markdown})))
 
-(defn make-markdown [markdown]
-  (Markdown. markdown))
+(defn markdown [markdown-str]
+  (Markdown. markdown-str))
+
+(defn ^:deprecated make-markdown
+  [markdown-str]
+  (markdown markdown-str))

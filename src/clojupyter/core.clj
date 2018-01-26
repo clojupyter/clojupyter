@@ -1,6 +1,5 @@
 (ns clojupyter.core
   (:require [beckon]
-            [cider.nrepl :as cider]
             [clojupyter.middleware.mime-values]
             [clojupyter.misc.zmq-comm :as zmq-comm]
             [clojupyter.misc.nrepl-comm :as nrepl-comm]
@@ -40,16 +39,19 @@
 (def clojupyter-middleware
   '[clojupyter.middleware.mime-values/mime-values])
 
-(def clojupyer-nrepl-handler
+(defn clojupyer-nrepl-handler []
+  ;; dynamically load to allow cider-jack-in to work
+  ;; see https://github.com/clojure-emacs/cider-nrepl/issues/447
+  (require 'cider.nrepl)
   (apply nrepl.server/default-handler
          (map resolve
-              (concat cider/cider-middleware
+              (concat (ns-resolve 'cider.nrepl 'cider-nrepl-middleware)
                       clojupyter-middleware))))
 
 (defn start-nrepl-server []
   (nrepl.server/start-server
    :port (get-free-port!)
-   :handler clojupyer-nrepl-handler))
+   :handler (clojupyer-nrepl-handler)))
 
 (defn exception-handler [e]
   (log/error (with-out-str (st/print-stack-trace e 20))))

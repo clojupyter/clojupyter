@@ -8,10 +8,9 @@ Jupyter console and notebook.
 
 See [this notebook](https://raw.github.com/roryk/clojupyter/master/examples/html-demo.ipynb) for examples of what you can do and [this one](https://raw.github.com/roryk/clojupyter/master/examples/incanter-demo.ipynb) for an example using Incanter for plotting. Below are some screen shots to whet your appetite:
 
-![](https://raw.githubusercontent.com/aria42/clojupyter/mime-improvements/images/html-demo.png =600x400)
+<img src="https://raw.githubusercontent.com/aria42/clojupyter/mime-improvements/images/html-demo.png" width="100%""/>
 
-![](https://raw.githubusercontent.com/aria42/clojupyter/mime-improvements/images/incanter-demo.png =600x400)
-
+<img src="https://raw.githubusercontent.com/aria42/clojupyter/mime-improvements/images/incanter-demo.png" width="100%"/>
 
 ### Installation
 

@@ -3,7 +3,8 @@
             [clojupyter.misc.states :as states]
             [cheshire.core :as cheshire]
             [clojure.data.codec.base64 :as b64]
-            [clojure.java.io :as io])
+            [clojure.java.io :as io]
+            [hiccup.core :as hiccup])
   (:import [javax.imageio ImageIO]))
 
 (defn display [obj]
@@ -30,7 +31,7 @@
 
 ;; Html
 
-(defrecord Html [html]
+(defrecord HtmlString [html]
 
   mc/PMimeConvertible
   (to-mime [_]
@@ -38,7 +39,17 @@
      {:text/html html})))
 
 (defn make-html [html]
-  (Html. html))
+  (HtmlString. html))
+
+(defrecord HiccupHTML [html-data]
+
+  mc/PMimeConvertible
+  (to-mime [_]
+    (mc/stream-to-string
+     {:text/html (hiccup/html html-data)})))
+
+(defn hiccup-html [html-data]
+  (HiccupHTML. html-data))
 
 ;; Latex
 

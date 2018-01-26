@@ -12,10 +12,9 @@
 
 ;; Incanter Plot
 
-(defrecord IncanterPlot [chart width height])
+(defrecord IncanterPlot [chart width height]
 
-(extend-protocol mc/PMimeConvertible
-  IncanterPlot
+  mc/PMimeConvertible
   (to-mime [plot]
     (let [out (io/java.io.ByteArrayOutputStream.)
           {:keys [chart width height]} plot]
@@ -31,26 +30,24 @@
 
 ;; Html
 
-(defrecord Html [html])
+(defrecord Html [html]
 
-(extend-protocol mc/PMimeConvertible
-  Html
-  (to-mime [self]
-      (mc/stream-to-string
-       {:text/html (:html self)})))
+  mc/PMimeConvertible
+  (to-mime [_]
+    (mc/stream-to-string
+     {:text/html html})))
 
 (defn make-html [html]
   (Html. html))
 
 ;; Latex
 
-(defrecord Latex [latex])
+(defrecord Latex [latex]
 
-(extend-protocol mc/PMimeConvertible
-  Latex
-  (to-mime [self]
+  mc/PMimeConvertible
+  (to-mime [_]
     (mc/stream-to-string
-      {:text/latex (:latex self)})))
+     {:text/latex latex})))
 
 (defn make-latex [latex]
   (Latex. latex))
@@ -58,13 +55,12 @@
 
 ;; Markdown
 
-(defrecord Markdown [markdown])
+(defrecord Markdown [markdown]
 
-(extend-protocol mc/PMimeConvertible
-  Markdown
-  (to-mime [self]
+  mc/PMimeConvertible
+  (to-mime [_]
     (mc/stream-to-string
-      {:text/markdown (:markdown self)})))
+     {:text/markdown markdown})))
 
-(defn make-markdown [latex]
-  (Markdown. latex))
+(defn make-markdown [markdown]
+  (Markdown. markdown))

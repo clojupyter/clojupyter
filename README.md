@@ -6,11 +6,11 @@ Jupyter console and notebook.
 
 ### Getting Started 
 
-See [this notebook](https://raw.github.com/roryk/clojupyter/master/examples/html-demo.ipynb) for examples of how you can display HTML and use external Javascript:
+See [this notebook](https://github.com/aria42/clojupyter/blob/mime-improvements/examples/html-demo.ipynb) for examples of how you can display HTML and use external Javascript:
 
 <img src="https://raw.githubusercontent.com/aria42/clojupyter/mime-improvements/images/html-demo.png" width="100%"/>
 
-You can also use existing JVM charting libraries since you can render any Java BufferedImage. Here's a [sample notebook](https://raw.github.com/roryk/clojupyter/master/examples/incanter-demo.ipynb) using the Clojure-based [Incanter](https://github.com/incanter/incanter) library:
+You can also use existing JVM charting libraries since you can render any Java BufferedImage. Here's a [sample notebook](https://github.com/aria42/clojupyter/blob/mime-improvements/examples/incanter-demo.ipynb) using the Clojure-based [Incanter](https://github.com/incanter/incanter) library:
 
 <img src="https://raw.githubusercontent.com/aria42/clojupyter/mime-improvements/images/incanter-demo.png" width="100%"/>
 

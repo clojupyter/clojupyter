@@ -1,4 +1,4 @@
-## clojupyter
+# clojupyter
 A Jupyter kernel for Clojure. This will let you run Clojure code from the
 Jupyter console and notebook.
 

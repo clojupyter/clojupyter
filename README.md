@@ -2,6 +2,8 @@
 A Jupyter kernel for Clojure. This will let you run Clojure code from the
 Jupyter console and notebook.
 
+[![Build Status](https://travis-ci.org/clojupyter/clojupyter.svg?branch=master)](https://travis-ci.org/clojupyter/clojupyter)
+
 ![clojupyter](https://raw.github.com/roryk/clojupyter/master/images/demo.png)
 
 ### Getting Started 

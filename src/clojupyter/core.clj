@@ -45,7 +45,7 @@
   (require 'cider.nrepl)
   (apply nrepl.server/default-handler
          (map resolve
-              (concat (ns-resolve 'cider.nrepl 'cider-nrepl-middleware)
+              (concat (var-get (ns-resolve 'cider.nrepl 'cider-middleware))
                       clojupyter-middleware))))
 
 (defn start-nrepl-server []

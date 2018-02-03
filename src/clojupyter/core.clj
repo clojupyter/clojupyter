@@ -4,6 +4,7 @@
             [clojupyter.misc.zmq-comm :as zmq-comm]
             [clojupyter.misc.nrepl-comm :as nrepl-comm]
             [clojupyter.misc.states :as states]
+            [clojupyter.misc.history :as his]
             [clojupyter.misc.messages :refer :all]
             [clojupyter.protocol.zmq-comm :as pzmq]
             [clojupyter.protocol.nrepl-comm :as pnrepl]
@@ -64,7 +65,7 @@
           "execute_request"     (execute-request   message signer)
           "kernel_info_request" (kernel-info-reply zmq-comm
                                                    socket message signer)
-          "history_request"     (history-reply     zmq-comm
+          "history_request"     (history-reply     states zmq-comm
                                                    socket message signer)
           "shutdown_request"    (shutdown-reply    states zmq-comm nrepl-comm
                                                    socket message signer)
@@ -179,7 +180,9 @@
             (finally (doseq [socket [shell-socket iopub-socket control-socket hb-socket]]
                        (zmq/set-linger @socket 0)
                        (zmq/close @socket))
-                     (System/exit 0))))))))
+                     (his/end-history-session (:history-session states) 5000)
+                     (System/exit 0)
+                     )))))))
 
 (defn -main [& args]
   (log/set-level! :error)

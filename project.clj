@@ -15,7 +15,9 @@
                  [org.clojure/core.async "0.2.395"]
                  [org.clojure/data.codec "0.1.0"]
                  [org.clojure/data.json "0.2.6"]
+                 [org.clojure/java.jdbc "0.3.7"]
                  [org.clojure/tools.nrepl "0.2.12"]
+                 [org.xerial/sqlite-jdbc "3.7.2"]
                  [org.zeromq/cljzmq "0.1.4" :exclusions [org.zeromq/jzmq]]
                  [org.zeromq/jeromq "0.3.4"] ; "0.3.5" (modern) fails on zmq/bind.
                  [pandect "0.5.4"]

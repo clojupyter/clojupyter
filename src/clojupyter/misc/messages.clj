@@ -4,6 +4,7 @@
    [clj-time.core :as time]
    [clj-time.format :as time-format]
    [clojupyter.misc.complete :as complete]
+   [clojupyter.misc.history :as his]
    [clojupyter.protocol.zmq-comm :as pzmq]
    [clojupyter.protocol.nrepl-comm :as pnrepl]
    [clojure.pprint :as pp]
@@ -275,10 +276,17 @@
                          content parent-header session-id metadata signer ident)))
 
 (defn history-reply
-  [zmq-comm
+  [states zmq-comm
    socket message signer]
-  "returns REPL history, not implemented for now and returns a dummy message"
-  {:history []})
+  (let [parent-header (:header message)
+        metadata {}
+        content  {:history (map #(vector (:session %) (:line %) (:source %))
+                            (his/get-history (:history-session states)))}
+        session-id (get-in message [:header :session])
+        ident (:idents message)]
+    (send-router-message zmq-comm socket
+                         "history_reply"
+                         content parent-header session-id metadata signer ident)))
 
 ;; Handlers
 
@@ -323,4 +331,5 @@
                              :data (cheshire/parse-string result true)
                              :metadata {}}
                             parent-header {} session-id signer)))
+          (his/add-history (:history-session states) @execution-count code)
           (swap! execution-count inc))))))

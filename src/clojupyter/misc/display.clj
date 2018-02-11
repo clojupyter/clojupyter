@@ -10,6 +10,17 @@
 
 ;; Html
 
+(defrecord HiccupHTML [html-data]
+
+  mc/PMimeConvertible
+  (to-mime [_]
+    (mc/stream-to-string
+      {:text/html (hiccup/html html-data)})))
+
+(defn hiccup-html [html-data]
+  (HiccupHTML. html-data))
+
+
 (defrecord HtmlString [html]
 
   mc/PMimeConvertible
@@ -17,22 +28,15 @@
     (mc/stream-to-string
      {:text/html html})))
 
-(defn html [html-str]
-  (HtmlString. html-str))
+(defn html [html-src]
+  (if (string? html-src)
+    (HtmlString. html-src)
+    (HiccupHTML. html-src)))
 
 (defn ^:deprecated make-html
   [html-str]
   (html html-str))
 
-(defrecord HiccupHTML [html-data]
-
-  mc/PMimeConvertible
-  (to-mime [_]
-    (mc/stream-to-string
-     {:text/html (hiccup/html html-data)})))
-
-(defn hiccup-html [html-data]
-  (HiccupHTML. html-data))
 
 ;; Latex
 

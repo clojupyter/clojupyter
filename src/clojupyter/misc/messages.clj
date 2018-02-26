@@ -139,26 +139,15 @@
 (defn complete-reply-content
   [nrepl-comm
    message]
-  (let [find-symbol (fn [code]
-                      (loop
-                          [pairs (map-indexed vector (reverse code))
-                           matched ""
-                           delimiter  nil]
-                        (let [character (second (first pairs))
-                              delimiter-map {\( :code
-                                             \" :string
-                                             \% :magic}
-                              delimiter (get delimiter-map character)]
-                          (if (and (not-empty pairs)
-                                   (nil? delimiter))
-                            (recur (rest pairs) (str character matched) delimiter)
-                            [(last (str/split matched #" "))
-                             delimiter]))))
+  (let [delimiters #{\( \" \% \space}
         content (:content message)
         cursor_pos (:cursor_pos content)
         code (subs (:code content) 0 cursor_pos)
-        [sym sym_type] (find-symbol code)]
+        sym (as-> (reverse code) $
+                  (take-while #(not (contains? delimiters %)) $)
+                  (apply str (reverse $)))]
     {:matches (pnrepl/nrepl-complete nrepl-comm sym)
+     :metadata {:_jupyter_types_experimental []}
      :cursor_start (- cursor_pos (count sym))
      :cursor_end cursor_pos
      :status "ok"}))

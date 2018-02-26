@@ -145,7 +145,7 @@
         code (subs (:code content) 0 cursor_pos)
         sym (as-> (reverse code) $
                   (take-while #(not (contains? delimiters %)) $)
-                  (apply str (reverse $)))
+                  (apply str (reverse $)))]
     {:matches (pnrepl/nrepl-complete nrepl-comm sym)
      :metadata {:_jupyter_types_experimental []}
      :cursor_start (- cursor_pos (count sym))

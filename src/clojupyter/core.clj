@@ -16,17 +16,7 @@
             [clojure.walk :as walk]
             [taoensso.timbre :as log]
             [zeromq.zmq :as zmq])
-  (:import [java.net ServerSocket InetSocketAddress])
   (:gen-class :main true))
-
-(defn get-free-port!
-  "Get a free port. Problem?: reuse address unavailable on windows?"
-  []
-  (let [socket (ServerSocket.)
-        _ (.setReuseAddress socket true)
-        _ (.bind socket (InetSocketAddress. "127.0.0.1" 0))
-        _ (.close socket)]
-    (.getLocalPort socket)))
 
 (defn prep-config [args]
   (-> args
@@ -52,7 +42,6 @@
 
 (defn start-nrepl-server []
   (nrepl.server/start-server
-   :port (get-free-port!)
    :handler (clojupyer-nrepl-handler)))
 
 (defn exception-handler [e]

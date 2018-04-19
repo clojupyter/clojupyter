@@ -13,8 +13,8 @@
 
 (defn add-dependencies
   [dependencies & {:keys [repositories]
-                   :or {repositories {"central" "http://repo1.maven.org/maven2/"
-                                      "clojars" "http://clojars.org/repo"}}}]
+                   :or {repositories {"central" "https://repo1.maven.org/maven2/"
+                                      "clojars" "https://clojars.org/repo"}}}]
 
   (pg/add-dependencies :coordinates `[~dependencies]
                        :repositories repositories))

@@ -16,16 +16,7 @@
             [clojure.walk :as walk]
             [taoensso.timbre :as log]
             [zeromq.zmq :as zmq])
-  (:import [java.net ServerSocket])
   (:gen-class :main true))
-
-(defn get-free-port!
-  "Get a free port. Problem?: might be taken before I use it."
-  []
-  (let [socket (ServerSocket. 0)
-        port (.getLocalPort socket)]
-    (.close socket)
-    port))
 
 (defn prep-config [args]
   (-> args
@@ -51,7 +42,6 @@
 
 (defn start-nrepl-server []
   (nrepl.server/start-server
-   :port (get-free-port!)
    :handler (clojupyer-nrepl-handler)))
 
 (defn exception-handler [e]

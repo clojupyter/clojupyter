@@ -11,19 +11,19 @@
                :subname      db-file}]
          (if (not has-db-file)
             (let [history-table (sql/create-table-ddl :history
-                                   [:session    :integer]
-                                   [:line       :integer]
-                                   [:source     :text]
-                                   [:primary :key "(session, line)"])
+                                   [[:session    :integer]
+                                    [:line       :integer]
+                                    [:source     :text]
+                                    [:primary :key "(session, line)"]])
                   session-table (sql/create-table-ddl :sessions
-                                             [:session  :integer
+                                             [[:session  :integer
                                               :primary :key
                                               :autoincrement]
                                              [:start    :timestamp]
                                              [:end      :timestamp]
                                              [:num_cmds :integer
                                               :default "0"]
-                                             [:remark   :text])]
+                                             [:remark   :text]])]
               (sql/execute! db [history-table])
               (sql/execute! db [session-table])) 
             )

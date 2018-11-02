@@ -277,6 +277,23 @@
                          "history_reply"
                          content parent-header session-id metadata signer ident)))
 
+(defn inspect-reply-content
+  [request-content]
+  {:status "ok" :found false :metadata {}
+   :data {:echo request-content}})
+
+(defn inspect-reply
+  [zmq-comm nrepl-comm
+   socket message signer]
+  (let [parent-header (:header message)
+        metadata {}
+        content (inspect-reply-content (:content message))
+        session-id (get-in message [:header :session])
+        ident (:idents message)]
+    (send-router-message zmq-comm socket
+                         "inspect_reply"
+                         content parent-header session-id metadata signer ident)))
+
 ;; Handlers
 
 (defn execute-request-handler

@@ -69,6 +69,8 @@
                                                    socket message signer)
           "comm_open"           (comm-open-reply   zmq-comm
                                                    socket message signer)
+          "inspect_request"     (inspect-reply     zmq-comm nrepl-comm
+                                                   socket message signer)
           (do
             (log/error "Message type" msg-type "not handled yet. Exiting.")
             (log/error "Message dump:" message)

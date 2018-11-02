@@ -279,8 +279,9 @@
 
 (defn inspect-reply-content
   [request-content]
-  {:status "ok" :found false :metadata {}
-   :data {:echo request-content}})
+  {:status "ok" :found true :metadata {}
+   :data {:text/html "<b>G'day, mate!</b>"
+          :text/plain "G'day, mate!"}})
 
 (defn inspect-reply
   [zmq-comm nrepl-comm

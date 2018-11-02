@@ -156,7 +156,9 @@
       (->> result
            :completions
            (map :candidate)
-           (into [])))))
+           (into []))))
+  (nrepl-doc [self sym]
+    (str "(doc " sym ")"))) ; FIXME
 
 (defn make-nrepl-comm [nrepl-server nrepl-transport
                        nrepl-client nrepl-session]

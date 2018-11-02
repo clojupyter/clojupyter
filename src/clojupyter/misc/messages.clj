@@ -278,17 +278,21 @@
                          content parent-header session-id metadata signer ident)))
 
 (defn inspect-reply-content
-  [request-content]
-  {:status "ok" :found true :metadata {}
-   :data {:text/html "<b>G'day, mate!</b>"
-          :text/plain "G'day, mate!"}})
+  [nrepl-comm request-content]
+  (let [code (:code request-content)
+        cursor_pos (:cursor_pos request-content)
+        sym (str "(token-at " code " " cursor_pos ")") ; FIXME
+        result (pnrepl/nrepl-doc nrepl-comm sym)]
+    {:status "ok" :found true :metadata {}
+     :data {:text/html (str "<pre>" result "</pre>")
+            :text/plain (str result)}}))
 
 (defn inspect-reply
   [zmq-comm nrepl-comm
    socket message signer]
   (let [parent-header (:header message)
         metadata {}
-        content (inspect-reply-content (:content message))
+        content (inspect-reply-content nrepl-comm (:content message))
         session-id (get-in message [:header :session])
         ident (:idents message)]
     (send-router-message zmq-comm socket

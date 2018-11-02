@@ -5,6 +5,7 @@
    [clj-time.format :as time-format]
    [clojupyter.misc.complete :as complete]
    [clojupyter.misc.history :as his]
+   [clojupyter.misc.tokenize :as tokenize]
    [clojupyter.protocol.zmq-comm :as pzmq]
    [clojupyter.protocol.nrepl-comm :as pnrepl]
    [clojure.pprint :as pp]
@@ -281,14 +282,16 @@
   [nrepl-comm request-content]
   (let [code (:code request-content)
         cursor_pos (:cursor_pos request-content)
-        sym code ; FIXME: find token at cursor_pos
-        result (pnrepl/nrepl-doc nrepl-comm sym)
-        found? (not (str/blank? result))]
-    (if found?
+        sym (tokenize/token-at code cursor_pos)
+        result (str/join "\n"
+                         (-> (pnrepl/nrepl-doc nrepl-comm sym)
+                             str/split-lines
+                             rest))]
+    (if (str/blank? result)
+      {:status "ok" :found false :metadata {} :data {}})
       {:status "ok" :found true :metadata {}
        :data {:text/html (str "<pre>" result "</pre>")
-              :text/plain (str result)}}
-      {:status "ok" :found false :metadata {} :data {}})))
+              :text/plain (str result)}}))
 
 (defn inspect-reply
   [zmq-comm nrepl-comm

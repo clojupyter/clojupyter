@@ -281,11 +281,14 @@
   [nrepl-comm request-content]
   (let [code (:code request-content)
         cursor_pos (:cursor_pos request-content)
-        sym (str "(token-at " code " " cursor_pos ")") ; FIXME
-        result (pnrepl/nrepl-doc nrepl-comm sym)]
-    {:status "ok" :found true :metadata {}
-     :data {:text/html (str "<pre>" result "</pre>")
-            :text/plain (str result)}}))
+        sym code ; FIXME: find token at cursor_pos
+        result (pnrepl/nrepl-doc nrepl-comm sym)
+        found? (not (str/blank? result))]
+    (if found?
+      {:status "ok" :found true :metadata {}
+       :data {:text/html (str "<pre>" result "</pre>")
+              :text/plain (str result)}}
+      {:status "ok" :found false :metadata {} :data {}})))
 
 (defn inspect-reply
   [zmq-comm nrepl-comm

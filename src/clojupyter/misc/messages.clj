@@ -283,15 +283,14 @@
   (let [code (:code request-content)
         cursor_pos (:cursor_pos request-content)
         sym (tokenize/token-at code cursor_pos)
-        result (str/join "\n"
-                         (-> (pnrepl/nrepl-doc nrepl-comm sym)
-                             str/split-lines
-                             rest))]
+        result (if-let [doc (pnrepl/nrepl-doc nrepl-comm sym)]
+                 (str/join "\n" (rest (str/split-lines doc)))
+                 "")]
     (if (str/blank? result)
-      {:status "ok" :found false :metadata {} :data {}})
+      {:status "ok" :found false :metadata {} :data {}}
       {:status "ok" :found true :metadata {}
        :data {:text/html (str "<pre>" result "</pre>")
-              :text/plain (str result)}}))
+              :text/plain (str result)}})))
 
 (defn inspect-reply
   [zmq-comm nrepl-comm

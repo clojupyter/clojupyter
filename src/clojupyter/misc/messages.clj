@@ -5,6 +5,7 @@
    [clj-time.format :as time-format]
    [clojupyter.misc.complete :as complete]
    [clojupyter.misc.history :as his]
+   [clojupyter.misc.tokenize :as tokenize]
    [clojupyter.protocol.zmq-comm :as pzmq]
    [clojupyter.protocol.nrepl-comm :as pnrepl]
    [clojure.pprint :as pp]
@@ -275,6 +276,32 @@
         ident (:idents message)]
     (send-router-message zmq-comm socket
                          "history_reply"
+                         content parent-header session-id metadata signer ident)))
+
+(defn inspect-reply-content
+  [nrepl-comm request-content]
+  (let [code (:code request-content)
+        cursor_pos (:cursor_pos request-content)
+        sym (tokenize/token-at code cursor_pos)
+        result (if-let [doc (pnrepl/nrepl-doc nrepl-comm sym)]
+                 (str/join "\n" (rest (str/split-lines doc)))
+                 "")]
+    (if (str/blank? result)
+      {:status "ok" :found false :metadata {} :data {}}
+      {:status "ok" :found true :metadata {}
+       :data {:text/html (str "<pre>" result "</pre>")
+              :text/plain (str result)}})))
+
+(defn inspect-reply
+  [zmq-comm nrepl-comm
+   socket message signer]
+  (let [parent-header (:header message)
+        metadata {}
+        content (inspect-reply-content nrepl-comm (:content message))
+        session-id (get-in message [:header :session])
+        ident (:idents message)]
+    (send-router-message zmq-comm socket
+                         "inspect_reply"
                          content parent-header session-id metadata signer ident)))
 
 ;; Handlers

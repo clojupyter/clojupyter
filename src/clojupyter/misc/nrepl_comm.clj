@@ -156,7 +156,14 @@
       (->> result
            :completions
            (map :candidate)
-           (into [])))))
+           (into []))))
+  (nrepl-doc [self sym]
+    (let [code (str "(clojure.repl/doc " sym ")")
+          result (-> (:nrepl-client self)
+                     (nrepl/message {:op :eval
+                                     :code code})
+                     nrepl/combine-responses)]
+    (:out result))))
 
 (defn make-nrepl-comm [nrepl-server nrepl-transport
                        nrepl-client nrepl-session]

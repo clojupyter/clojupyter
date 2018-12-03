@@ -1,5 +1,5 @@
 (ns clojupyter.misc.complete
-  (require [net.cgrand.sjacket.parser :as p]))
+  (:require [net.cgrand.sjacket.parser :as p]))
 
 (defn complete? [code]
   (not (some  #(= :net.cgrand.parsley/unfinished %)

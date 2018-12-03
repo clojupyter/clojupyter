@@ -1,5 +1,5 @@
 (ns clojupyter.misc.messages
-  (require
+  (:require
    [cheshire.core :as cheshire]
    [clj-time.core :as time]
    [clj-time.format :as time-format]

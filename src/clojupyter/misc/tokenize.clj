@@ -1,5 +1,5 @@
 (ns clojupyter.misc.tokenize
-  (require [clojure.string :as string]))
+  (:require [clojure.string :as string]))
 
 
 (defn re-index

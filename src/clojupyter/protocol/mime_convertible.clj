@@ -5,7 +5,7 @@
    [clojure.java.io :as io])
   (:import
    [javax.imageio ImageIO]
-   [java.awt.image.BufferedImage]))
+   [java.awt.image BufferedImage]))
 
 (defn stream-to-string [map]
   (let [repr (java.io.StringWriter.)]

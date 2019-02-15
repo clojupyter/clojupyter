@@ -10,9 +10,9 @@
    [clojupyter.protocol.nrepl-comm :as pnrepl]
    [clojure.pprint :as pp]
    [clojure.string :as str]
-   [clojure.tools.nrepl :as nrepl]
-   [clojure.tools.nrepl.misc :as nrepl.misc]
-   [clojure.tools.nrepl.server :as nrepl.server]
+   [nrepl.core :as nrepl]
+   [nrepl.misc :as nrepl.misc]
+   [nrepl.server :as nrepl.server]
    [pandect.algo.sha256 :refer [sha256-hmac]]
    [taoensso.timbre :as log]
    [zeromq.zmq :as zmq]))

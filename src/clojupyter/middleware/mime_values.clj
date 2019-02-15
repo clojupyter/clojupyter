@@ -1,9 +1,9 @@
 (ns clojupyter.middleware.mime-values
-  (:require [clojure.tools.nrepl.transport :as t]
+  (:require [nrepl.transport :as t]
             [clojupyter.protocol.mime-convertible :as mime]
-            [clojure.tools.nrepl.middleware.pr-values])
-  (:use [clojure.tools.nrepl.middleware :only (set-descriptor!)])
-  (:import clojure.tools.nrepl.transport.Transport))
+            [nrepl.middleware.print])
+  (:use [nrepl.middleware :only (set-descriptor!)])
+  (:import nrepl.transport.Transport))
 
 (defn mime-values
   [h]
@@ -21,6 +21,6 @@
                         this))))))
 
 (set-descriptor! #'mime-values
-                 {:requires #{#'clojure.tools.nrepl.middleware.pr-values/pr-values}
+                 {:requires #{#'nrepl.middleware.print/wrap-print}
                   :expects #{"eval"}
                   :handles {}})

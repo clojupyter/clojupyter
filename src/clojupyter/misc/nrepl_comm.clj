@@ -4,8 +4,8 @@
             [clojupyter.misc.messages :refer :all]
             [clojupyter.protocol.zmq-comm :as pzmq]
             [clojure.pprint :as pp]
-            [clojure.tools.nrepl :as nrepl]
-            [clojure.tools.nrepl.misc :as nrepl.misc]
+            [nrepl.core :as nrepl]
+            [nrepl.misc :as nrepl.misc]
             [taoensso.timbre :as log]
             [zeromq.zmq :as zmq]))
 

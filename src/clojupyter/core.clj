@@ -11,8 +11,8 @@
             [clojure.data.json :as json]
             [clojure.pprint :as pp]
             [clojure.stacktrace :as st]
-            [clojure.tools.nrepl :as nrepl]
-            [clojure.tools.nrepl.server :as nrepl.server]
+            [nrepl.core :as nrepl]
+            [nrepl.server :as nrepl.server]
             [clojure.walk :as walk]
             [taoensso.timbre :as log]
             [zeromq.zmq :as zmq])

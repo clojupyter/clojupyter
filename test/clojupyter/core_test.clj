@@ -10,8 +10,8 @@
             [clojupyter.protocol.nrepl-comm :as pnrepl]
             [clojupyter.protocol.zmq-comm :as pzmq]
             [clojure.pprint :as p]
-            [clojure.tools.nrepl :as nrepl]
-            [clojure.tools.nrepl.server :as nrepl.server]
+            [nrepl.core :as nrepl]
+            [nrepl.server :as nrepl.server]
             [midje.sweet :refer :all]
             [taoensso.timbre :as log]
             [zeromq.zmq :as zmq]))

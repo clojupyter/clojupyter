@@ -11,7 +11,7 @@
                  [net.cgrand/parsley "0.9.3" :exclusions [org.clojure/clojure]]
                  [net.cgrand/sjacket "0.1.1" :exclusions [org.clojure/clojure
                                                           net.cgrand.parsley]]
-                 [org.clojure/clojure "1.8.0"]
+                 [org.clojure/clojure "1.10.0"]
                  [org.clojure/core.async "0.2.395"]
                  [org.clojure/data.codec "0.1.0"]
                  [org.clojure/data.json "0.2.6"]

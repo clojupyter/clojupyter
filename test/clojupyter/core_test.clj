@@ -98,7 +98,7 @@
            :implementation "clojupyter",
            :language_info
            {:name "clojure",
-            :version "1.8.0",
+            :version "1.10.0",
             :mimetype "text/x-clojure",
             :file_extension ".clj"},
            :banner "Clojupyters-0.1.0",

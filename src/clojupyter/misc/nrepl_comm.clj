@@ -140,7 +140,8 @@
 
       ;; set traceback for when there are exceptions or interrupted
       (when-let [ex (:ename @result)]
-        (swap! result assoc :traceback
+        ;; kh@harbo-enterprises.com: Workaround to avoid uncaught throw in stacktrace processing
+        #_(swap! result assoc :traceback 
                (if (re-find #"StackOverflowError" ex) []
                    (stacktrace-string (pnrepl/nrepl-trace self)))))
       (log/info "eval-result: " (with-out-str (pp/pprint @result)))

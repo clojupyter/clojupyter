@@ -3,7 +3,7 @@
             [clojupyter.protocol.mime-convertible :as mime]
             [nrepl.middleware.pr-values])
   (:use [nrepl.middleware :only (set-descriptor!)])
-  (:import nrepl.transport.Transport))
+  (:import [nrepl.transport Transport]))
 
 (defn mime-values
   [h]

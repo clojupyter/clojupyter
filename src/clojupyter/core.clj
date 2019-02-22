@@ -40,9 +40,16 @@
               (concat (var-get (ns-resolve 'cider.nrepl 'cider-middleware))
                       clojupyter-middleware))))
 
+(defonce ^:dynamic ^:private *NREPL-SERVER-ADDR* nil)
+
+(defn nrepl-server-addr [] (str *NREPL-SERVER-ADDR*))
+
 (defn start-nrepl-server []
-  (nrepl.server/start-server
-   :handler (clojupyer-nrepl-handler)))
+  (let [srv (nrepl.server/start-server :handler (clojupyer-nrepl-handler))
+        sock-addr (.getLocalSocketAddress (:server-socket srv))]
+    (println (str "Started NREPL server on " sock-addr "."))
+    (alter-var-root #'*NREPL-SERVER-ADDR* (constantly sock-addr))
+    srv))
 
 (defn exception-handler [e]
   (log/error (with-out-str (st/print-stack-trace e 20))))

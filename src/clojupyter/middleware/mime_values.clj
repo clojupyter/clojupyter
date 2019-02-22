@@ -1,5 +1,6 @@
 (ns clojupyter.middleware.mime-values
   (:require [nrepl.transport :as t]
+            [clojure.pprint :as pp]
             [clojupyter.protocol.mime-convertible :as mime]
             [nrepl.middleware.pr-values])
   (:use [nrepl.middleware :only (set-descriptor!)])
@@ -15,8 +16,7 @@
                       (send [this {:keys [value] :as resp}]
                         (.send transport
                                (if-let [[_ v] (find resp :value)]
-                                 (assoc (assoc resp :value (mime/to-mime value))
-                                        :printed-value true)
+                                 (assoc resp :mime-tagged-value (mime/to-mime value))
                                  resp))
                         this))))))
 

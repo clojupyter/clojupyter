@@ -104,27 +104,22 @@
                        (send-message zmq-comm :iopub-socket "stream"
                                      {:name "stdout" :text msg}
                                      parent-header {} session-id signer))]
-      (doseq [{:keys [ns out err status session ex value] :as msg}
+      (doseq [{:keys [ns out err status session ex mime-tagged-value] :as msg}
               (nrepl/message (:nrepl-client self)
                              {:id command-id
                               :op :eval
                               :session (:nrepl-session self)
                               :code code})
               :while (not (done? msg pending))]
-        (if (not @interrupted)
-          (do
-            (log/info "nrepl status " status)
-            (when ns  (reset! current-ns ns))
-            (when out (stdout out))
-            (when err (stderr err))
-            (when ex (swap! result assoc :ename ex))
-            (when value (swap! result assoc :result value))
-            (when (some #{"need-input"} status) (pass-input-to-nrepl
-                                                 nrepl-client session pending))
-            (Thread/sleep io-sleep)
-            )
-          )
-        )
+        (when-not @interrupted
+          (log/info "nrepl status " status)
+          (when ns  (reset! current-ns ns))
+          (when out (stdout out))
+          (when err (stderr err))
+          (when ex (swap! result assoc :ename ex))
+          (when mime-tagged-value (swap! result assoc :result mime-tagged-value))
+          (when (some #{"need-input"} status) (pass-input-to-nrepl nrepl-client session pending))
+          (Thread/sleep io-sleep)))
 
       ;; report and reset interrupt
       (when @interrupted (swap! result assoc :ename "interrupted"))
@@ -140,10 +135,13 @@
 
       ;; set traceback for when there are exceptions or interrupted
       (when-let [ex (:ename @result)]
-        ;; kh@harbo-enterprises.com: Workaround to avoid uncaught throw in stacktrace processing
-        #_(swap! result assoc :traceback 
-               (if (re-find #"StackOverflowError" ex) []
-                   (stacktrace-string (pnrepl/nrepl-trace self)))))
+        ;; 2019-02-15 (Klaus Harbo): Workaround to avoid uncaught exception in stacktrace processing
+        ;;			     TODO: Fix stacktrace processing (presumed to be related to
+        ;;			     nrepl update).
+        (swap! result assoc :traceback 
+               ["No traceback available (disabled)."]
+               (comment "KH: Keep original code for reference."
+                 (if (re-find #"StackOverflowError" ex) [] (stacktrace-string (pnrepl/nrepl-trace self))))))
       (log/info "eval-result: " (with-out-str (pp/pprint @result)))
       @result))
   (nrepl-complete [self code]

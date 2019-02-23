@@ -140,8 +140,8 @@
         ;;			     nrepl update).
         (swap! result assoc :traceback 
                ["No traceback available (disabled)."]
-               (comment "KH: Keep original code for reference."
-                 (if (re-find #"StackOverflowError" ex) [] (stacktrace-string (pnrepl/nrepl-trace self))))))
+               #_(comment "KH: Keep original code for reference."
+                          (if (re-find #"StackOverflowError" ex) [] (stacktrace-string (pnrepl/nrepl-trace self))))))
       (log/info "eval-result: " (with-out-str (pp/pprint @result)))
       @result))
   (nrepl-complete [self code]

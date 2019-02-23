@@ -19,9 +19,9 @@
 
 (def protocol-version "5.0")
 
-(defn uuid [] (str (java.util.UUID/randomUUID)))
+(defn- uuid [] (str (java.util.UUID/randomUUID)))
 
-(defn now []
+(defn- now []
   "Returns current ISO 8601 compliant date."
   (let [current-date-time (time/to-time-zone (time/now) (time/default-time-zone))]
     (time-format/unparse
@@ -29,7 +29,7 @@
        (.getZone current-date-time))
      current-date-time)))
 
-(defn message-header [message msgtype]
+(defn- message-header [message msgtype]
   (cheshire/generate-string
    {:msg_id (uuid)
     :date (now)
@@ -38,7 +38,7 @@
     :msg_type msgtype
     :version protocol-version}))
 
-(defn new-header [msg_type session-id]
+(defn- new-header [msg_type session-id]
   {:date (now)
    :version protocol-version
    :msg_id (uuid)
@@ -46,21 +46,21 @@
    :session session-id
    :msg_type msg_type})
 
-(defn send-message-piece
+(defn- send-message-piece
   [zmq-comm
    socket msg]
   (log/debug "Sending" (with-out-str (pp/pprint msg)))
   (pzmq/zmq-send zmq-comm socket (.getBytes msg) zmq/send-more)
   (log/debug "Finished sending part"))
 
-(defn finish-message
+(defn- finish-message
   [zmq-comm
    socket msg]
   (log/debug "Sending" (with-out-str (pp/pprint msg)))
   (pzmq/zmq-send zmq-comm socket (.getBytes msg))
   (log/debug "Finished sending all"))
 
-(defn send-router-message
+(defn- send-router-message
   [zmq-comm
    socket msg_type content parent-header session-id metadata signer idents]
   (log/info "Trying to send router message\n"
@@ -128,16 +128,15 @@
   {:execution_count execution-count
    :code (get-in message [:content :code])})
 
-(defn is-complete-reply-content
+(defn- is-complete-reply-content
   "Returns whether or not what the user has typed is complete (ready for execution).
    Not yet implemented. May be that it is just used by jupyter-console."
   [message]
   (if (complete/complete? (:code (:content message)))
     {:status "complete"}
-    {:status "incomplete"})
-  )
+    {:status "incomplete"}))
 
-(defn complete-reply-content
+(defn- complete-reply-content
   [nrepl-comm
    message]
   (let [delimiters #{\( \" \% \space}
@@ -153,7 +152,7 @@
      :cursor_end cursor_pos
      :status "ok"}))
 
-(defn kernel-info-content []
+(defn- kernel-info-content []
   {:status "ok"
    :protocol_version protocol-version
    :implementation "clojupyter"
@@ -164,7 +163,7 @@
    :banner "Clojupyters-0.1.0"
    :help_links []})
 
-(defn comm-open-reply-content [message]
+(defn- comm-open-reply-content [message]
   {:comm_id (get-in message [:content :comm_id])
    :data {}})
 
@@ -180,9 +179,8 @@
                          content parent-header session-id metadata signer ident)))
 
 (defn comm-open-reply
-  [zmq-comm
-   socket message signer]
   "Just close a comm immediately since we don't handle it yet"
+  [{:keys [zmq-comm socket message signer]}]
   (let [parent-header (:header message)
         session-id (get-in message [:header :session])
         ident (:idents message)
@@ -193,8 +191,7 @@
                          content parent-header session-id metadata signer ident)))
 
 (defn kernel-info-reply
-  [zmq-comm
-   socket message signer]
+  [{:keys [zmq-comm socket message signer]}]
   (let [parent-header (:header message)
         session-id (get-in message [:header :session])
         ident (:idents message)
@@ -205,7 +202,7 @@
                          content parent-header session-id metadata signer ident)))
 
 (defn shutdown-reply
-  [states zmq-comm nrepl-comm socket message signer]
+  [{:keys [states zmq-comm nrepl-comm socket message signer]}]
   (let [parent-header (:header message)
         metadata {}
         restart (get-in message message [:content :restart])
@@ -221,8 +218,7 @@
     (Thread/sleep 100)))
 
 (defn comm-info-reply
-  [zmq-comm
-   socket message signer]
+  [{:keys [zmq-comm socket message signer]}]
   (let [parent-header (:header message)
         metadata {}
         content  {:comms
@@ -232,8 +228,7 @@
                   content parent-header metadata session-id signer)))
 
 (defn comm-msg-reply
-  [zmq-comm
-   socket message socket signer]
+  [{:keys [zmq-comm socket message socket signer]}]
   (let [parent-header (:header message)
         metadata {}
         content  {}
@@ -242,8 +237,7 @@
                   content parent-header metadata session-id signer)))
 
 (defn is-complete-reply
-  [zmq-comm
-   socket message signer]
+  [{:keys [zmq-comm socket message signer]}]
   (let [parent-header (:header message)
         metadata {}
         content  (is-complete-reply-content message)
@@ -254,8 +248,7 @@
                          content parent-header session-id metadata signer ident)))
 
 (defn complete-reply
-  [zmq-comm nrepl-comm
-   socket message signer]
+  [{:keys [zmq-comm nrepl-comm socket message signer]}]
   (let [parent-header (:header message)
         metadata {}
         content  (complete-reply-content nrepl-comm message)
@@ -266,8 +259,7 @@
                          content parent-header session-id metadata signer ident)))
 
 (defn history-reply
-  [states zmq-comm
-   socket message signer]
+  [{:keys [states zmq-comm socket message signer]}]
   (let [parent-header (:header message)
         metadata {}
         content  {:history (map #(vector (:session %) (:line %) (:source %))
@@ -278,7 +270,7 @@
                          "history_reply"
                          content parent-header session-id metadata signer ident)))
 
-(defn inspect-reply-content
+(defn- inspect-reply-content
   [nrepl-comm request-content]
   (let [code (:code request-content)
         cursor_pos (:cursor_pos request-content)
@@ -293,8 +285,7 @@
               :text/plain (str result)}})))
 
 (defn inspect-reply
-  [zmq-comm nrepl-comm
-   socket message signer]
+  [{:keys [zmq-comm nrepl-comm socket message signer]}]
   (let [parent-header (:header message)
         metadata {}
         content (inspect-reply-content nrepl-comm (:content message))
@@ -306,10 +297,10 @@
 
 ;; Handlers
 
-(defn execute-request-handler
-  [states zmq-comm nrepl-comm socket]
+(defn make-execute-request-handler
+  []
   (let [execution-count (atom 1N)]
-    (fn [message signer]
+    (fn [{:keys [states zmq-comm nrepl-comm socket message signer]}]
       (let [session-id (get-in message [:header :session])
             ident (:idents message)
             parent-header (:header message)

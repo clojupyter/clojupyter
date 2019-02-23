@@ -18,14 +18,16 @@
             [zeromq.zmq :as zmq])
   (:gen-class :main true))
 
-(defn prep-config [args]
+(defonce VERSION "66")
+
+(defn- prep-config [args]
   (-> args
       first
       slurp
       json/read-str
       walk/keywordize-keys))
 
-(defn address [config service]
+(defn- address [config service]
   (str (:transport config) "://" (:ip config) ":" (service config)))
 
 (def clojupyter-middleware
@@ -51,52 +53,49 @@
     (alter-var-root #'*NREPL-SERVER-ADDR* (constantly sock-addr))
     srv))
 
-(defn exception-handler [e]
+(defn- exception-handler [e]
   (log/error (with-out-str (st/print-stack-trace e 20))))
 
-(defn configure-shell-handler [states zmq-comm nrepl-comm socket signer]
-  (let [execute-request (execute-request-handler states zmq-comm nrepl-comm socket)]
-    (fn [message]
-      (let [msg-type (get-in message [:header :msg_type])]
-        (case msg-type
-          "execute_request"     (execute-request   message signer)
-          "kernel_info_request" (kernel-info-reply zmq-comm
-                                                   socket message signer)
-          "history_request"     (history-reply     states zmq-comm
-                                                   socket message signer)
-          "shutdown_request"    (shutdown-reply    states zmq-comm nrepl-comm
-                                                   socket message signer)
-          "comm_info_request"   (comm-info-reply   zmq-comm
-                                                   socket message signer)
-          "comm_msg"            (comm-msg-reply    zmq-comm
-                                                   socket message signer)
-          "is_complete_request" (is-complete-reply zmq-comm
-                                                   socket message signer)
-          "complete_request"    (complete-reply    zmq-comm nrepl-comm
-                                                   socket message signer)
-          "comm_open"           (comm-open-reply   zmq-comm
-                                                   socket message signer)
-          "inspect_request"     (inspect-reply     zmq-comm nrepl-comm
-                                                   socket message signer)
-          (do
-            (log/error "Message type" msg-type "not handled yet. Exiting.")
-            (log/error "Message dump:" message)
-            (System/exit -1)))))))
+(defn handler-failure
+  [{:keys [msg-type message] :as S}]
+  (log/error "Message type" msg-type "not handled yet. Exiting.")
+  (log/error "Message dump:" message)
+  (System/exit -1))
 
-(defn configure-control-handler [states zmq-comm nrepl-comm socket signer]
+(def ^:private HANDLER-MAP
+  {"kernel_info_request" kernel-info-reply
+   "history_request"     history-reply   
+   "shutdown_request"    shutdown-reply
+   "comm_info_request"   comm-info-reply
+   "comm_msg"            comm-msg-reply
+   "is_complete_request" is-complete-reply
+   "complete_request"    complete-reply
+   "comm_open"           comm-open-reply
+   "inspect_request"     inspect-reply})
+
+(defn- configure-shell-handler [S]
+  (let [execute-request-handler (make-execute-request-handler)]
+    (fn [message]
+      (let [msg-type (get-in message [:header :msg_type])
+            handler (if (= msg-type "execute_request")
+                      execute-request-handler
+                      (get HANDLER-MAP msg-type handler-failure))
+            S (assoc S :message message :msg-type msg-type)]
+        (handler S)))))
+
+(defn- configure-control-handler [S]
   (fn [message]
-    (let [msg-type (get-in message [:header :msg_type])]
+    (let [msg-type (get-in message [:header :msg_type])
+          S (assoc S :message message :msg-type msg-type)]
       (case msg-type
-        "kernel_info_request" (kernel-info-reply zmq-comm
-                                                 socket message signer)
-        "shutdown_request"    (shutdown-reply    states zmq-comm nrepl-comm
-                                                 socket message signer)
+        "kernel_info_request" (kernel-info-reply S)
+        "shutdown_request"    (shutdown-reply    S)
         (do
           (log/error "Message type" msg-type "not handled yet. Exiting.")
           (log/error "Message dump:" message)
           (System/exit -1))))))
 
-(defn process-event [states zmq-comm socket signer handler]
+(defn- process-event [{:keys [states zmq-comm socket signer handler]}]
   (let [message        (pzmq/zmq-read-raw-message zmq-comm socket 0)
         parsed-message (parse-message message)
         parent-header  (:header parsed-message)
@@ -107,37 +106,39 @@
     (send-message zmq-comm :iopub-socket "status"
                   (status-content "idle") parent-header {} session-id signer)))
 
-(defn event-loop [states zmq-comm socket signer handler]
+(defn- event-loop [{:keys [states zmq-comm socket signer handler] :as S}]
   (try
     (while @(:alive states)
-      (process-event states zmq-comm socket signer handler))
+      (process-event S))
     (catch Exception e
       (exception-handler e))))
 
-(defn process-heartbeat [zmq-comm socket]
+(defn- process-heartbeat [zmq-comm socket]
   (let [message (pzmq/zmq-recv zmq-comm socket)]
     (pzmq/zmq-send zmq-comm socket message)))
 
-(defn heartbeat-loop [states zmq-comm]
+(defn- heartbeat-loop [{:keys [states zmq-comm]}]
   (try
     (while @(:alive states)
       (process-heartbeat zmq-comm :hb-socket))
     (catch Exception e
       (exception-handler e))))
 
-(defn shell-loop [states zmq-comm nrepl-comm signer checker]
-  (let [socket        :shell-socket
-        shell-handler (configure-shell-handler states zmq-comm nrepl-comm socket signer)
-        sigint-handle (fn [] (pp/pprint (pnrepl/nrepl-interrupt nrepl-comm)))]
+(defn- shell-loop [{:keys [states zmq-comm nrepl-comm signer checker] :as S}]
+  (let [socket        	:shell-socket
+        S		(assoc S :socket socket)
+        shell-handler	(configure-shell-handler S)
+        sigint-handle 	(fn [] (pp/pprint (pnrepl/nrepl-interrupt nrepl-comm)))]
     (reset! (beckon/signal-atom "INT") #{sigint-handle})
-    (event-loop states zmq-comm socket signer shell-handler)))
+    (event-loop (assoc S :handler shell-handler))))
 
-(defn control-loop [states zmq-comm nrepl-comm signer checker]
+(defn- control-loop [{:keys [states zmq-comm nrepl-comm signer checker] :as S}]
   (let [socket          :control-socket
-        control-handler (configure-control-handler states zmq-comm nrepl-comm socket signer)]
-    (event-loop states zmq-comm socket signer control-handler)))
+        S		(assoc S :socket socket)
+        control-handler (configure-control-handler S)]
+    (event-loop (assoc S :handler control-handler))))
 
-(defn run-kernel [config]
+(defn- run-kernel [config]
   (let [hb-addr			(address config :hb_port)
         shell-addr		(address config :shell_port)
         iopub-addr		(address config :iopub_port)
@@ -166,11 +167,13 @@
               nrepl-session	(nrepl/new-session nrepl-client)
               nrepl-comm	(nrepl-comm/make-nrepl-comm nrepl-server nrepl-transport
                                                             nrepl-client nrepl-session)
+              S			{:states states :zmq-comm zmq-comm :nrepl-comm nrepl-comm
+                                 :signer signer :checker checker}
               status-sleep  1000]
           (try
-            (future (shell-loop     states zmq-comm nrepl-comm signer checker))
-            (future (control-loop   states zmq-comm nrepl-comm signer checker))
-            (future (heartbeat-loop states zmq-comm))
+            (future (shell-loop     S))
+            (future (control-loop   S))
+            (future (heartbeat-loop S))
             ;; check every second if state
             ;; has changed to anything other than alive
             (while @(:alive states) (Thread/sleep status-sleep))

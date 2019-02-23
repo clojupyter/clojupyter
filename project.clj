@@ -1,10 +1,10 @@
-(defproject clojupyter "0.2.0-SNAPSHOT"
+(defproject clojupyter "0.1.1"
   :description "An IPython kernel for executing Clojure code"
   :url "http://github.com/roryk/clojupyter"
   :license {:name "MIT"}
   :aot [clojupyter.core]
   :main clojupyter.core
-  ;:jvm-opts ["-Xmx250m"]
+  :jvm-opts ["-Xmx10000m"]
   :keep-non-project-classes true
   :profiles {:dev {:dependencies [[midje "1.9.0" :exclusions [org.clojure/clojure]]]
                    :plugins [[lein-midje "3.2.1"]]}}

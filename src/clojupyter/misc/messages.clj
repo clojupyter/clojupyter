@@ -60,7 +60,7 @@
   (pzmq/zmq-send zmq-comm socket (.getBytes msg))
   (log/debug "Finished sending all"))
 
-(defn- send-router-message
+(defn send-router-message
   [zmq-comm
    socket msg_type content parent-header session-id metadata signer idents]
   (log/info "Trying to send router message\n"
@@ -295,48 +295,5 @@
                          "inspect_reply"
                          content parent-header session-id metadata signer ident)))
 
-;; Handlers
 
-(defn make-execute-request-handler
-  []
-  (let [execution-count (atom 1N)]
-    (fn [{:keys [states zmq-comm nrepl-comm socket message signer]}]
-      (let [session-id (get-in message [:header :session])
-            ident (:idents message)
-            parent-header (:header message)
-            code (get-in message [:content :code])
-            silent (str/ends-with? code ";")]
-        (send-message zmq-comm :iopub-socket "execute_input"
-                      (pyin-content @execution-count message)
-                      parent-header {} session-id signer)
-        (let [nrepl-resp (pnrepl/nrepl-eval nrepl-comm states zmq-comm
-                                            code parent-header
-                                            session-id signer ident)
-              {:keys [result ename traceback]} nrepl-resp
-              error (if ename
-                      {:status "error"
-                       :ename ename
-                       :evalue ""
-                       :execution_count @execution-count
-                       :traceback traceback})]
-          (send-router-message zmq-comm :shell-socket "execute_reply"
-                               (if error
-                                 error
-                                 {:status "ok"
-                                  :execution_count @execution-count
-                                  :user_expressions {}})
-                               parent-header
-                               session-id
-                               {}
-                               signer ident)
-          (if error
-            (send-message zmq-comm :iopub-socket "error"
-                          error parent-header {} session-id signer)
-            (when-not (or (= result "nil") silent)
-              (send-message zmq-comm :iopub-socket "execute_result"
-                            {:execution_count @execution-count
-                             :data (cheshire/parse-string result true)
-                             :metadata {}}
-                            parent-header {} session-id signer)))
-          (his/add-history (:history-session states) @execution-count code)
-          (swap! execution-count inc))))))
+

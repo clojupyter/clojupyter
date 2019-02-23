@@ -138,34 +138,34 @@
     (event-loop states zmq-comm socket signer control-handler)))
 
 (defn run-kernel [config]
-  (let [hb-addr      (address config :hb_port)
-        shell-addr   (address config :shell_port)
-        iopub-addr   (address config :iopub_port)
-        control-addr (address config :control_port)
-        stdin-addr   (address config :stdin_port)
-        key          (:key config)
-        signer       (get-message-signer key)
-        checker      (get-message-checker signer)]
-    (let [states  (states/make-states)
-          context (zmq/context 1)
-          shell-socket   (atom (doto (zmq/socket context :router)
-                                 (zmq/bind shell-addr)))
-          iopub-socket   (atom (doto (zmq/socket context :pub)
-                                 (zmq/bind iopub-addr)))
-          control-socket (atom (doto (zmq/socket context :router)
-                                 (zmq/bind control-addr)))
-          stdin-socket   (atom (doto (zmq/socket context :router)
-                                 (zmq/bind stdin-addr)))
-          hb-socket      (atom (doto (zmq/socket context :rep)
-                                 (zmq/bind hb-addr)))
-          zmq-comm       (zmq-comm/make-zmq-comm shell-socket iopub-socket stdin-socket
-                                                 control-socket hb-socket)]
+  (let [hb-addr			(address config :hb_port)
+        shell-addr		(address config :shell_port)
+        iopub-addr		(address config :iopub_port)
+        control-addr		(address config :control_port)
+        stdin-addr		(address config :stdin_port)
+        key			(:key config)
+        signer			(get-message-signer key)
+        checker			(get-message-checker signer)]
+    (let [states		(states/make-states)
+          context		(zmq/context 1)
+          shell-socket		(atom (doto (zmq/socket context :router)
+                                        (zmq/bind shell-addr)))
+          iopub-socket		(atom (doto (zmq/socket context :pub)
+                                        (zmq/bind iopub-addr)))
+          control-socket	(atom (doto (zmq/socket context :router)
+                                        (zmq/bind control-addr)))
+          stdin-socket		(atom (doto (zmq/socket context :router)
+                                        (zmq/bind stdin-addr)))
+          hb-socket		(atom (doto (zmq/socket context :rep)
+                                        (zmq/bind hb-addr)))
+          zmq-comm		(zmq-comm/make-zmq-comm shell-socket iopub-socket stdin-socket
+                                                        control-socket hb-socket)]
       (with-open [nrepl-server    (start-nrepl-server)
                   nrepl-transport (nrepl/connect :port (:port nrepl-server))]
-        (let [nrepl-client  (nrepl/client nrepl-transport Integer/MAX_VALUE)
-              nrepl-session (nrepl/new-session nrepl-client)
-              nrepl-comm    (nrepl-comm/make-nrepl-comm nrepl-server nrepl-transport
-                                                        nrepl-client nrepl-session)
+        (let [nrepl-client	(nrepl/client nrepl-transport Integer/MAX_VALUE)
+              nrepl-session	(nrepl/new-session nrepl-client)
+              nrepl-comm	(nrepl-comm/make-nrepl-comm nrepl-server nrepl-transport
+                                                            nrepl-client nrepl-session)
               status-sleep  1000]
           (try
             (future (shell-loop     states zmq-comm nrepl-comm signer checker))
@@ -180,8 +180,7 @@
                        (zmq/set-linger @socket 0)
                        (zmq/close @socket))
                      (his/end-history-session (:history-session states) 5000)
-                     (System/exit 0)
-                     )))))))
+                     (System/exit 0))))))))
 
 (defn -main [& args]
   (log/set-level! :error)

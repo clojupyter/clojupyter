@@ -12,7 +12,6 @@
     (cheshire/generate-stream map repr)
     (str repr)))
 
-
 (defprotocol PMimeConvertible
   (to-mime [o]))
 
@@ -23,7 +22,7 @@
 
   nil
   (to-mime [o]
-    "nil")
+    (stream-to-string {:text/plain "nil"}))
 
   java.awt.image.BufferedImage
   (to-mime [o]

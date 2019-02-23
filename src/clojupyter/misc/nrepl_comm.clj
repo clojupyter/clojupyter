@@ -93,9 +93,7 @@
           done?      (fn [{:keys [id status] :as msg} pending]
                        (let [pending? (@pending id)]
                          (swap! pending disj id)
-                         (and pending? (some #{"interrupted" "done" "error"} status))
-                         )
-                       )
+                         (and pending? (some #{"interrupted" "done" "error"} status))))
           stdout     (fn [msg]
                        (send-message zmq-comm :iopub-socket "stream"
                                      {:name "stdout" :text msg}

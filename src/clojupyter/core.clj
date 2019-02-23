@@ -31,7 +31,7 @@
 (def clojupyter-middleware
   '[clojupyter.middleware.mime-values/mime-values])
 
-(defn clojupyer-nrepl-handler []
+(defn clojupyter-nrepl-handler []
   ;; dynamically load to allow cider-jack-in to work
   ;; see https://github.com/clojure-emacs/cider-nrepl/issues/447
   (require 'cider.nrepl)
@@ -45,7 +45,7 @@
 (defn nrepl-server-addr [] (str *NREPL-SERVER-ADDR*))
 
 (defn start-nrepl-server []
-  (let [srv (nrepl.server/start-server :handler (clojupyer-nrepl-handler))
+  (let [srv (nrepl.server/start-server :handler (clojupyter-nrepl-handler))
         sock-addr (.getLocalSocketAddress (:server-socket srv))]
     (println (str "Started NREPL server on " sock-addr "."))
     (alter-var-root #'*NREPL-SERVER-ADDR* (constantly sock-addr))

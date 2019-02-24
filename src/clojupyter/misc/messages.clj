@@ -6,6 +6,7 @@
    [clojupyter.misc.complete :as complete]
    [clojupyter.misc.history :as his]
    [clojupyter.misc.tokenize :as tokenize]
+   [clojupyter.misc.util	:as u]
    [clojupyter.protocol.zmq-comm :as pzmq]
    [clojupyter.protocol.nrepl-comm :as pnrepl]
    [clojure.pprint :as pp]
@@ -52,30 +53,26 @@
    :msg_type msg_type})
 
 (defn- send-message-piece
-  [zmq-comm
-   socket msg]
-  (log/debug "Sending" (with-out-str (pp/pprint msg)))
+  [zmq-comm socket msg]
+  (log/debug "Sending " (u/pp-str msg))
   (pzmq/zmq-send zmq-comm socket (.getBytes msg) zmq/send-more)
   (log/debug "Finished sending part"))
 
 (defn- finish-message
-  [zmq-comm
-   socket msg]
-  (log/debug "Sending" (with-out-str (pp/pprint msg)))
+  [zmq-comm socket msg]
+  (log/debug "Sending" (u/pp-str msg))
   (pzmq/zmq-send zmq-comm socket (.getBytes msg))
   (log/debug "Finished sending all"))
 
-(defn send-router-message
+(defn- send-router-message
   [zmq-comm socket msg_type content parent-header session-id metadata signer idents]
-  (log/info "Trying to send router message\n"
-            (with-out-str (pp/pprint content)))
+  (log/info "Trying to send router message\n" (u/pp-str content))
   (let [header        (cheshire/generate-string (new-header msg_type session-id))
         parent-header (cheshire/generate-string parent-header)
         metadata      (cheshire/generate-string metadata)
         content       (cheshire/generate-string content)]
-   (when (not (empty? idents))
-      (doseq [ident idents];
-        (pzmq/zmq-send zmq-comm socket ident zmq/send-more)))
+    (doseq [ident idents];
+      (pzmq/zmq-send zmq-comm socket ident zmq/send-more))
     (send-message-piece zmq-comm socket "<IDS|MSG>")
     (send-message-piece zmq-comm socket (signer header parent-header metadata content))
     (send-message-piece zmq-comm socket header)
@@ -86,8 +83,7 @@
 
 (defn send-message
   [zmq-comm socket msg_type content parent-header metadata session-id signer]
-  (log/info "Trying to send message\n"
-            (with-out-str (pp/pprint content)))
+  (log/info "Trying to send message\n" (u/pp-str content))
   (let [header        (cheshire/generate-string (new-header msg_type session-id))
         parent-header (cheshire/generate-string parent-header)
         metadata      (cheshire/generate-string metadata)

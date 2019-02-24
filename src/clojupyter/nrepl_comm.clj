@@ -9,7 +9,8 @@
    ,,
    [clojupyter.messages					:refer :all]
    [clojupyter.protocol.nrepl-comm	:as pnrepl]
-   [clojupyter.protocol.zmq-comm	:as pzmq]))
+   [clojupyter.protocol.zmq-comm	:as pzmq]
+   [clojupyter.util			:as u]))
 
 (defn stacktrace-string
   "Return a nicely formatted string."
@@ -55,7 +56,7 @@
   (nrepl-eval [self {:keys [states zmq-comm signer] :as S} code parent-message]
     (log/debug "nrepl-eval: " :S S :code code :parent-message parent-message)
     (let [pending (atom #{})
-          command-id (nrepl.misc/uuid)
+          command-id (u/uuid)
           result (atom {:result "nil"})
           S-iopub	(assoc S :socket :iopub-socket)
           io-sleep   10
@@ -67,7 +68,7 @@
                                 (loop [message (pzmq/zmq-read-raw-message
                                                 zmq-comm :stdin-socket
                                                 (:no-block zmq/socket-options))]
-                                  (let [command-id (nrepl.misc/uuid)]
+                                  (let [command-id (u/uuid)]
                                     (if (not @interrupted)
                                       ;; not interrupted
                                       (if (not (nil? message))

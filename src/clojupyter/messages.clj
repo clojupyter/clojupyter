@@ -1,8 +1,6 @@
 (ns clojupyter.messages
   (:require
    [cheshire.core			:as cheshire]
-   [clj-time.core			:as time]
-   [clj-time.format			:as time-format]
    [clojure.pprint			:as pp]
    [clojure.string			:as str]
    [nrepl.core				:as nrepl]
@@ -36,24 +34,11 @@
 
 (def as-json cheshire/generate-string)
 
-(defn- uuid
-  []
-  (str (java.util.UUID/randomUUID)))
-
-(defn- now
-  []
-  "Returns current ISO 8601 compliant date."
-  (let [current-date-time (time/to-time-zone (time/now) (time/default-time-zone))]
-    (time-format/unparse
-     (time-format/with-zone (time-format/formatters :date-time-no-ms)
-       (.getZone current-date-time))
-     current-date-time)))
-
 (defn- new-header
   [msg_type session-id]
-  {:date (now)
+  {:date (u/now)
    :version protocol-version
-   :msg_id (uuid)
+   :msg_id (u/uuid)
    :username "kernel"
    :session session-id
    :msg_type msg_type})

@@ -20,20 +20,19 @@
             [zeromq.zmq :as zmq])
   (:gen-class :main true))
 
-(defn- prep-config [args]
-  (-> args
-      first
-      slurp
-      json/read-str
-      walk/keywordize-keys))
+(defn- prep-config
+  [args]
+  (-> args first slurp json/read-str walk/keywordize-keys))
 
-(defn- address [config service]
+(defn- address
+  [config service]
   (str (:transport config) "://" (:ip config) ":" (service config)))
 
 (def clojupyter-middleware
   '[clojupyter.middleware.mime-values/mime-values])
 
-(defn clojupyter-nrepl-handler []
+(defn clojupyter-nrepl-handler
+  []
   ;; dynamically load to allow cider-jack-in to work
   ;; see https://github.com/clojure-emacs/cider-nrepl/issues/447
   (require 'cider.nrepl)
@@ -44,19 +43,24 @@
 
 (defonce ^:dynamic ^:private *NREPL-SERVER-ADDR* nil)
 
-(defn nrepl-server-addr [] (str *NREPL-SERVER-ADDR*))
+(defn nrepl-server-addr
+  []
+  (str *NREPL-SERVER-ADDR*))
 
-(defn start-nrepl-server []
+(defn start-nrepl-server
+  []
   (let [srv (nrepl.server/start-server :handler (clojupyter-nrepl-handler))
         sock-addr (.getLocalSocketAddress (:server-socket srv))]
     (println (str "Started NREPL server on " sock-addr "."))
     (alter-var-root #'*NREPL-SERVER-ADDR* (constantly sock-addr))
     srv))
 
-(defn- exception-handler [e]
+(defn- exception-handler
+  [e]
   (log/error (with-out-str (st/print-stack-trace e 20))))
 
-(defn- configure-shell-handler [S]
+(defn- configure-shell-handler
+  [S]
   (let [execute-request-handler (make-execute-request-handler S)]
     (fn [message]
       (let [msg-type (get-in message [:header :msg_type])
@@ -65,12 +69,14 @@
           "execute_request" (execute-request-handler S)
           (respond-to-message msg-type S))))))
 
-(defn- configure-control-handler [S]
+(defn- configure-control-handler
+  [S]
   (fn [message]
     (let [msg-type (get-in message [:header :msg_type])]
       (respond-to-message (assoc S :message message :msg-type msg-type) msg-type))))
 
-(defn- process-event [{:keys [states zmq-comm socket signer handler]}]
+(defn- process-event
+  [{:keys [zmq-comm socket signer handler]}]
   (let [message        (pzmq/zmq-read-raw-message zmq-comm socket 0)
         parsed-message (parse-message message)
         parent-header  (:header parsed-message)
@@ -81,25 +87,29 @@
     (send-message zmq-comm :iopub-socket "status"
                   (status-content "idle") parent-header {} session-id signer)))
 
-(defn- event-loop [{:keys [states zmq-comm socket signer handler] :as S}]
+(defn- event-loop
+  [{:keys [states] :as S}]
   (try
     (while @(:alive states)
       (process-event S))
     (catch Exception e
       (exception-handler e))))
 
-(defn- process-heartbeat [zmq-comm socket]
+(defn- process-heartbeat
+  [zmq-comm socket]
   (let [message (pzmq/zmq-recv zmq-comm socket)]
     (pzmq/zmq-send zmq-comm socket message)))
 
-(defn- heartbeat-loop [{:keys [states zmq-comm]}]
+(defn- heartbeat-loop
+  [{:keys [states zmq-comm]}]
   (try
     (while @(:alive states)
       (process-heartbeat zmq-comm :hb-socket))
     (catch Exception e
       (exception-handler e))))
 
-(defn- shell-loop [{:keys [states zmq-comm nrepl-comm signer checker] :as S}]
+(defn- shell-loop
+  [{:keys [nrepl-comm] :as S}]
   (let [socket        	:shell-socket
         S		(assoc S :socket socket)
         shell-handler	(configure-shell-handler S)
@@ -107,13 +117,15 @@
     (reset! (beckon/signal-atom "INT") #{sigint-handle})
     (event-loop (assoc S :handler shell-handler))))
 
-(defn- control-loop [{:keys [states zmq-comm nrepl-comm signer checker] :as S}]
+(defn- control-loop
+  [S]
   (let [socket          :control-socket
         S		(assoc S :socket socket)
         control-handler (configure-control-handler S)]
     (event-loop (assoc S :handler control-handler))))
 
-(defn- run-kernel [config]
+(defn- run-kernel
+  [config]
   (let [hb-addr			(address config :hb_port)
         shell-addr		(address config :shell_port)
         iopub-addr		(address config :iopub_port)
@@ -160,6 +172,7 @@
                      (his/end-history-session (:history-session states) 5000)
                      (System/exit 0))))))))
 
-(defn -main [& args]
+(defn -main
+  [& args]
   (log/set-level! :debug)
   (run-kernel (prep-config args)))

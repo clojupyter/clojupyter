@@ -75,7 +75,7 @@
     (fn [message]
       (log/debug "shell-handler: " :S S :message message)
       (assert (:socket S) (str "shell-handler: no socket found"))
-      (let [msg-type (get-in message [:header :msg_type])]
+      (let [msg-type (message-msg-type message)]
         (case msg-type
           "execute_request" (respond-to-execute-request S msg-type message)
           (respond-to-message S msg-type message))))))
@@ -84,18 +84,15 @@
   [S]
   (fn [message]
     (log/debug (str "control-handler: " :S S :message message))
-    (let [msg-type (get-in message [:header :msg_type])]
+    (let [msg-type (message-msg-type message)]
       (respond-to-message S msg-type message))))
 
 (defn- process-event
   [{:keys [zmq-comm socket signer handler] :as S}]
   (log/debug (str "process-event: " :S S))
-  (let [S-iopub		(assoc S :socket :iopub-socket)
-        raw-message	(pzmq/zmq-read-raw-message zmq-comm socket 0)
-        message		(parse-message raw-message)
-        parent-header 	(:header message)
-        session-id	(:session parent-header)]
-    (log/debug (str "process-event: " :message message :raw-message raw-message))
+  (let [S-iopub	(assoc S :socket :iopub-socket)
+        message	(-> (pzmq/zmq-read-raw-message zmq-comm socket 0) parse-message)]
+    (log/debug (str "process-event: " :message message))
     (send-message S-iopub "status" (status-content "busy") message)
     (handler message)
     (send-message S-iopub "status" (status-content "idle") message)))
@@ -141,8 +138,8 @@
         control-addr		(address config :control_port)
         stdin-addr		(address config :stdin_port)
         key			(:key config)
-        signer			(get-message-signer key)
-        checker			(get-message-checker signer)]
+        signer			(make-message-signer key)
+        checker			(make-message-checker signer)]
     (let [states		(states/make-states)
           context		(zmq/context 1)
           shell-socket		(atom (doto (zmq/socket context :router)

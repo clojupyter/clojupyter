@@ -20,6 +20,21 @@
 
 (def protocol-version "5.0")
 
+(defn message-code		[message]	(get-in message [:content :code]))
+(defn message-comm-id		[message]	(get-in message [:content :comm_id]))
+(defn message-content		[message]	(get-in message [:content]))
+(defn message-cursor-pos	[message]	(get-in message [:content :cursor_pos]))
+(defn message-delimiter		[message]	(get-in message [:delimiter]))
+(defn message-header		[message]	(get-in message [:header]))
+(defn message-idents		[message]	(get-in message [:idents]))
+(defn message-msg-type		[message]	(get-in message [:header :msg_type]))
+(defn message-parent-header	[message]	(get-in message [:parent-header]))
+(defn message-restart		[message]	(get-in message [:content :restart]))
+(defn message-session		[message]	(get-in message [:header :session]))
+(defn message-signature		[message]	(get-in message [:signature]))
+(defn message-username		[message]	(get-in message [:header :username]))
+(defn message-value		[message]	(get-in message [:content :value]))
+
 (defn- uuid
   []
   (str (java.util.UUID/randomUUID)))
@@ -32,16 +47,6 @@
      (time-format/with-zone (time-format/formatters :date-time-no-ms)
        (.getZone current-date-time))
      current-date-time)))
-
-(defn- message-header
-  [message msgtype]
-  (cheshire/generate-string
-   {:msg_id (uuid)
-    :date (now)
-    :username (get-in message [:header :username])
-    :session (get-in message [:header :session])
-    :msg_type msgtype
-    :version protocol-version}))
 
 (defn- new-header
   [msg_type session-id]
@@ -67,63 +72,56 @@
 (defn- send-router-message
   [{:keys [zmq-comm socket signer] :as S} msg-type content parent-message]
   (log/info "Trying to send router message\n" (u/pp-str content))
-  (let [session-id	(get-in parent-message [:header :session])
-        idents		(:idents parent-message)
+  (let [session-id	(message-session parent-message)
         header		(-> (new-header msg-type session-id)	cheshire/generate-string)
         parent-header	(-> parent-message :header		cheshire/generate-string)
         metadata	(-> {}					cheshire/generate-string)
         content		(-> content				cheshire/generate-string)]
-    (doseq [ident idents];
+    (doseq [ident (message-idents parent-message)]               ;
       (pzmq/zmq-send zmq-comm socket ident zmq/send-more))
-    (send-message-piece zmq-comm socket "<IDS|MSG>")
-    (send-message-piece zmq-comm socket (signer header parent-header metadata content))
-    (send-message-piece zmq-comm socket header)
-    (send-message-piece zmq-comm socket parent-header)
-    (send-message-piece zmq-comm socket metadata)
+    (doall
+     (map (partial send-message-piece zmq-comm socket)
+          ["<IDS|MSG>" (signer header parent-header metadata content)
+           header parent-header metadata]))
     (finish-message     zmq-comm socket content))
   (log/info "Message sent"))
 
 (defn send-message
   [{:keys [zmq-comm socket signer] :as S} msg-type content parent-message]
   (log/info "Trying to send message\n" (u/pp-str content))
-  (let [session-id	(get-in parent-message [:header :session])
-        idents		(:idents parent-message)
+  (let [session-id	(message-session parent-message)
         header		(-> (new-header msg-type session-id)	cheshire/generate-string)
         parent-header	(-> parent-message :header		cheshire/generate-string)
         metadata	(-> {}					cheshire/generate-string)
         content		(-> content				cheshire/generate-string)]
-    (send-message-piece zmq-comm socket msg-type)
-    (send-message-piece zmq-comm socket "<IDS|MSG>")
-    (send-message-piece zmq-comm socket (signer header parent-header metadata content))
-    (send-message-piece zmq-comm socket header)
-    (send-message-piece zmq-comm socket parent-header)
-    (send-message-piece zmq-comm socket metadata)
+    (doall
+     (map (partial send-message-piece zmq-comm socket )
+          [msg-type "<IDS|MSG>" (signer header parent-header metadata content)
+           header parent-header metadata]))
     (finish-message zmq-comm socket content))
   (log/info "Message sent"))
 
-(defn get-message-signer
+(defn make-message-signer
   [key]
-  "returns a function used to sign a message"
   (if (empty? key)
     (constantly "")
     (fn [header parent metadata content]
       (sha256-hmac (str header parent metadata content) key))))
 
-(defn get-message-checker
+(defn make-message-checker
   [signer]
-  "returns a function to check an incoming message"
   (fn [{:keys [signature header parent-header metadata content]}]
     (let [our-signature (signer header parent-header metadata content)]
       (= our-signature signature))))
 
 (defn parse-message
   [message]
-  {:idents (:idents message)
-   :delimiter (:delimiter message)
-   :signature (:signature message)
-   :header (cheshire/parse-string (:header message) keyword)
-   :parent-header (cheshire/parse-string (:parent-header message) keyword)
-   :content (cheshire/parse-string (:content message) keyword)})
+  {:idents (message-idents message)
+   :delimiter (message-delimiter message)
+   :signature (message-signature message)
+   :header (cheshire/parse-string (message-header message) keyword)
+   :parent-header (cheshire/parse-string (message-parent-header message) keyword)
+   :content (cheshire/parse-string (message-content message) keyword)})
 
 ;; Message contents
 
@@ -133,11 +131,10 @@
 
 (defn pyin-content
   [execution-count message]
-  {:execution_count execution-count
-   :code (get-in message [:content :code])})
+  {:execution_count execution-count, :code (message-code message)})
 
 (defn input-request
-  [{:as S} parent-message]
+  [S parent-message]
   (let [content  {:prompt ">> ", :password false}]
     (send-router-message (assoc S :socket :stdin-socket) "input_request" content parent-message)))
 
@@ -162,7 +159,7 @@
 (defmethod respond-to-message "comm_open"
   [S _ message]
   (log/debug "respond-to comm_open: " :S S :message message)
-  (let [comm-id (get-in message [:content :comm_id])
+  (let [comm-id (message-comm-id message)
         content {:comm_id comm-id, :data {}}]
     (send-router-message S "comm_close" content message)))
 
@@ -183,7 +180,7 @@
 (defmethod respond-to-message "shutdown_request"
   [{:keys [states nrepl-comm] :as S} _ message]
   (log/debug "respond-to shutdown_request: " :S S :message message)
-  (let [restart (get-in message message [:content :restart])
+  (let [restart (message-restart message)
         server @(:nrepl-server nrepl-comm)
         content {:restart restart :status "ok"}]
     (reset! (:alive states) false)
@@ -194,7 +191,7 @@
 (defmethod respond-to-message "is_complete_request"
   [S _ message]
   (log/debug "respond-to is_complete_request: " :S S :message message)
-  (let [content (if (complete/complete? (get-in message [:content :code]))
+  (let [content (if (complete/complete? (message-code message))
                   {:status "complete"}
                   {:status "incomplete"})]
     (send-router-message S "is_complete_reply" content message)))
@@ -203,10 +200,9 @@
   [{:keys [nrepl-comm] :as S} _ message]
   (log/debug "respond-to complete_request" :S S :message message)
   (let [content (let [delimiters #{\( \" \% \space}
-                      content (:content message)
-                      cursor_pos (:cursor_pos content)
-                      code (subs (:code content) 0 cursor_pos)
-                      sym (as-> (reverse code) $
+                      cursor_pos (message-cursor-pos message)
+                      codestr (subs (message-code message) 0 cursor_pos)
+                      sym (as-> (reverse codestr) $
                             (take-while #(not (contains? delimiters %)) $)
                             (apply str (reverse $)))]
                   {:matches (pnrepl/nrepl-complete nrepl-comm sym)
@@ -226,9 +222,8 @@
 (defmethod respond-to-message "inspect_request"
   [{:keys [zmq-comm nrepl-comm socket signer] :as S} _ message]
   (log/debug "respond-to inspect_request:" :S S :message message)
-  (let [request-content (:content message)
-        code (:code request-content)
-        cursor_pos (:cursor_pos request-content)
+  (let [code (message-code message)
+        cursor_pos (message-cursor-pos message)
         sym (tokenize/token-at code cursor_pos)
         result (if-let [doc (pnrepl/nrepl-doc nrepl-comm sym)]
                  (str/join "\n" (rest (str/split-lines doc)))
@@ -251,7 +246,7 @@
   (let [execution-count (atom 1N)]
     (fn [{:keys [states zmq-comm nrepl-comm socket signer] :as S} _ message]
       (log/debug "exe-request-handler: " :S S :message message)
-      (let [code		(get-in message [:content :code])
+      (let [code		(message-code message)
             silent?		(str/ends-with? code ";") ;; TODO: Find out what is this about?
             S-iopub 		(assoc S :socket :iopub-socket)]
         (log/debug (str "execute-exe-req-handler: " :message message))

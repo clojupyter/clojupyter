@@ -30,8 +30,7 @@
   (nrepl-trace [self]
     (log/debug "nrepl-trace: " :self self)
     (-> (:nrepl-client self)
-        (nrepl/message {:op :stacktrace
-                        :session (:nrepl-session self)})
+        (nrepl/message {:op :stacktrace, :session (:nrepl-session self)})
         nrepl/combine-responses
         doall))
   (nrepl-interrupt [self]
@@ -40,8 +39,7 @@
       (reset! interrupted true)
       (if (not @need-input)
         (-> (:nrepl-client self)
-            (nrepl/message {:op :interrupt
-                            :session (:nrepl-session self)})
+            (nrepl/message {:op :interrupt, :session (:nrepl-session self)})
             nrepl/combine-responses
             doall)
         ;; a special case here
@@ -73,7 +71,7 @@
                                       (if (not (nil? message))
                                         ;; got a message continue
                                         (let [parsed-message (parse-message message)
-                                              input (get-in parsed-message [:content :value])]
+                                              input (message-value parsed-message)]
                                           (swap! pending conj command-id)
                                           (log/info "got input " message)
                                           (nrepl/message nrepl-client {:id command-id
@@ -160,8 +158,7 @@
     (log/debug "nrepl-doc: " :self self :sym sym)
     (let [code (str "(clojure.repl/doc " sym ")")
           result (-> (:nrepl-client self)
-                     (nrepl/message {:op :eval
-                                     :code code})
+                     (nrepl/message {:op :eval, :code code})
                      nrepl/combine-responses)]
     (:out result))))
 

@@ -19,9 +19,12 @@
 
 (def protocol-version "5.0")
 
-(defn- uuid [] (str (java.util.UUID/randomUUID)))
+(defn- uuid
+  []
+  (str (java.util.UUID/randomUUID)))
 
-(defn- now []
+(defn- now
+  []
   "Returns current ISO 8601 compliant date."
   (let [current-date-time (time/to-time-zone (time/now) (time/default-time-zone))]
     (time-format/unparse
@@ -29,7 +32,8 @@
        (.getZone current-date-time))
      current-date-time)))
 
-(defn- message-header [message msgtype]
+(defn- message-header
+  [message msgtype]
   (cheshire/generate-string
    {:msg_id (uuid)
     :date (now)
@@ -38,7 +42,8 @@
     :msg_type msgtype
     :version protocol-version}))
 
-(defn- new-header [msg_type session-id]
+(defn- new-header
+  [msg_type session-id]
   {:date (now)
    :version protocol-version
    :msg_id (uuid)
@@ -61,8 +66,7 @@
   (log/debug "Finished sending all"))
 
 (defn send-router-message
-  [zmq-comm
-   socket msg_type content parent-header session-id metadata signer idents]
+  [zmq-comm socket msg_type content parent-header session-id metadata signer idents]
   (log/info "Trying to send router message\n"
             (with-out-str (pp/pprint content)))
   (let [header        (cheshire/generate-string (new-header msg_type session-id))
@@ -81,8 +85,7 @@
   (log/info "Message sent"))
 
 (defn send-message
-  [zmq-comm
-   socket msg_type content parent-header metadata session-id signer]
+  [zmq-comm socket msg_type content parent-header metadata session-id signer]
   (log/info "Trying to send message\n"
             (with-out-str (pp/pprint content)))
   (let [header        (cheshire/generate-string (new-header msg_type session-id))
@@ -98,20 +101,23 @@
     (finish-message zmq-comm socket content))
   (log/info "Message sent"))
 
-(defn get-message-signer [key]
+(defn get-message-signer
+  [key]
   "returns a function used to sign a message"
   (if (empty? key)
-    (fn [header parent metadata content] "")
+    (constantly "")
     (fn [header parent metadata content]
       (sha256-hmac (str header parent metadata content) key))))
 
-(defn get-message-checker [signer]
+(defn get-message-checker
+  [signer]
   "returns a function to check an incoming message"
   (fn [{:keys [signature header parent-header metadata content]}]
     (let [our-signature (signer header parent-header metadata content)]
       (= our-signature signature))))
 
-(defn parse-message [message]
+(defn parse-message
+  [message]
   {:idents (:idents message)
    :delimiter (:delimiter message)
    :signature (:signature message)
@@ -121,10 +127,12 @@
 
 ;; Message contents
 
-(defn status-content [status]
+(defn status-content
+  [status]
   {:execution_state status})
 
-(defn pyin-content [execution-count message]
+(defn pyin-content
+  [execution-count message]
   {:execution_count execution-count
    :code (get-in message [:content :code])})
 
@@ -137,8 +145,7 @@
     {:status "incomplete"}))
 
 (defn- complete-reply-content
-  [nrepl-comm
-   message]
+  [nrepl-comm message]
   (let [delimiters #{\( \" \% \space}
         content (:content message)
         cursor_pos (:cursor_pos content)
@@ -152,7 +159,8 @@
      :cursor_end cursor_pos
      :status "ok"}))
 
-(defn- kernel-info-content []
+(defn- kernel-info-content
+  []
   {:status "ok"
    :protocol_version protocol-version
    :implementation "clojupyter"
@@ -163,7 +171,8 @@
    :banner "Clojupyters-0.1.0"
    :help_links []})
 
-(defn- comm-open-reply-content [message]
+(defn- comm-open-reply-content
+  [message]
   {:comm_id (get-in message [:content :comm_id])
    :data {}})
 
@@ -189,6 +198,10 @@
       {:status "ok" :found true :metadata {}
        :data {:text/html (str "<pre>" result "</pre>")
               :text/plain (str result)}})))
+
+;;; ----------------------------------------------------------------------------------------------------
+;;; RESPOND-TO-MESSAGE
+;;; ----------------------------------------------------------------------------------------------------
 
 (defmulti respond-to-message (fn [dv _] dv))
 
@@ -283,7 +296,7 @@
                          "history_reply"
                          content parent-header session-id metadata signer ident)))
 
-(defmethod respond-to-message "inspect_request" 
+(defmethod respond-to-message "inspect_request"
   [_ {:keys [zmq-comm nrepl-comm socket message signer]}]
   (let [parent-header (:header message)
         metadata {}
@@ -300,10 +313,9 @@
   (log/error "Message dump:" message)
   (System/exit -1))
 
-(defn make-execute-request-handler
-  [{:keys [states zmq-comm nrepl-comm socket] :as S}]
+(def execute-request-handler
   (let [execution-count (atom 1N)]
-    (fn [{:keys [message signer]}]
+    (fn [{:keys [states zmq-comm nrepl-comm socket signer message]}]
       (let [session-id (get-in message [:header :session])
             ident (:idents message)
             parent-header (:header message)

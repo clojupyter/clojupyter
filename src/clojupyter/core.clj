@@ -61,12 +61,12 @@
 
 (defn- configure-shell-handler
   [S]
-  (let [execute-request-handler (make-execute-request-handler S)]
+  (let [respond-to-execute-request execute-request-handler] ;; needs to bind execution counter atom
     (fn [message]
       (let [msg-type (get-in message [:header :msg_type])
             S (assoc S :message message :msg-type msg-type)]
         (case msg-type
-          "execute_request" (execute-request-handler S)
+          "execute_request" (respond-to-execute-request S)
           (respond-to-message msg-type S))))))
 
 (defn- configure-control-handler

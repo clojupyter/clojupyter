@@ -223,38 +223,55 @@
       (log/error "Message dump:" (u/pp-str message))
       (System/exit -1)))
 
+(defn- hushed?
+  [s]
+  (str/ends-with? (str/trimr (or s "")) ";"))
+
+(defn- submit-eval-request
+  [{:keys [nrepl-comm] :as S} message]
+  (let [nrepl-resp				(pnrepl/nrepl-eval nrepl-comm S
+                                                                   (message-code message) message)
+        {:keys [result ename traceback]}	nrepl-resp
+        err					(when ename
+                                                  {:status "error", :ename ename,
+                                                   :evalue "", :traceback traceback})]
+    (log/debug (str "submit-eval-request: " :nrepl-resp nrepl-resp))
+    {:err err, :result result}))
+
 (defn execute-request-handler
   []
-  (let [execution-count (atom 1N)]
-    (fn [{:keys [states zmq-comm nrepl-comm socket signer] :as S} _ message]
+  (let [execution-count (atom 1N)
+        ;; Bind counter in handler for update in each handling call -
+        ;; this is the reason why it's instantiated as a function and
+        ;; not simply a `respond-to-message`..
+        ]
+    (fn [{:keys [states] :as S} _ message]
       (log/debug "exe-request-handler: " :S S :message message)
-      (let [code		(message-code message)
-            silent?		(str/ends-with? code ";") ;; TODO: Find out what is this about?
-            S-iopub 		(assoc S :socket :iopub-socket)]
-        (log/debug (str "execute-exe-req-handler: " :message message))
+      (let [S-iopub 			(assoc S :socket :iopub-socket)]
+        ;; STEP 1: NOTIFY PUB CHANNEL THAT EXECUTE REQUEST ARRIVED
         (send-message S-iopub "execute_input" (pyin-content @execution-count message) message)
-        (let [nrepl-resp	(pnrepl/nrepl-eval nrepl-comm S code message)
-              _ (log/debug "exe-req-handler :rnrepl-resp 1" :nrepl-resp nrepl-resp)
-              {:keys [result ename traceback]}
-              ,,		nrepl-resp
-              err		(when ename {:status "error"
-                                             :ename ename
-                                             :evalue ""
-                                             :execution_count @execution-count
-                                             :traceback traceback})
-              content 		(or err {:status "ok"
-                                         :execution_count @execution-count
-                                         :user_expressions {}})]
-          (log/debug (str "exe-req-handler: " :nrepl-resp nrepl-resp))
+        (let [code			(message-code message)
+              ;; STEP 2: SUBMIT REQUEST VIA NREPL
+              {:keys [err result]}	(submit-eval-request S message)
+              content 			(-> err
+                                            (or {:status "ok"
+                                                 :execution_count @execution-count
+                                                 :user_expressions {}})
+                                            (assoc :execution_count @execution-count))]
+          ;; STEP 3: SEND EXECUTE REPLY
           (send-router-message S "execute_reply" content message)
-          (if err
-            (send-message S-iopub "error" err message)
-            (when-not silent?
-              (log/debug (str "execute-req-handler: " :result result))
-              (send-message S-iopub "execute_result" 
-                            {:execution_count @execution-count
-                             :data (cheshire/parse-string result true)
-                             :metadata {}}
-                            message)))
+          (cond
+            err
+            ;; STEP 4A: IF ERROR OCCURRED SEND ERROR MESSAGE...
+            ,, (send-message S-iopub "error" err message)
+            (not (hushed? code))
+            ,, (do
+                 (log/debug (str "execute-req-handler: " :result result))
+                 ;; STEP 4B: OTHERWISE SEND RESULT (IF WE'RE NOT HUSHED)
+                 (send-message S-iopub "execute_result" 
+                               {:execution_count @execution-count
+                                :data (cheshire/parse-string result true)
+                                :metadata {}}
+                               message)))
           (his/add-history (:history-session states) @execution-count code)
           (swap! execution-count inc))))))

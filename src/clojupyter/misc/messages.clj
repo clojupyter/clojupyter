@@ -3,9 +3,7 @@
    [cheshire.core :as cheshire]
    [clj-time.core :as time]
    [clj-time.format :as time-format]
-   [clojupyter.misc.complete :as complete]
    [clojupyter.misc.history :as his]
-   [clojupyter.misc.tokenize :as tokenize]
    [clojupyter.misc.util	:as u]
    [clojupyter.protocol.zmq-comm :as pzmq]
    [clojupyter.protocol.nrepl-comm :as pnrepl]
@@ -187,7 +185,7 @@
 
 (defresponse [S _ message] "is_complete_request"
   (send-router-message S "is_complete_reply"
-                       (if (complete/complete? (message-code message))
+                       (if (u/complete? (message-code message))
                          {:status "complete"}
                          {:status "incomplete"}) message))
 
@@ -213,7 +211,7 @@
 (defresponse [{:keys [zmq-comm nrepl-comm socket signer] :as S} _ message] "inspect_request"
   (let [code (message-code message)
         cursor_pos (message-cursor-pos message)
-        sym (tokenize/token-at code cursor_pos)
+        sym (u/token-at code cursor_pos)
         result (if-let [doc (pnrepl/nrepl-doc nrepl-comm sym)]
                  (str/join "\n" (rest (str/split-lines doc)))
                  "")

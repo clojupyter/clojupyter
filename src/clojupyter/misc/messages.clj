@@ -35,6 +35,8 @@
 (defn message-username		[message]	(get-in message [:header :username]))
 (defn message-value		[message]	(get-in message [:content :value]))
 
+(def as-json cheshire/generate-string)
+
 (defn- uuid
   []
   (str (java.util.UUID/randomUUID)))
@@ -59,13 +61,13 @@
 
 (defn- send-message-piece
   [zmq-comm socket msg]
-  (log/debug "Sending " (u/pp-str msg))
+  (log/debug "Sending part: " (u/pp-str msg))
   (pzmq/zmq-send zmq-comm socket (.getBytes msg) zmq/send-more)
   (log/debug "Finished sending part"))
 
 (defn- finish-message
   [zmq-comm socket msg]
-  (log/debug "Sending" (u/pp-str msg))
+  (log/debug "Sending message: " (u/pp-str msg))
   (pzmq/zmq-send zmq-comm socket (.getBytes msg))
   (log/debug "Finished sending all"))
 
@@ -73,30 +75,30 @@
   [{:keys [zmq-comm socket signer] :as S} msg-type content parent-message]
   (log/info "Trying to send router message\n" (u/pp-str content))
   (let [session-id	(message-session parent-message)
-        header		(-> (new-header msg-type session-id)	cheshire/generate-string)
-        parent-header	(-> parent-message :header		cheshire/generate-string)
-        metadata	(-> {}					cheshire/generate-string)
-        content		(-> content				cheshire/generate-string)]
+        header		(as-json (new-header msg-type session-id))
+        parent-header	(as-json (message-header parent-message))
+        metadata	(as-json {})
+        content		(as-json content)]
     (doseq [ident (message-idents parent-message)]               ;
       (pzmq/zmq-send zmq-comm socket ident zmq/send-more))
     (doall
      (map (partial send-message-piece zmq-comm socket)
           ["<IDS|MSG>" (signer header parent-header metadata content)
            header parent-header metadata]))
-    (finish-message     zmq-comm socket content))
+    (finish-message zmq-comm socket content))
   (log/info "Message sent"))
 
 (defn send-message
   [{:keys [zmq-comm socket signer] :as S} msg-type content parent-message]
-  (log/info "Trying to send message\n" (u/pp-str content))
+  (log/info "send-message sending: " (u/pp-str content))
   (let [session-id	(message-session parent-message)
-        header		(-> (new-header msg-type session-id)	cheshire/generate-string)
-        parent-header	(-> parent-message :header		cheshire/generate-string)
-        metadata	(-> {}					cheshire/generate-string)
-        content		(-> content				cheshire/generate-string)]
+        header		(as-json (new-header msg-type session-id))
+        parent-header	(as-json (message-header parent-message))
+        metadata	(as-json {})
+        content		(as-json content)]
     (doall
-     (map (partial send-message-piece zmq-comm socket )
-          [msg-type "<IDS|MSG>" (signer header parent-header metadata content)
+     (map (partial send-message-piece zmq-comm socket)
+          [msg-type "<IDS|MSG>" (signer header parent-header metadata content) 
            header parent-header metadata]))
     (finish-message zmq-comm socket content))
   (log/info "Message sent"))

@@ -1,7 +1,9 @@
 (ns clojupyter.util
   (:require
    [clojure.pprint			:as pp]
-   [net.cgrand.sjacket.parser		:as p]))
+   [net.cgrand.sjacket.parser		:as p]
+   ,,
+   [clojupyter.history			:as his]))
 
 (defn- re-index
   "Returns a sorted-map of indicies to matches."
@@ -32,3 +34,18 @@
 (defn pp-str
   [v]
   (with-out-str (pp/pprint v)))
+
+;;; ----------------------------------------------------------------------------------------------------
+;;; STATES
+;;; ----------------------------------------------------------------------------------------------------
+
+(def current-global-states (atom nil))
+
+(defrecord States [alive display-queue history-session])
+
+(defn make-states []
+  (reset! current-global-states (States. (atom true) (atom [])
+                                         (his/start-history-session
+                                          (his/init-history
+                                           (str (System/getenv "HOME")
+                                                "/.clojupyter_history"))))))

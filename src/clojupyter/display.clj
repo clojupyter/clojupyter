@@ -3,10 +3,10 @@
    [hiccup.core					:as hiccup]
    ,,
    [clojupyter.protocol.mime-convertible	:as mc]
-   [clojupyter.states				:as states]))
+   [clojupyter.util				:as u]))
 
 (defn display [obj]
-  (swap! (:display-queue @states/current-global-states) conj (mc/to-mime obj))
+  (swap! (:display-queue @u/current-global-states) conj (mc/to-mime obj))
   nil)
 
 ;; Html

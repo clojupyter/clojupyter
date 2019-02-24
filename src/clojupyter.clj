@@ -12,14 +12,14 @@
    [taoensso.timbre			:as log]
    [zeromq.zmq				:as zmq]
    ,,
-   [clojupyter.middleware.mime-values]
    [clojupyter.history			:as his]
    [clojupyter.messages			:refer :all]
+   [clojupyter.middleware.mime-values]
    [clojupyter.nrepl-comm		:as nrepl-comm]
-   [clojupyter.states			:as states]
-   [clojupyter.zmq-comm			:as zmq-comm]
    [clojupyter.protocol.nrepl-comm	:as pnrepl]
-   [clojupyter.protocol.zmq-comm	:as pzmq])
+   [clojupyter.protocol.zmq-comm	:as pzmq]
+   [clojupyter.util			:as u]
+   [clojupyter.zmq-comm			:as zmq-comm])
   (:gen-class :main true))
 
 (defn- catching-exceptions*
@@ -151,7 +151,7 @@
         key			(:key config)
         signer			(make-message-signer key)
         checker			(make-message-checker signer)]
-    (let [states		(states/make-states)
+    (let [states		(u/make-states)
           context		(zmq/context 1)
           shell-socket		(atom (doto (zmq/socket context :router)
                                         (zmq/bind shell-addr)))
@@ -165,11 +165,11 @@
                                         (zmq/bind hb-addr)))
           zmq-comm		(zmq-comm/make-zmq-comm shell-socket iopub-socket stdin-socket
                                                         control-socket hb-socket)]
-      (with-open [nrepl-server    (start-nrepl-server)
-                  nrepl-transport (nrepl/connect :port (:port nrepl-server))]
-        (let [nrepl-client	(nrepl/client nrepl-transport Integer/MAX_VALUE)
+      (with-open [nrepl-server	(start-nrepl-server)
+                  nrepl-trans	(nrepl/connect :port (:port nrepl-server))]
+        (let [nrepl-client	(nrepl/client nrepl-trans Integer/MAX_VALUE)
               nrepl-session	(nrepl/new-session nrepl-client)
-              nrepl-comm	(nrepl-comm/make-nrepl-comm nrepl-server nrepl-transport
+              nrepl-comm	(nrepl-comm/make-nrepl-comm nrepl-server nrepl-trans
                                                             nrepl-client nrepl-session)
               S			{:states states :zmq-comm zmq-comm :nrepl-comm nrepl-comm
                                  :signer signer :checker checker}

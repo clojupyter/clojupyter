@@ -199,10 +199,10 @@
 ;;; RESPOND-TO-MESSAGE
 ;;; ----------------------------------------------------------------------------------------------------
 
-(defmulti respond-to-message (fn [dv _] dv))
+(defmulti respond-to-message (fn [_ msg-type _] msg-type))
 
 (defmethod respond-to-message "comm_open"
-  [_ {:keys [zmq-comm socket message signer]}]
+  [{:keys [zmq-comm socket signer]} _ message]
   (let [parent-header (:header message)
         session-id (get-in message [:header :session])
         ident (:idents message)
@@ -213,7 +213,7 @@
                          content parent-header session-id metadata signer ident)))
 
 (defmethod respond-to-message "kernel_info_request"
-  [_ {:keys [zmq-comm socket message signer]}]
+  [{:keys [zmq-comm socket signer]} _ message]
   (let [parent-header (:header message)
         session-id (get-in message [:header :session])
         ident (:idents message)
@@ -224,7 +224,7 @@
                          content parent-header session-id metadata signer ident)))
 
 (defmethod respond-to-message "shutdown_request"
-  [_ {:keys [states zmq-comm nrepl-comm socket message signer]}]
+  [{:keys [states zmq-comm nrepl-comm socket signer]} _ message]
   (let [parent-header (:header message)
         metadata {}
         restart (get-in message message [:content :restart])
@@ -240,7 +240,7 @@
     (Thread/sleep 100)))
 
 (defmethod respond-to-message "comm_info_request"
-  [_ {:keys [zmq-comm socket message signer]}]
+  [{:keys [zmq-comm socket signer]} _ message]
   (let [parent-header (:header message)
         metadata {}
         content  {:comms
@@ -250,7 +250,7 @@
                   content parent-header metadata session-id signer)))
 
 (defmethod respond-to-message "comm_msg"
-  [_ {:keys [zmq-comm socket message socket signer]}]
+  [{:keys [zmq-comm socket socket signer]} _ message]
   (let [parent-header (:header message)
         metadata {}
         content  {}
@@ -259,7 +259,7 @@
                   content parent-header metadata session-id signer)))
 
 (defmethod respond-to-message "is_complete_request"
-  [_ {:keys [zmq-comm socket message signer]}]
+  [{:keys [zmq-comm socket signer]} _ message]
   (let [parent-header (:header message)
         metadata {}
         content  (is-complete-reply-content message)
@@ -270,7 +270,7 @@
                          content parent-header session-id metadata signer ident)))
 
 (defmethod respond-to-message "complete_request"
-  [_ {:keys [zmq-comm nrepl-comm socket message signer]}]
+  [{:keys [zmq-comm nrepl-comm socket signer]} _ message]
   (let [parent-header (:header message)
         metadata {}
         content  (complete-reply-content nrepl-comm message)
@@ -281,7 +281,7 @@
                          content parent-header session-id metadata signer ident)))
 
 (defmethod respond-to-message "history_request"
-  [_ {:keys [states zmq-comm socket message signer]}]
+  [{:keys [states zmq-comm socket signer]} _ message]
   (let [parent-header (:header message)
         metadata {}
         content  {:history (map #(vector (:session %) (:line %) (:source %))
@@ -293,7 +293,7 @@
                          content parent-header session-id metadata signer ident)))
 
 (defmethod respond-to-message "inspect_request"
-  [_ {:keys [zmq-comm nrepl-comm socket message signer]}]
+  [{:keys [zmq-comm nrepl-comm socket signer]} _ message]
   (let [parent-header (:header message)
         metadata {}
         content (inspect-reply-content nrepl-comm (:content message))
@@ -304,14 +304,15 @@
                          content parent-header session-id metadata signer ident)))
 
 (defmethod respond-to-message :default
-  [_ {:keys [msg-type message] :as S}]
+  [{:as S} msg-type message]
   (log/error "Message type" msg-type "not handled yet. Exiting.")
   (log/error "Message dump:" message)
   (System/exit -1))
 
-(def execute-request-handler
+(defn execute-request-handler
+  []
   (let [execution-count (atom 1N)]
-    (fn [{:keys [states zmq-comm nrepl-comm socket signer message]}]
+    (fn [{:keys [states zmq-comm nrepl-comm socket signer ]} _ message]
       (let [session-id (get-in message [:header :session])
             ident (:idents message)
             parent-header (:header message)

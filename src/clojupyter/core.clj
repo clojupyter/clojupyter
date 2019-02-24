@@ -20,7 +20,7 @@
             [zeromq.zmq :as zmq])
   (:gen-class :main true))
 
-(defonce VERSION "66")
+(defonce VERSION "55")
 
 (defn- prep-config [args]
   (-> args
@@ -59,9 +59,9 @@
   (log/error (with-out-str (st/print-stack-trace e 20))))
 
 (defn- make-execute-request-handler
-  []
+  [{:keys [states zmq-comm nrepl-comm socket] :as S}]
   (let [execution-count (atom 1N)]
-    (fn [{:keys [states zmq-comm nrepl-comm socket message signer]}]
+    (fn [{:keys [message signer]}]
       (let [session-id (get-in message [:header :session])
             ident (:idents message)
             parent-header (:header message)
@@ -102,44 +102,19 @@
           (his/add-history (:history-session states) @execution-count code)
           (swap! execution-count inc))))))
 
-(defn handler-failure
-  [{:keys [msg-type message] :as S}]
-  (log/error "Message type" msg-type "not handled yet. Exiting.")
-  (log/error "Message dump:" message)
-  (System/exit -1))
-
-(def ^:private HANDLER-MAP
-  {"kernel_info_request" kernel-info-reply
-   "history_request"     history-reply   
-   "shutdown_request"    shutdown-reply
-   "comm_info_request"   comm-info-reply
-   "comm_msg"            comm-msg-reply
-   "is_complete_request" is-complete-reply
-   "complete_request"    complete-reply
-   "comm_open"           comm-open-reply
-   "inspect_request"     inspect-reply})
-
 (defn- configure-shell-handler [S]
-  (let [execute-request-handler (make-execute-request-handler)]
+  (let [execute-request-handler (make-execute-request-handler S)]
     (fn [message]
       (let [msg-type (get-in message [:header :msg_type])
-            handler (if (= msg-type "execute_request")
-                      execute-request-handler
-                      (get HANDLER-MAP msg-type handler-failure))
             S (assoc S :message message :msg-type msg-type)]
-        (handler S)))))
+        (case msg-type
+          "execute_request" (execute-request-handler S)
+          (respond-to-message msg-type S))))))
 
 (defn- configure-control-handler [S]
   (fn [message]
-    (let [msg-type (get-in message [:header :msg_type])
-          S (assoc S :message message :msg-type msg-type)]
-      (case msg-type
-        "kernel_info_request" (kernel-info-reply S)
-        "shutdown_request"    (shutdown-reply    S)
-        (do
-          (log/error "Message type" msg-type "not handled yet. Exiting.")
-          (log/error "Message dump:" message)
-          (System/exit -1))))))
+    (let [msg-type (get-in message [:header :msg_type])]
+      (respond-to-message (assoc S :message message :msg-type msg-type) msg-type))))
 
 (defn- process-event [{:keys [states zmq-comm socket signer handler]}]
   (let [message        (pzmq/zmq-read-raw-message zmq-comm socket 0)
@@ -232,5 +207,5 @@
                      (System/exit 0))))))))
 
 (defn -main [& args]
-  (log/set-level! :error)
+  (log/set-level! :debug)
   (run-kernel (prep-config args)))

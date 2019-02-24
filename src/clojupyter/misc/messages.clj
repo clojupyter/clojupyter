@@ -167,8 +167,6 @@
   {:comm_id (get-in message [:content :comm_id])
    :data {}})
 
-;; Request and reply messages
-
 (defn input-request
   [zmq-comm parent-header session-id signer ident]
   (let [metadata {}
@@ -176,98 +174,6 @@
                   :password false}]
     (send-router-message zmq-comm :stdin-socket
                          "input_request"
-                         content parent-header session-id metadata signer ident)))
-
-(defn comm-open-reply
-  "Just close a comm immediately since we don't handle it yet"
-  [{:keys [zmq-comm socket message signer]}]
-  (let [parent-header (:header message)
-        session-id (get-in message [:header :session])
-        ident (:idents message)
-        metadata {}
-        content  (comm-open-reply-content message)]
-    (send-router-message zmq-comm socket
-                         "comm_close"
-                         content parent-header session-id metadata signer ident)))
-
-(defn kernel-info-reply
-  [{:keys [zmq-comm socket message signer]}]
-  (let [parent-header (:header message)
-        session-id (get-in message [:header :session])
-        ident (:idents message)
-        metadata {}
-        content  (kernel-info-content)]
-    (send-router-message zmq-comm socket
-                         "kernel_info_reply"
-                         content parent-header session-id metadata signer ident)))
-
-(defn shutdown-reply
-  [{:keys [states zmq-comm nrepl-comm socket message signer]}]
-  (let [parent-header (:header message)
-        metadata {}
-        restart (get-in message message [:content :restart])
-        content {:restart restart :status "ok"}
-        session-id (get-in message [:header :session])
-        ident (:idents message)
-        server @(:nrepl-server nrepl-comm)]
-    (reset! (:alive states) false)
-    (nrepl.server/stop-server server)
-    (send-router-message zmq-comm socket
-                         "shutdown_reply"
-                         content parent-header session-id metadata signer ident)
-    (Thread/sleep 100)))
-
-(defn comm-info-reply
-  [{:keys [zmq-comm socket message signer]}]
-  (let [parent-header (:header message)
-        metadata {}
-        content  {:comms
-                  {:comm_id {:target_name ""}}}
-        session-id (get-in message [:header :session])]
-    (send-message zmq-comm socket "comm_info_reply"
-                  content parent-header metadata session-id signer)))
-
-(defn comm-msg-reply
-  [{:keys [zmq-comm socket message socket signer]}]
-  (let [parent-header (:header message)
-        metadata {}
-        content  {}
-        session-id (get-in message [:header :session])]
-    (send-message zmq-comm socket "comm_msg_reply"
-                  content parent-header metadata session-id signer)))
-
-(defn is-complete-reply
-  [{:keys [zmq-comm socket message signer]}]
-  (let [parent-header (:header message)
-        metadata {}
-        content  (is-complete-reply-content message)
-        session-id (get-in message [:header :session])
-        ident (:idents message)]
-    (send-router-message zmq-comm socket
-                         "is_complete_reply"
-                         content parent-header session-id metadata signer ident)))
-
-(defn complete-reply
-  [{:keys [zmq-comm nrepl-comm socket message signer]}]
-  (let [parent-header (:header message)
-        metadata {}
-        content  (complete-reply-content nrepl-comm message)
-        session-id (get-in message [:header :session])
-        ident (:idents message)]
-    (send-router-message zmq-comm socket
-                         "complete_reply"
-                         content parent-header session-id metadata signer ident)))
-
-(defn history-reply
-  [{:keys [states zmq-comm socket message signer]}]
-  (let [parent-header (:header message)
-        metadata {}
-        content  {:history (map #(vector (:session %) (:line %) (:source %))
-                            (his/get-history (:history-session states)))}
-        session-id (get-in message [:header :session])
-        ident (:idents message)]
-    (send-router-message zmq-comm socket
-                         "history_reply"
                          content parent-header session-id metadata signer ident)))
 
 (defn- inspect-reply-content
@@ -284,8 +190,101 @@
        :data {:text/html (str "<pre>" result "</pre>")
               :text/plain (str result)}})))
 
-(defn inspect-reply
-  [{:keys [zmq-comm nrepl-comm socket message signer]}]
+(defmulti respond-to-message (fn [dv _] dv))
+
+(defmethod respond-to-message "comm_open"
+  [_ {:keys [zmq-comm socket message signer]}]
+  (let [parent-header (:header message)
+        session-id (get-in message [:header :session])
+        ident (:idents message)
+        metadata {}
+        content  (comm-open-reply-content message)]
+    (send-router-message zmq-comm socket
+                         "comm_close"
+                         content parent-header session-id metadata signer ident)))
+
+(defmethod respond-to-message "kernel_info_request"
+  [_ {:keys [zmq-comm socket message signer]}]
+  (let [parent-header (:header message)
+        session-id (get-in message [:header :session])
+        ident (:idents message)
+        metadata {}
+        content  (kernel-info-content)]
+    (send-router-message zmq-comm socket
+                         "kernel_info_reply"
+                         content parent-header session-id metadata signer ident)))
+
+(defmethod respond-to-message "shutdown_request"
+  [_ {:keys [states zmq-comm nrepl-comm socket message signer]}]
+  (let [parent-header (:header message)
+        metadata {}
+        restart (get-in message message [:content :restart])
+        content {:restart restart :status "ok"}
+        session-id (get-in message [:header :session])
+        ident (:idents message)
+        server @(:nrepl-server nrepl-comm)]
+    (reset! (:alive states) false)
+    (nrepl.server/stop-server server)
+    (send-router-message zmq-comm socket
+                         "shutdown_reply"
+                         content parent-header session-id metadata signer ident)
+    (Thread/sleep 100)))
+
+(defmethod respond-to-message "comm_info_request"
+  [_ {:keys [zmq-comm socket message signer]}]
+  (let [parent-header (:header message)
+        metadata {}
+        content  {:comms
+                  {:comm_id {:target_name ""}}}
+        session-id (get-in message [:header :session])]
+    (send-message zmq-comm socket "comm_info_reply"
+                  content parent-header metadata session-id signer)))
+
+(defmethod respond-to-message "comm_msg"
+  [_ {:keys [zmq-comm socket message socket signer]}]
+  (let [parent-header (:header message)
+        metadata {}
+        content  {}
+        session-id (get-in message [:header :session])]
+    (send-message zmq-comm socket "comm_msg_reply"
+                  content parent-header metadata session-id signer)))
+
+(defmethod respond-to-message "is_complete_request"
+  [_ {:keys [zmq-comm socket message signer]}]
+  (let [parent-header (:header message)
+        metadata {}
+        content  (is-complete-reply-content message)
+        session-id (get-in message [:header :session])
+        ident (:idents message)]
+    (send-router-message zmq-comm socket
+                         "is_complete_reply"
+                         content parent-header session-id metadata signer ident)))
+
+(defmethod respond-to-message "complete_request"
+  [_ {:keys [zmq-comm nrepl-comm socket message signer]}]
+  (let [parent-header (:header message)
+        metadata {}
+        content  (complete-reply-content nrepl-comm message)
+        session-id (get-in message [:header :session])
+        ident (:idents message)]
+    (send-router-message zmq-comm socket
+                         "complete_reply"
+                         content parent-header session-id metadata signer ident)))
+
+(defmethod respond-to-message "history_request"
+  [_ {:keys [states zmq-comm socket message signer]}]
+  (let [parent-header (:header message)
+        metadata {}
+        content  {:history (map #(vector (:session %) (:line %) (:source %))
+                            (his/get-history (:history-session states)))}
+        session-id (get-in message [:header :session])
+        ident (:idents message)]
+    (send-router-message zmq-comm socket
+                         "history_reply"
+                         content parent-header session-id metadata signer ident)))
+
+(defmethod respond-to-message "inspect_request" 
+  [_ {:keys [zmq-comm nrepl-comm socket message signer]}]
   (let [parent-header (:header message)
         metadata {}
         content (inspect-reply-content nrepl-comm (:content message))
@@ -295,5 +294,8 @@
                          "inspect_reply"
                          content parent-header session-id metadata signer ident)))
 
-
-
+(defmethod respond-to-message :default
+  [_ {:keys [msg-type message] :as S}]
+  (log/error "Message type" msg-type "not handled yet. Exiting.")
+  (log/error "Message dump:" message)
+  (System/exit -1))

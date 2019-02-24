@@ -3,7 +3,6 @@
 (defprotocol PNreplComm
   (nrepl-trace [self])
   (nrepl-interrupt [self])
-  (nrepl-eval [self states zmq-comm code parent-header session-id signer ident])
+  (nrepl-eval [self S code parent-message])
   (nrepl-complete [self code])
-  (nrepl-doc [self sym])
-  )
+  (nrepl-doc [self sym]))

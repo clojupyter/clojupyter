@@ -28,12 +28,14 @@
                       interrupted need-input current-ns]
   pnrepl/PNreplComm
   (nrepl-trace [self]
+    (log/debug "nrepl-trace: " :self self)
     (-> (:nrepl-client self)
         (nrepl/message {:op :stacktrace
                         :session (:nrepl-session self)})
         nrepl/combine-responses
         doall))
   (nrepl-interrupt [self]
+    (log/debug "nrepl-interrupt: " :self self)
     (do
       (reset! interrupted true)
       (if (not @need-input)
@@ -50,12 +52,14 @@
         ;; return nil
         )
       ))
-  (nrepl-eval [self states zmq-comm code parent-header session-id signer ident]
+  (nrepl-eval [self {:keys [states zmq-comm signer] :as S} code parent-message]
+    (log/debug "nrepl-eval: " :S S :code code :parent-message parent-message)
     (let [pending (atom #{})
           command-id (nrepl.misc/uuid)
           result (atom {:result "nil"})
+          S-iopub	(assoc S :socket :iopub-socket)
           io-sleep   10
-          get-input (fn [] (input-request zmq-comm parent-header session-id signer ident))
+          get-input (fn [] (input-request S parent-message))
           pass-input-to-nrepl (fn [nrepl-client session pending]
                                 (reset! need-input true)
                                 (get-input)
@@ -95,13 +99,9 @@
                          (swap! pending disj id)
                          (and pending? (some #{"interrupted" "done" "error"} status))))
           stdout     (fn [msg]
-                       (send-message zmq-comm :iopub-socket "stream"
-                                     {:name "stdout" :text msg}
-                                     parent-header {} session-id signer))
+                       (send-message S-iopub "stream" {:name "stdout" :text msg} parent-message))
           stderr     (fn [msg]
-                       (send-message zmq-comm :iopub-socket "stream"
-                                     {:name "stdout" :text msg}
-                                     parent-header {} session-id signer))]
+                       (send-message S-iopub "stream" {:name "stdout" :text msg} parent-message))]
       (doseq [{:keys [ns out err status session ex mime-tagged-value] :as msg}
               (nrepl/message (:nrepl-client self)
                              {:id command-id
@@ -109,7 +109,7 @@
                               :session (:nrepl-session self)
                               :code code})
               :while (not (done? msg pending))]
-        (log/debug (str "received nrepl msg: " msg))
+        (log/debug (str "received nrepl" :msg msg))
         (when-not @interrupted
           (log/info "nrepl status " status)
           (when ns  (reset! current-ns ns))
@@ -126,10 +126,9 @@
 
       ;; send display data and reset display queue
       (doseq [data @(:display-queue states)]
-        (send-message zmq-comm :iopub-socket "display_data"
-                      {:data (cheshire/parse-string data true)
-                       :metadata {}}
-                      parent-header {} session-id signer))
+        (send-message S-iopub "display_data"
+                      {:data (cheshire/parse-string data true), :metadata {}}
+                      parent-message))
       (reset! (:display-queue states) [])
 
       ;; set traceback for when there are exceptions or interrupted
@@ -137,7 +136,7 @@
         (swap! result assoc :traceback 
                (if (= [1 10] ((juxt :major :minor) *clojure-version*))
                  ;; TODO: Uncaught exceptions related to op "stacktrace" in cider-nrepl causes kernel to crash.
-                 ;;       Living without stack traces seems less annoying for now.
+                 ;;       Living without stack traces seems less annoying.
                  ["No traceback available (disabled for Clojure 1.10)."] 
                  (if (re-find #"StackOverflowError" ex)
                    []
@@ -145,6 +144,7 @@
       (log/info "eval-result: " (with-out-str (pp/pprint @result)))
       @result))
   (nrepl-complete [self code]
+    (log/debug "nrepl-complete: " :self self :code code)
     (let [ns @current-ns
           result (-> (:nrepl-client self)
                      (nrepl/message {:op :complete
@@ -157,6 +157,7 @@
            (map :candidate)
            (into []))))
   (nrepl-doc [self sym]
+    (log/debug "nrepl-doc: " :self self :sym sym)
     (let [code (str "(clojure.repl/doc " sym ")")
           result (-> (:nrepl-client self)
                      (nrepl/message {:op :eval

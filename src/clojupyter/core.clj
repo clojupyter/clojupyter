@@ -20,6 +20,20 @@
             [zeromq.zmq :as zmq])
   (:gen-class :main true))
 
+(defn- catching-exceptions*
+  ([form finally-form]
+   `(try ~form
+         (catch Exception e#
+           (do (log/error (with-out-str (st/print-stack-trace e# 20)))
+               (throw e#)))
+         (finally ~finally-form))))
+
+(defmacro ^{:style/indent 1} catching-exceptions
+  ([form]
+   (catching-exceptions* form '(do)))
+  ([form finally-form]
+   (catching-exceptions* form finally-form)))
+
 (defn- prep-config
   [args]
   (-> args first slurp json/read-str walk/keywordize-keys))
@@ -55,14 +69,12 @@
     (alter-var-root #'*NREPL-SERVER-ADDR* (constantly sock-addr))
     srv))
 
-(defn- exception-handler
-  [e]
-  (log/error (with-out-str (st/print-stack-trace e 20))))
-
 (defn- configure-shell-handler
   [S]
   (let [respond-to-execute-request (execute-request-handler)] ;; needs to bind execution counter atom
     (fn [message]
+      (log/debug "shell-handler: " :S S :message message)
+      (assert (:socket S) (str "shell-handler: no socket found"))
       (let [msg-type (get-in message [:header :msg_type])]
         (case msg-type
           "execute_request" (respond-to-execute-request S msg-type message)
@@ -71,28 +83,28 @@
 (defn- configure-control-handler
   [S]
   (fn [message]
+    (log/debug (str "control-handler: " :S S :message message))
     (let [msg-type (get-in message [:header :msg_type])]
-      (respond-to-message (assoc S :message message :msg-type msg-type) msg-type))))
+      (respond-to-message S msg-type message))))
 
 (defn- process-event
-  [{:keys [zmq-comm socket signer handler]}]
-  (let [message        (pzmq/zmq-read-raw-message zmq-comm socket 0)
-        parsed-message (parse-message message)
-        parent-header  (:header parsed-message)
-        session-id     (:session parent-header)]
-    (send-message zmq-comm :iopub-socket "status"
-                  (status-content "busy") parent-header {} session-id signer)
-    (handler parsed-message)
-    (send-message zmq-comm :iopub-socket "status"
-                  (status-content "idle") parent-header {} session-id signer)))
+  [{:keys [zmq-comm socket signer handler] :as S}]
+  (log/debug (str "process-event: " :S S))
+  (let [S-iopub		(assoc S :socket :iopub-socket)
+        raw-message	(pzmq/zmq-read-raw-message zmq-comm socket 0)
+        message		(parse-message raw-message)
+        parent-header 	(:header message)
+        session-id	(:session parent-header)]
+    (log/debug (str "process-event: " :message message :raw-message raw-message))
+    (send-message S-iopub "status" (status-content "busy") message)
+    (handler message)
+    (send-message S-iopub "status" (status-content "idle") message)))
 
 (defn- event-loop
   [{:keys [states] :as S}]
-  (try
+  (catching-exceptions
     (while @(:alive states)
-      (process-event S))
-    (catch Exception e
-      (exception-handler e))))
+      (process-event S))))
 
 (defn- process-heartbeat
   [zmq-comm socket]
@@ -101,11 +113,9 @@
 
 (defn- heartbeat-loop
   [{:keys [states zmq-comm]}]
-  (try
+  (catching-exceptions
     (while @(:alive states)
-      (process-heartbeat zmq-comm :hb-socket))
-    (catch Exception e
-      (exception-handler e))))
+      (process-heartbeat zmq-comm :hb-socket))))
 
 (defn- shell-loop
   [{:keys [nrepl-comm] :as S}]
@@ -155,21 +165,19 @@
                                                             nrepl-client nrepl-session)
               S			{:states states :zmq-comm zmq-comm :nrepl-comm nrepl-comm
                                  :signer signer :checker checker}
-              status-sleep  1000]
-          (try
-            (future (shell-loop     S))
-            (future (control-loop   S))
-            (future (heartbeat-loop S))
-            ;; check every second if state
-            ;; has changed to anything other than alive
-            (while @(:alive states) (Thread/sleep status-sleep))
-            (catch Exception e
-              (exception-handler e))
-            (finally (doseq [socket [shell-socket iopub-socket control-socket hb-socket]]
-                       (zmq/set-linger @socket 0)
-                       (zmq/close @socket))
-                     (his/end-history-session (:history-session states) 5000)
-                     (System/exit 0))))))))
+              status-sleep	1000]
+          (catching-exceptions
+              (do (future (shell-loop     S))
+                  (future (control-loop   S))
+                  (future (heartbeat-loop S))
+                  ;; check every second if state
+                  ;; has changed to anything other than alive
+                  (while @(:alive states) (Thread/sleep status-sleep)))
+            (do (doseq [socket [shell-socket iopub-socket control-socket hb-socket]]
+                  (zmq/set-linger @socket 0)
+                  (zmq/close @socket))
+                (his/end-history-session (:history-session states) 5000)
+                (System/exit 0))))))))
 
 (defn -main
   [& args]

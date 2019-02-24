@@ -71,37 +71,46 @@
   (pzmq/zmq-send zmq-comm socket (.getBytes msg))
   (log/debug "Finished sending all"))
 
-(defn- send-router-message
+(defn- send-parts
   [{:keys [zmq-comm socket signer] :as S} msg-type content parent-message]
-  (log/info "Trying to send router message\n" (u/pp-str content))
   (let [session-id	(message-session parent-message)
         header		(as-json (new-header msg-type session-id))
         parent-header	(as-json (message-header parent-message))
         metadata	(as-json {})
         content		(as-json content)]
-    (doseq [ident (message-idents parent-message)]               ;
-      (pzmq/zmq-send zmq-comm socket ident zmq/send-more))
+    (log/debug "send-parts: " :S S :msg-type msg-type :content content
+               :header header :parent-header  parent-header :metadata metadata)
     (doall
      (map (partial send-message-piece zmq-comm socket)
-          ["<IDS|MSG>" (signer header parent-header metadata content)
-           header parent-header metadata]))
-    (finish-message zmq-comm socket content))
-  (log/info "Message sent"))
+          ["<IDS|MSG>" (signer header parent-header metadata content) 
+           header parent-header metadata]))))
+
+(defn- send-idents
+  [{:keys [zmq-comm socket] :as S} message]
+  (log/debug "send-idents: " :S S :message message)
+  (doseq [ident (message-idents message)]               ;
+    (pzmq/zmq-send zmq-comm socket ident zmq/send-more)))
+
+(defn- send-msg-type
+  [{:keys [zmq-comm socket] :as S} msg-type]
+  (log/debug "send-msg-type: " :S S :msg-type msg-type)
+  (send-message-piece zmq-comm socket msg-type))
+
+(defn- send-router-message
+  [{:keys [zmq-comm socket signer] :as S} msg-type content parent-message]
+  (log/info "send-router-message sending: " (u/pp-str content))
+  (send-idents S parent-message)
+  (send-parts S msg-type content parent-message)
+  (finish-message zmq-comm socket (as-json content))
+  (log/info "send-router-message: message sent"))
 
 (defn send-message
   [{:keys [zmq-comm socket signer] :as S} msg-type content parent-message]
   (log/info "send-message sending: " (u/pp-str content))
-  (let [session-id	(message-session parent-message)
-        header		(as-json (new-header msg-type session-id))
-        parent-header	(as-json (message-header parent-message))
-        metadata	(as-json {})
-        content		(as-json content)]
-    (doall
-     (map (partial send-message-piece zmq-comm socket)
-          [msg-type "<IDS|MSG>" (signer header parent-header metadata content) 
-           header parent-header metadata]))
-    (finish-message zmq-comm socket content))
-  (log/info "Message sent"))
+  (send-msg-type S msg-type)
+  (send-parts S msg-type content parent-message)
+  (finish-message zmq-comm socket (as-json content))
+  (log/info "send-message: message sent"))
 
 (defn make-message-signer
   [key]

@@ -102,7 +102,7 @@
   [{:keys [zmq-comm socket signer handler] :as S}]
   (log/debug (str "process-event: " :S S))
   (let [S-iopub	(assoc S :socket :iopub-socket)
-        message	(-> (pzmq/zmq-read-raw-message zmq-comm socket 0) parse-message)]
+        message	(-> (pzmq/zmq-read-raw-message zmq-comm socket 0) build-message)]
     (log/debug (str "process-event: " :message message))
     (send-message S-iopub "status" (status-content "busy") message)
     (handler message)

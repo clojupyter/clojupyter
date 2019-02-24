@@ -73,7 +73,7 @@
                                       ;; not interrupted
                                       (if (not (nil? message))
                                         ;; got a message continue
-                                        (let [parsed-message (parse-message message)
+                                        (let [parsed-message (build-message message)
                                               input (message-value parsed-message)]
                                           (swap! pending conj command-id)
                                           (log/info "got input " message)

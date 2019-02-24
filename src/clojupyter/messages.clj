@@ -32,6 +32,10 @@
 (defn message-username		[message]	(get-in message [:header :username]))
 (defn message-value		[message]	(get-in message [:content :value]))
 
+;;; ----------------------------------------------------------------------------------------------------
+;;; SENDING MESSAGES
+;;; ----------------------------------------------------------------------------------------------------
+
 (def as-json cheshire/generate-string)
 
 (defn- new-header
@@ -96,6 +100,10 @@
   (finish-message zmq-comm socket (as-json content))
   (log/info "send-message: message sent"))
 
+;;; ----------------------------------------------------------------------------------------------------
+;;; MESSAGE HELPRES
+;;; ----------------------------------------------------------------------------------------------------
+
 (defn make-message-signer
   [key]
   (if (empty? key)
@@ -109,7 +117,7 @@
     (let [our-signature (signer header parent-header metadata content)]
       (= our-signature signature))))
 
-(defn parse-message
+(defn build-message
   [message]
   {:idents (message-idents message)
    :delimiter (message-delimiter message)
@@ -118,7 +126,9 @@
    :parent-header (cheshire/parse-string (message-parent-header message) keyword)
    :content (cheshire/parse-string (message-content message) keyword)})
 
-;; Message contents
+;;; ----------------------------------------------------------------------------------------------------
+;;; MESSAGE CONTENTS
+;;; ----------------------------------------------------------------------------------------------------
 
 (defn status-content
   [status]
@@ -128,14 +138,14 @@
   [execution-count message]
   {:execution_count execution-count, :code (message-code message)})
 
+;;; ----------------------------------------------------------------------------------------------------
+;;; RESPOND TO MESSAGES
+;;; ----------------------------------------------------------------------------------------------------
+
 (defn input-request
   [S parent-message]
   (let [content  {:prompt ">> ", :password false}]
     (send-router-message (assoc S :socket :stdin-socket) "input_request" content parent-message)))
-
-;;; ----------------------------------------------------------------------------------------------------
-;;; RESPOND-TO-MESSAGE
-;;; ----------------------------------------------------------------------------------------------------
 
 (defmacro defresponse [bindings msg-type form]
   `(defmethod respond-to-message ~msg-type ~bindings

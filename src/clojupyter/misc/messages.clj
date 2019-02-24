@@ -142,30 +142,24 @@
 ;;; RESPOND-TO-MESSAGE
 ;;; ----------------------------------------------------------------------------------------------------
 
+(defmacro defresponse [bindings msg-type form]
+  `(defmethod respond-to-message ~msg-type ~bindings
+     (do (log/debug :respond-to-message " " ~msg-type " " :arglist " " ~bindings)
+         ~form
+         (log/debug :respond-to-message ~msg-type :done))))
+
 (defmulti respond-to-message (fn [_ msg-type _] msg-type))
 
-(defmethod respond-to-message "comm_info_request"
-  [S _ message]
-  (log/debug "respond-to comm_info_request: " :S S :message message)
-  (let [content {:comms {:comm_id {:target_name ""}}}]
-    (send-message S "comm_info_reply" content message)))
+(defresponse [S _ message] "comm_info_request"
+  (send-message S "comm_info_reply" {:comms {:comm_id {:target_name ""}}} message))
 
-(defmethod respond-to-message "comm_msg"
-  [S _ message]
-  (log/debug "respond-to comm_msg: " :S S :message message)
-  (let [content  {}]
-    (send-message S "comm_msg_reply" content message)))
+(defresponse [S _ message] "comm_msg"
+  (send-message S "comm_msg_reply" {} message))
 
-(defmethod respond-to-message "comm_open"
-  [S _ message]
-  (log/debug "respond-to comm_open: " :S S :message message)
-  (let [comm-id (message-comm-id message)
-        content {:comm_id comm-id, :data {}}]
-    (send-router-message S "comm_close" content message)))
+(defresponse [S _ message] "comm_open"
+  (send-router-message S "comm_close" {:comm_id (message-comm-id message), :data {}} message))
 
-(defmethod respond-to-message "kernel_info_request"
-  [S _ message]
-  (log/debug "respond-to kernel_info_request:" :S S :message message)
+(defresponse [S _ message] "kernel_info_request"
   (let [content {:status "ok"
                  :protocol_version protocol-version
                  :implementation "clojupyter"
@@ -177,23 +171,16 @@
                  :help_links []}]
     (send-router-message S "kernel_info_reply" content message)))
 
-(defmethod respond-to-message "shutdown_request"
-  [{:keys [states nrepl-comm] :as S} _ message]
-  (log/debug "respond-to shutdown_request: " :S S :message message)
-  (let [content {:restart (message-restart message) :status "ok"}]
-    (send-router-message S "shutdown_reply" content message)))
+(defresponse [{:keys [states nrepl-comm] :as S} _ message] "shutdown_request"
+  (send-router-message S "shutdown_reply" {:restart (message-restart message) :status "ok"} message))
 
-(defmethod respond-to-message "is_complete_request"
-  [S _ message]
-  (log/debug "respond-to is_complete_request: " :S S :message message)
-  (let [content (if (complete/complete? (message-code message))
-                  {:status "complete"}
-                  {:status "incomplete"})]
-    (send-router-message S "is_complete_reply" content message)))
+(defresponse [S _ message] "is_complete_request"
+  (send-router-message S "is_complete_reply"
+                       (if (complete/complete? (message-code message))
+                         {:status "complete"}
+                         {:status "incomplete"}) message))
 
-(defmethod respond-to-message "complete_request"
-  [{:keys [nrepl-comm] :as S} _ message]
-  (log/debug "respond-to complete_request" :S S :message message)
+(defresponse [{:keys [nrepl-comm] :as S} _ message] "complete_request"
   (let [content (let [delimiters #{\( \" \% \space}
                       cursor_pos (message-cursor-pos message)
                       codestr (subs (message-code message) 0 cursor_pos)
@@ -207,16 +194,12 @@
                    :status "ok"})]
     (send-router-message S "complete_reply" content message)))
 
-(defmethod respond-to-message "history_request"
-  [{:keys [states] :as S} _ message]
-  (log/debug "respond-to history_request: " :S S :message message)
-  (let [content  {:history (map #(vector (:session %) (:line %) (:source %))
-                                (his/get-history (:history-session states)))}]
+(defresponse [{:keys [states] :as S} _ message] "history_request"
+  (let [content {:history (map #(vector (:session %) (:line %) (:source %))
+                               (his/get-history (:history-session states)))}]
     (send-router-message S "history_reply" content message)))
 
-(defmethod respond-to-message "inspect_request"
-  [{:keys [zmq-comm nrepl-comm socket signer] :as S} _ message]
-  (log/debug "respond-to inspect_request:" :S S :message message)
+(defresponse [{:keys [zmq-comm nrepl-comm socket signer] :as S} _ message] "inspect_request"
   (let [code (message-code message)
         cursor_pos (message-cursor-pos message)
         sym (tokenize/token-at code cursor_pos)
@@ -230,11 +213,10 @@
                           :text/plain (str result)}})]
     (send-router-message S "inspect_reply" content message)))
 
-(defmethod respond-to-message :default
-  [{:as S} msg-type message]
-  (log/error "Message type" msg-type "not handled yet. Exiting.")
-  (log/error "Message dump:" message)
-  (System/exit -1))
+(defresponse [{:as S} msg-type message] :default
+  (do (log/error "Message type " msg-type " not implemented. Exiting.")
+      (log/error "Message dump:" (u/pp-str message))
+      (System/exit -1)))
 
 (defn execute-request-handler
   []

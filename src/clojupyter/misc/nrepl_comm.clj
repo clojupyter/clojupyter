@@ -134,13 +134,14 @@
 
       ;; set traceback for when there are exceptions or interrupted
       (when-let [ex (:ename @result)]
-        ;; 2019-02-15 (Klaus Harbo): Workaround to avoid uncaught exception in stacktrace processing
-        ;;			     TODO: Fix stacktrace processing (presumed to be related to
-        ;;			     nrepl update).
         (swap! result assoc :traceback 
-               ["No traceback available (disabled)."]
-               #_(comment "KH: Keep original code for reference."
-                          (if (re-find #"StackOverflowError" ex) [] (stacktrace-string (pnrepl/nrepl-trace self))))))
+               (if (= [1 10] ((juxt :major :minor) *clojure-version*))
+                 ;; TODO: Uncaught exceptions related to op "stacktrace" in cider-nrepl causes kernel to crash.
+                 ;;       Living without stack traces seems less annoying for now.
+                 ["No traceback available (disabled for Clojure 1.10)."] 
+                 (if (re-find #"StackOverflowError" ex)
+                   []
+                   (stacktrace-string (pnrepl/nrepl-trace self))))))
       (log/info "eval-result: " (with-out-str (pp/pprint @result)))
       @result))
   (nrepl-complete [self code]

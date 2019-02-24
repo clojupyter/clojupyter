@@ -299,3 +299,50 @@
   (log/error "Message type" msg-type "not handled yet. Exiting.")
   (log/error "Message dump:" message)
   (System/exit -1))
+
+(defn make-execute-request-handler
+  [{:keys [states zmq-comm nrepl-comm socket] :as S}]
+  (let [execution-count (atom 1N)]
+    (fn [{:keys [message signer]}]
+      (let [session-id (get-in message [:header :session])
+            ident (:idents message)
+            parent-header (:header message)
+            code (get-in message [:content :code])
+            silent (str/ends-with? code ";")]
+        (send-message zmq-comm :iopub-socket "execute_input"
+                      (pyin-content @execution-count message)
+                      parent-header {} session-id signer)
+        (log/debug (str "execute-input sent: " message))
+        (let [nrepl-resp (pnrepl/nrepl-eval nrepl-comm states zmq-comm
+                                            code parent-header
+                                            session-id signer ident)
+              {:keys [result ename traceback]} nrepl-resp
+              error (if ename
+                      {:status "error"
+                       :ename ename
+                       :evalue ""
+                       :execution_count @execution-count
+                       :traceback traceback})]
+          (log/debug (str "nrepl-resp: " nrepl-resp))
+          (send-router-message zmq-comm :shell-socket "execute_reply"
+                               (if error
+                                 error
+                                 {:status "ok"
+                                  :execution_count @execution-count
+                                  :user_expressions {}})
+                               parent-header
+                               session-id
+                               {}
+                               signer ident)
+          (if error
+            (send-message zmq-comm :iopub-socket "error"
+                          error parent-header {} session-id signer)
+            (when-not (or (= result "nil") silent)
+              (log/debug (str "execute-result: " result))
+              (send-message zmq-comm :iopub-socket "execute_result"
+                            {:execution_count @execution-count
+                             :data (cheshire/parse-string result true)
+                             :metadata {}}
+                            parent-header {} session-id signer)))
+          (his/add-history (:history-session states) @execution-count code)
+          (swap! execution-count inc))))))

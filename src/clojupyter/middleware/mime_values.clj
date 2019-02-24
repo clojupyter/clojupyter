@@ -1,8 +1,11 @@
 (ns clojupyter.middleware.mime-values
-  (:require [nrepl.transport :as t]
-            [clojure.pprint :as pp]
-            [clojupyter.protocol.mime-convertible :as mime])
-  (:use [nrepl.middleware :only (set-descriptor!)])
+  (:require
+   [clojure.pprint				:as pp]
+   [nrepl.transport				:as t]
+   ,,
+   [clojupyter.protocol.mime-convertible	:as mime])
+  (:use
+   [nrepl.middleware				:only (set-descriptor!)])
   (:import [nrepl.transport Transport]))
 
 (defn mime-values

@@ -1,12 +1,13 @@
-(ns clojupyter.misc.display
-  (:require [clojupyter.protocol.mime-convertible :as mc]
-            [clojupyter.misc.states :as states]
-            [hiccup.core :as hiccup]))
+(ns clojupyter.display
+  (:require
+   [hiccup.core					:as hiccup]
+   ,,
+   [clojupyter.protocol.mime-convertible	:as mc]
+   [clojupyter.states				:as states]))
 
 (defn display [obj]
   (swap! (:display-queue @states/current-global-states) conj (mc/to-mime obj))
   nil)
-
 
 ;; Html
 

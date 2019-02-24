@@ -1,20 +1,21 @@
-(ns clojupyter.misc.messages
+(ns clojupyter.messages
   (:require
-   [cheshire.core :as cheshire]
-   [clj-time.core :as time]
-   [clj-time.format :as time-format]
-   [clojupyter.misc.history :as his]
-   [clojupyter.misc.util	:as u]
-   [clojupyter.protocol.zmq-comm :as pzmq]
-   [clojupyter.protocol.nrepl-comm :as pnrepl]
-   [clojure.pprint :as pp]
-   [clojure.string :as str]
-   [nrepl.core :as nrepl]
-   [nrepl.misc :as nrepl.misc]
-   [nrepl.server :as nrepl.server]
-   [pandect.algo.sha256 :refer [sha256-hmac]]
-   [taoensso.timbre :as log]
-   [zeromq.zmq :as zmq]))
+   [cheshire.core			:as cheshire]
+   [clj-time.core			:as time]
+   [clj-time.format			:as time-format]
+   [clojure.pprint			:as pp]
+   [clojure.string			:as str]
+   [nrepl.core				:as nrepl]
+   [nrepl.misc				:as nrepl.misc]
+   [nrepl.server			:as nrepl.server]
+   [pandect.algo.sha256					:refer [sha256-hmac]]
+   [taoensso.timbre			:as log]
+   [zeromq.zmq				:as zmq]
+   ,,
+   [clojupyter.history			:as his]
+   [clojupyter.protocol.nrepl-comm	:as pnrepl]
+   [clojupyter.protocol.zmq-comm	:as pzmq]
+   [clojupyter.util			:as u]))
 
 (def protocol-version "5.0")
 

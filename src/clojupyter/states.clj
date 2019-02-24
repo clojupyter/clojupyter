@@ -1,6 +1,8 @@
-(ns clojupyter.misc.states
-  (:require [clojupyter.misc.history :as his]
-            [clojure.java.io :as io]))
+(ns clojupyter.states
+  (:require
+   [clojure.java.io			:as io]
+   ,,
+   [clojupyter.history			:as his]))
 
 (def current-global-states (atom nil))
 

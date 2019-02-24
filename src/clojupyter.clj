@@ -1,23 +1,25 @@
-(ns clojupyter.core
-  (:require [beckon]
-            [cheshire.core :as cheshire]
-            [clojupyter.middleware.mime-values]
-            [clojupyter.misc.zmq-comm :as zmq-comm]
-            [clojupyter.misc.nrepl-comm :as nrepl-comm]
-            [clojupyter.misc.states :as states]
-            [clojupyter.misc.history :as his]
-            [clojupyter.misc.messages :refer :all]
-            [clojupyter.protocol.zmq-comm :as pzmq]
-            [clojupyter.protocol.nrepl-comm :as pnrepl]
-            [clojure.data.json :as json]
-            [clojure.pprint :as pp]
-            [clojure.stacktrace :as st]
-            [clojure.string	:as str]
-            [nrepl.core :as nrepl]
-            [nrepl.server :as nrepl.server]
-            [clojure.walk :as walk]
-            [taoensso.timbre :as log]
-            [zeromq.zmq :as zmq])
+(ns clojupyter
+  (:require
+   [beckon]
+   [cheshire.core			:as cheshire]
+   [clojure.data.json			:as json]
+   [clojure.pprint			:as pp]
+   [clojure.stacktrace			:as st]
+   [clojure.string			:as str]
+   [clojure.walk			:as walk]
+   [nrepl.core				:as nrepl]
+   [nrepl.server			:as nrepl.server]
+   [taoensso.timbre			:as log]
+   [zeromq.zmq				:as zmq]
+   ,,
+   [clojupyter.middleware.mime-values]
+   [clojupyter.history			:as his]
+   [clojupyter.messages			:refer :all]
+   [clojupyter.nrepl-comm		:as nrepl-comm]
+   [clojupyter.states			:as states]
+   [clojupyter.zmq-comm			:as zmq-comm]
+   [clojupyter.protocol.nrepl-comm	:as pnrepl]
+   [clojupyter.protocol.zmq-comm	:as pzmq])
   (:gen-class :main true))
 
 (defn- catching-exceptions*

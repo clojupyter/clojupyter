@@ -1,4 +1,4 @@
-(ns clojupyter.misc.util
+(ns clojupyter.util
   (:require
    [clojure.pprint			:as pp]
    [net.cgrand.sjacket.parser		:as p]))

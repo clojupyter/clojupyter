@@ -1,13 +1,15 @@
-(ns clojupyter.misc.nrepl-comm
-  (:require [cheshire.core :as cheshire]
-            [clojupyter.protocol.nrepl-comm :as pnrepl]
-            [clojupyter.misc.messages :refer :all]
-            [clojupyter.protocol.zmq-comm :as pzmq]
-            [clojure.pprint :as pp]
-            [nrepl.core :as nrepl]
-            [nrepl.misc :as nrepl.misc]
-            [taoensso.timbre :as log]
-            [zeromq.zmq :as zmq]))
+(ns clojupyter.nrepl-comm
+  (:require
+   [cheshire.core			:as cheshire]
+   [clojure.pprint			:as pp]
+   [nrepl.core				:as nrepl]
+   [nrepl.misc				:as nrepl.misc]
+   [taoensso.timbre			:as log]
+   [zeromq.zmq				:as zmq]
+   ,,
+   [clojupyter.messages					:refer :all]
+   [clojupyter.protocol.nrepl-comm	:as pnrepl]
+   [clojupyter.protocol.zmq-comm	:as pzmq]))
 
 (defn stacktrace-string
   "Return a nicely formatted string."

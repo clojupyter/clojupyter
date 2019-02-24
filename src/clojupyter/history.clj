@@ -1,6 +1,7 @@
-(ns clojupyter.misc.history
-  (:require [clojure.java.jdbc :as sql]
-            [clojure.java.io :as io]))
+(ns clojupyter.history
+  (:require
+   [clojure.java.jdbc			:as sql]
+   [clojure.java.io			:as io]))
 
 (defn- now [] (new java.util.Date))
 

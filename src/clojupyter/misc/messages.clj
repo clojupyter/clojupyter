@@ -180,13 +180,8 @@
 (defmethod respond-to-message "shutdown_request"
   [{:keys [states nrepl-comm] :as S} _ message]
   (log/debug "respond-to shutdown_request: " :S S :message message)
-  (let [restart (message-restart message)
-        server @(:nrepl-server nrepl-comm)
-        content {:restart restart :status "ok"}]
-    (reset! (:alive states) false)
-    (nrepl.server/stop-server server)
-    (send-router-message S "shutdown_reply" content message)
-    (Thread/sleep 100)))
+  (let [content {:restart (message-restart message) :status "ok"}]
+    (send-router-message S "shutdown_reply" content message)))
 
 (defmethod respond-to-message "is_complete_request"
   [S _ message]

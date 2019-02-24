@@ -69,6 +69,11 @@
     (alter-var-root #'*NREPL-SERVER-ADDR* (constantly sock-addr))
     srv))
 
+(defn- shutdown
+  [{:keys [nrepl-comm states] :as S}]
+  (reset! (:alive states) false)
+  (nrepl.server/stop-server @(:nrepl-server nrepl-comm)))
+
 (defn- configure-shell-handler
   [S]
   (let [respond-to-execute-request (execute-request-handler)] ;; needs to bind execution counter atom
@@ -77,7 +82,11 @@
       (assert (:socket S) (str "shell-handler: no socket found"))
       (let [msg-type (message-msg-type message)]
         (case msg-type
-          "execute_request" (respond-to-execute-request S msg-type message)
+          "execute_request"	(respond-to-execute-request S msg-type message)
+          "shutdown_request"    (do
+                                  (respond-to-message S msg-type message)
+                                  (shutdown S)
+                                  (Thread/sleep 100))
           (respond-to-message S msg-type message))))))
 
 (defn- configure-control-handler

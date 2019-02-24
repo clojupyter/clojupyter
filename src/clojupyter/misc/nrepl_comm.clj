@@ -109,6 +109,7 @@
                               :session (:nrepl-session self)
                               :code code})
               :while (not (done? msg pending))]
+        (log/debug (str "received nrepl msg: " msg))
         (when-not @interrupted
           (log/info "nrepl status " status)
           (when ns  (reset! current-ns ns))

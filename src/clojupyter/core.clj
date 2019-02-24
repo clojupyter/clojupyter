@@ -20,7 +20,7 @@
             [zeromq.zmq :as zmq])
   (:gen-class :main true))
 
-(defonce VERSION "55")
+(defonce VERSION 55)
 
 (defn- prep-config [args]
   (-> args
@@ -70,6 +70,7 @@
         (send-message zmq-comm :iopub-socket "execute_input"
                       (pyin-content @execution-count message)
                       parent-header {} session-id signer)
+        (log/debug (str "execute-input sent: " message))
         (let [nrepl-resp (pnrepl/nrepl-eval nrepl-comm states zmq-comm
                                             code parent-header
                                             session-id signer ident)
@@ -80,6 +81,7 @@
                        :evalue ""
                        :execution_count @execution-count
                        :traceback traceback})]
+          (log/debug (str "nrepl-resp: " nrepl-resp))
           (send-router-message zmq-comm :shell-socket "execute_reply"
                                (if error
                                  error
@@ -94,6 +96,7 @@
             (send-message zmq-comm :iopub-socket "error"
                           error parent-header {} session-id signer)
             (when-not (or (= result "nil") silent)
+              (log/debug (str "execute-result: " result))
               (send-message zmq-comm :iopub-socket "execute_result"
                             {:execution_count @execution-count
                              :data (cheshire/parse-string result true)

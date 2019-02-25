@@ -2,6 +2,7 @@
   (:require
    [clojure.pprint				:as pp]
    [nrepl.transport				:as t]
+   [nrepl.middleware.pr-values				:refer [pr-values]]
    ,,
    [clojupyter.protocol.mime-convertible	:as mime])
   (:use
@@ -22,7 +23,7 @@
                                       resp))
                              this))))))
 
-(set-descriptor! #'mime-values
-                 {:requires #{}
+(set-descriptor! #'mime-values 
+                 {:requires #{#'pr-values}
                   :expects #{"eval"}
                   :handles {}})

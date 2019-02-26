@@ -48,7 +48,7 @@ Changes relative to Clojupyter `master` latest commit per 15 February 2019 (`994
     * Various reformatting here and there
 * Examples
     * `html-demo.ipynb`
-        * Updated to use Vega Lite instead of Highcharts (which seems to be broken in both updated version
-          and current `HEAD` of `master` using Clojure 1.8
+        * Update to use Vega Lite instead of Highcharts (which seems to be broken in both updated version
+          and current `HEAD` of `master` using Clojure 1.8)
     * `incanter-demo.ipynb`
-        * Updated to print Clojure version
+        * Update to print Clojure version

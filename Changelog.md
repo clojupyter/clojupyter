@@ -38,3 +38,5 @@
     * Use `->Class`-forms, e.g. `->HiccupHTML` instead of `HiccupHTML.`, to allow interactive class updates
     * Extra `log/debug`s here and there
     * Various reformatting here and there
+* `core_test.clj`
+    * Update tests	

@@ -33,14 +33,14 @@ Changes relative to Clojupyter `master` latest commit per 15 February 2019 (`994
       directly): Enables using the `nrepl` server using regular clients
 * `protocol/mime_convertible.clj`
     * Print `nil` as `nil` (instead of not printing anything)
-* Miscellaneous code cleanup
-    * Send error messages to Jupyter stream `stderr` instead of `stdout`
-    * Use `->Class`-forms, e.g. `->HiccupHTML` instead of `HiccupHTML.`, to allow interactive class updates
-    * Extra `log/debug`s here and there
-    * Various reformatting here and there
 * `stacktrace.clj`
     * Add mechanism to control whether stacktraces are printed or not as it appears
       that `cider-nrepl` occasionally triggers uncaught exceptions. Most likely linked to upgrade of
      `nrepl` and/or `cider-nrepl`; the cause of the problem not understood as yet.
 * `core_test.clj`
-    * Update tests	
+    * Update tests
+* Miscellaneous code cleanup
+    * Send error messages to Jupyter stream `stderr` instead of `stdout`
+    * Use `->Class`-forms, e.g. `->HiccupHTML` instead of `HiccupHTML.`, to allow interactive class updates
+    * Extra `log/debug`s here and there
+    * Various reformatting here and there

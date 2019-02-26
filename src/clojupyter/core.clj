@@ -76,7 +76,7 @@
   (reset! (:alive states) false)
   (nrepl.server/stop-server @(:nrepl-server nrepl-comm)))
 
-(defn- configure-shell-handler
+(defn configure-shell-handler
   [S]
   (let [respond-to-execute-request (execute-request-handler)] ;; needs to bind execution counter atom
     (fn [message]
@@ -98,7 +98,7 @@
     (let [msg-type (message-msg-type message)]
       (respond-to-message S msg-type message))))
 
-(defn- process-event
+(defn process-event
   [{:keys [zmq-comm socket signer handler] :as S}]
   (log/debug (str "process-event: " :S S))
   (let [S-iopub	(assoc S :socket :iopub-socket)
@@ -114,7 +114,7 @@
     (while @(:alive states)
       (process-event S))))
 
-(defn- process-heartbeat
+(defn process-heartbeat
   [zmq-comm socket]
   (let [message (pzmq/zmq-recv zmq-comm socket)]
     (pzmq/zmq-send zmq-comm socket message)))

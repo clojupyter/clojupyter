@@ -22,3 +22,6 @@
   [v]
   (with-out-str (pp/pprint v)))
 
+(defn rcomp
+  [& fs]
+  (apply comp (reverse fs)))

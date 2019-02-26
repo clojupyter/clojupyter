@@ -1,6 +1,6 @@
 # Changelog
 
-## v0.1.4
+## 0.1.2 (work in progress)
 
 Changes relative to Clojupyter `master` latest commit per 15 February 2019 (`994f680c`):
 

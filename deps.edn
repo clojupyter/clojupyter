@@ -1,12 +1,8 @@
 {:paths					["src"]
  :deps {
-        nrepl 				{:mvn/version "0.5.3"}
-        cider/cider-nrepl		{:mvn/version "0.20.0"}
-
-        midje				{:mvn/version "1.9.6" :exclusions [org.clojure/clojure]}
-        
         beckon				{:mvn/version "0.1.1"}
         cheshire			{:mvn/version "5.8.1"}
+        cider/cider-nrepl		{:mvn/version "0.20.0"}
         clj-time			{:mvn/version "0.15.0"}
         com.cemerick/pomegranate 	{:mvn/version "1.1.0"}
         com.taoensso/timbre 		{:mvn/version "4.10.0"}
@@ -14,6 +10,7 @@
         net.cgrand/parsley 		{:mvn/version "0.9.3" :exclusions [org.clojure/clojure]}
         net.cgrand/regex 		{:mvn/version "1.1.0" :exclusions [org.clojure/clojure]}
         net.cgrand/sjacket 		{:mvn/version "0.1.1" :exclusions [org.clojure/clojure net.cgrand.parsley]}
+        nrepl 				{:mvn/version "0.5.3"}
         org.clojure/clojure 		{:mvn/version "1.10.0"}
         org.clojure/core.async 		{:mvn/version "0.4.490"}
         org.clojure/data.codec 		{:mvn/version "0.1.1"}

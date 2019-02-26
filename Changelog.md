@@ -1,5 +1,7 @@
 # Changelog
 
+## v0.1.4
+
 Changes relative to Clojupyter `master` latest commit per 15 February 2019 (`994f680c`):
 
 * Ensure compatibility with **Clojure v1.9** and **Clojure v1.10**

@@ -16,11 +16,11 @@ Changes relative to Clojupyter `master` latest commit per 15 February 2019 (`994
 	* Refactor `process-heartbeat` away
 	* Shorten arglists using a map instead of individual args
     * Add `nrepl-server-addr` to retrieve `nrepl` server port to enable connection from interactive
-	development environment
+      development environment
 * `messages.clj`
     * Use multi-method `respond-to-message` dispatching on request type to eliminate individually
-	named response functions such as `input-request`, `comm-open-reply`, `kernel-info-reply`, etc.
-	* Use macro `defresponse` to further reduce code size
+      named response functions such as `input-request`, `comm-open-reply`, `kernel-info-reply`, etc.
+    * Use macro `defresponse` to further reduce code size
     * Refactor `shutdown-reply` separating shutdown actions and responding to shutdown request
     * Refactor away content-calculating functions to get better locality permitted by much smaller response
 	generating functions
@@ -30,7 +30,7 @@ Changes relative to Clojupyter `master` latest commit per 15 February 2019 (`994
     * Move some generic helper functions to `util.clj`
 * `middleware/mime_values.clj`
     * Assoc `:mime-tagged-value` to result of `to-mime` (instead of mime-tagging `:value`
-	directly): Enables using the `nrepl` server using regular clients
+      directly): Enables using the `nrepl` server using regular clients
 * `protocol/mime_convertible.clj`
     * Print `nil` as `nil` (instead of not printing anything)
 * Miscellaneous code cleanup
@@ -38,8 +38,9 @@ Changes relative to Clojupyter `master` latest commit per 15 February 2019 (`994
     * Use `->Class`-forms, e.g. `->HiccupHTML` instead of `HiccupHTML.`, to allow interactive class updates
     * Extra `log/debug`s here and there
     * Various reformatting here and there
-* `stacktrace.clj`: Add mechnanism to control whether stacktraces are printed or not as it appears
-  that `cider-nrepl` occasionally triggers uncaught exceptions. Most likely linked to upgrade of
-  `nrepl` and/or `cider-nrepl` -- the cause of the problem not understood as yet.
+* `stacktrace.clj`
+    * Add mechanism to control whether stacktraces are printed or not as it appears
+      that `cider-nrepl` occasionally triggers uncaught exceptions. Most likely linked to upgrade of
+     `nrepl` and/or `cider-nrepl`; the cause of the problem not understood as yet.
 * `core_test.clj`
     * Update tests	

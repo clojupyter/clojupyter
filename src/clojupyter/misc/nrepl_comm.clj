@@ -10,6 +10,7 @@
    [clojupyter.misc.messages				:refer :all]
    [clojupyter.protocol.nrepl-comm	:as pnrepl]
    [clojupyter.protocol.zmq-comm	:as pzmq]
+   [clojupyter.misc.stacktrace		:as stacktrace]
    [clojupyter.misc.util		:as u]))
 
 (defn stacktrace-string
@@ -135,13 +136,11 @@
       ;; set traceback for when there are exceptions or interrupted
       (when-let [ex (:ename @result)]
         (swap! result assoc :traceback 
-               (if (= [1 10] ((juxt :major :minor) *clojure-version*))
-                 ;; TODO: Uncaught exceptions related to op "stacktrace" in cider-nrepl causes kernel to crash.
-                 ;;       Living without stack traces seems less annoying.
-                 ["No traceback available (disabled for Clojure 1.10)."] 
+               (if (stacktrace/printing-stacktraces?)
                  (if (re-find #"StackOverflowError" ex)
-                   []
-                   (stacktrace-string (pnrepl/nrepl-trace self))))))
+                   ["Stack overflow error (stacktrace not available)."]
+                   (stacktrace-string (pnrepl/nrepl-trace self))) 
+                 ["Stacktrace disabled."])))
       (log/info "eval-result: " (with-out-str (pp/pprint @result)))
       @result))
   (nrepl-complete [self code]

@@ -5,7 +5,7 @@
 * Add compatibility with **Clojure v1.9** and **Clojure v1.10**
 * Enable **`nrepl`-based access** from interactive development environments such as CIDER/Cursive: 
   Leave `:value` unchanged, add `:mime-tagged-value` instead
-* **Update dependencies**, not least move to `nrepl` "0.5.3" and `cider-nrepl` "0.20.0"
+* **Update dependencies**, not least move to `nrepl` v0.5.3 and `cider-nrepl` v0.20.0
 * Improve code structure / organization
     * Use a map for passing largely unchanging values around
     * Abstract message content access: Use `message-*` functions

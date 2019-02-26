@@ -92,9 +92,10 @@
                      (doseq [_ @zmq-in]
                        (process-event S))))]
  (fact "should be able to process kernel-info-request"
-       (-> (rcv (get @zmq-messages 0))
-           (get-in [:content :execution_state]))
-       => "busy"
+       (mapv (rcomp rcv :content #(select-keys % [:status :execution_state])) @zmq-messages)
+       => [{:execution_state "busy"}
+           {:status "ok"}
+           {:execution_state "idle"}]
        (-> (get @zmq-messages 1) rcv (get-in [:content])
            ((juxt :protocol_version :status :implementation
                   (rcomp :language_info :name)
@@ -102,9 +103,7 @@
                   (rcomp :language_info :file_extension)
                   (rcomp :language_info :version))))
        => [messages/protocol-version "ok" "clojupyter" "clojure" "text/x-clojure" ".clj"
-           (apply format "%d.%d.%d" ((juxt :major :minor :incremental) *clojure-version*))]
-       (get-in (rcv (get @zmq-messages 2)) [:content :execution_state])
-       => "idle"))
+           (apply format "%d.%d.%d" ((juxt :major :minor :incremental) *clojure-version*))]))
 
 (against-background
    [(before :facts (do
@@ -119,7 +118,7 @@
    (fact "should be able to process shutdown-request"
          @stopped
          => true
-         (mapv #(-> (rcv %) (get-in [:content]) (select-keys [:execution_state :status :restart :protocol_version]))
+         (mapv (rcomp rcv :content #(select-keys % [:execution_state :status :restart :protocol_version]))
                @zmq-messages)
          => [{:execution_state "busy"}
              {:status "ok", :restart false}
@@ -171,7 +170,7 @@
  (fact "should be able to process execute-request"
        @stopped
        => false
-       (vec (map (rcomp rcv :content) @zmq-messages))
+       (mapv (rcomp rcv :content) @zmq-messages)
        => [{:execution_state "busy"}
            {:code "(println 10)" :execution_count 1}
            {:name "stdout" :text "10\n"}

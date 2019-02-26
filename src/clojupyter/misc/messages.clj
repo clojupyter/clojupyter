@@ -18,7 +18,8 @@
    [clojupyter.misc.util		:as u]
    ))
 
-(def protocol-version "5.0")
+(def ^:private PROTOCOL-VERSION "5.0")
+(def ^:pricate BANNER "clojupyter-0.1.4")
 
 (defn message-code		[message]	(get-in message [:content :code]))
 (defn message-comm-id		[message]	(get-in message [:content :comm_id]))
@@ -44,7 +45,7 @@
 (defn- new-header
   [msg_type session-id]
   {:date (u/now)
-   :version protocol-version
+   :version PROTOCOL-VERSION
    :msg_id (u/uuid)
    :username "kernel"
    :session session-id
@@ -169,13 +170,13 @@
 
 (defresponse [S _ message] "kernel_info_request"
   (let [content {:status "ok"
-                 :protocol_version protocol-version
+                 :protocol_version PROTOCOL-VERSION
                  :implementation "clojupyter"
                  :language_info {:name "clojure"
                                  :version (clojure-version)
                                  :mimetype "text/x-clojure"
                                  :file_extension ".clj"}
-                 :banner "Clojupyters-0.1.0"
+                 :banner BANNER
                  :help_links []}]
     (send-router-message S "kernel_info_reply" content message)))
 

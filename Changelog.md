@@ -42,5 +42,5 @@ Changes relative to Clojupyter `master` latest commit per 15 February 2019 (`994
 * Miscellaneous code cleanup
     * Send error messages to Jupyter stream `stderr` instead of `stdout`
     * Use `->Class`-forms, e.g. `->HiccupHTML` instead of `HiccupHTML.`, to allow interactive class updates
-    * Extra `log/debug`s here and there
+    * Extra `log/debug` here and there
     * Various reformatting here and there

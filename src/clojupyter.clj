@@ -189,5 +189,5 @@
 
 (defn -main
   [& args]
-  (log/set-level! :debug)
+  (log/set-level! :error)
   (run-kernel (prep-config args)))

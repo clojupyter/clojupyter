@@ -32,7 +32,7 @@
     * Assoc `:mime-tagged-value` to result of `to-mime` (instead of mime-tagging `:value`
 	directly): Enables using the `nrepl` server using regular clients
 * `protocol/mime_convertible.clj`
-    * Print `nil` as `nil` (instead of `""`)
+    * Print `nil` as `nil` (instead of not printing anything)
 * Miscellaneous code cleanup
     * Send error messages to Jupyter stream `stderr` instead of `stdout`
     * Use `->Class`-forms, e.g. `->HiccupHTML` instead of `HiccupHTML.`, to allow interactive class updates

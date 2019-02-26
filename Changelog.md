@@ -1,8 +1,6 @@
 # Changelog
 
-## Pull request
-
-Changes relative to `master` latest commit per 15 February 2019 (`994f680c`):
+Changes relative to Clojupyter `master` latest commit per 15 February 2019 (`994f680c`):
 
 * Ensure compatibility with **Clojure v1.9** and **Clojure v1.10**
 * Enable **`nrepl`-based access** from interactive development environments such as CIDER/Cursive: 

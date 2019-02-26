@@ -181,9 +181,10 @@
                   ;; check every second if state
                   ;; has changed to anything other than alive
                   (while @(:alive states) (Thread/sleep status-sleep)))
-            (do (doseq [socket [shell-socket iopub-socket control-socket hb-socket]]
-                  (zmq/set-linger @socket 0)
-                  (zmq/close @socket))
+            (do ;; finally:
+              (doseq [socket [shell-socket iopub-socket control-socket hb-socket]]
+                (zmq/set-linger @socket 0)
+                (zmq/close @socket))
                 (his/end-history-session (:history-session states) 5000)
                 (System/exit 0))))))))
 

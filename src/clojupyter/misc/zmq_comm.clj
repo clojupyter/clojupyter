@@ -1,4 +1,4 @@
-(ns clojupyter.zmq-comm
+(ns clojupyter.misc.zmq-comm
   (:require
    [clojure.pprint			:as pp]
    [taoensso.timbre			:as log]

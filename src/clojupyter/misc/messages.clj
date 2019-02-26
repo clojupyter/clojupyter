@@ -1,4 +1,4 @@
-(ns clojupyter.messages
+(ns clojupyter.misc.messages
   (:require
    [cheshire.core			:as cheshire]
    [clojure.pprint			:as pp]
@@ -10,10 +10,13 @@
    [taoensso.timbre			:as log]
    [zeromq.zmq				:as zmq]
    ,,
-   [clojupyter.history			:as his]
+   [clojupyter.misc.complete		:as complete]
+   [clojupyter.misc.history		:as his]
    [clojupyter.protocol.nrepl-comm	:as pnrepl]
    [clojupyter.protocol.zmq-comm	:as pzmq]
-   [clojupyter.util			:as u]))
+   [clojupyter.misc.tokenize		:as tokenize]
+   [clojupyter.misc.util		:as u]
+   ))
 
 (def protocol-version "5.0")
 
@@ -181,7 +184,7 @@
 
 (defresponse [S _ message] "is_complete_request"
   (send-router-message S "is_complete_reply"
-                       (if (u/complete? (message-code message))
+                       (if (complete/complete? (message-code message))
                          {:status "complete"}
                          {:status "incomplete"}) message))
 
@@ -207,7 +210,7 @@
 (defresponse [{:keys [zmq-comm nrepl-comm socket signer] :as S} _ message] "inspect_request"
   (let [code (message-code message)
         cursor_pos (message-cursor-pos message)
-        sym (u/token-at code cursor_pos)
+        sym (tokenize/token-at code cursor_pos)
         result (if-let [doc (pnrepl/nrepl-doc nrepl-comm sym)]
                  (str/join "\n" (rest (str/split-lines doc)))
                  "")

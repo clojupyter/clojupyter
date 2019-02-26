@@ -2,8 +2,8 @@
   :description "An IPython kernel for executing Clojure code"
   :url "http://github.com/roryk/clojupyter"
   :license {:name "MIT"}
-  :aot [clojupyter]
-  :main clojupyter
+  :aot [clojupyter.core]
+  :main clojupyter.core
   :jvm-opts ["-Xmx10000m"]
   :keep-non-project-classes true
   :profiles {:dev {:dependencies [[midje "1.9.0" :exclusions [org.clojure/clojure]]]

@@ -1,4 +1,4 @@
-(ns clojupyter.history
+(ns clojupyter.misc.history
   (:require
    [clojure.java.jdbc			:as sql]
    [clojure.java.io			:as io]))

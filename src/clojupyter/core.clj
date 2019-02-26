@@ -1,4 +1,4 @@
-(ns clojupyter
+(ns clojupyter.core
   (:require
    [beckon]
    [cheshire.core			:as cheshire]
@@ -12,14 +12,14 @@
    [taoensso.timbre			:as log]
    [zeromq.zmq				:as zmq]
    ,,
-   [clojupyter.history			:as his]
-   [clojupyter.messages			:refer :all]
-   [clojupyter.middleware.mime-values]
-   [clojupyter.nrepl-comm		:as nrepl-comm]
+   [clojupyter.misc.history		:as his]
+   [clojupyter.misc.messages			:refer :all]
+   [clojupyter.middleware.mime-values	:as mv]
+   [clojupyter.misc.nrepl-comm		:as nrepl-comm]
    [clojupyter.protocol.nrepl-comm	:as pnrepl]
    [clojupyter.protocol.zmq-comm	:as pzmq]
-   [clojupyter.util			:as u]
-   [clojupyter.zmq-comm			:as zmq-comm])
+   [clojupyter.misc.states		:as states]
+   [clojupyter.misc.zmq-comm		:as zmq-comm])
   (:gen-class :main true))
 
 (defn- catching-exceptions*
@@ -151,7 +151,7 @@
         key			(:key config)
         signer			(make-message-signer key)
         checker			(make-message-checker signer)]
-    (let [states		(u/make-states)
+    (let [states		(states/make-states)
           context		(zmq/context 1)
           shell-socket		(atom (doto (zmq/socket context :router)
                                         (zmq/bind shell-addr)))

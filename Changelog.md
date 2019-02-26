@@ -1,6 +1,6 @@
 # Changelog
 
-## v0.1.4
+## 0.1.2? (work in progress)
 
 Changes relative to Clojupyter `master` latest commit per 15 February 2019 (`994f680c`):
 
@@ -46,3 +46,9 @@ Changes relative to Clojupyter `master` latest commit per 15 February 2019 (`994
     * Use `->Class`-forms, e.g. `->HiccupHTML` instead of `HiccupHTML.`, to allow interactive class updates
     * Extra `log/debug` here and there
     * Various reformatting here and there
+* Examples
+    * `html-demo.ipynb`
+        * Update to use Vega Lite instead of Highcharts (which seems to be broken in both updated version
+          and current `HEAD` of `master` using Clojure 1.8)
+    * `incanter-demo.ipynb`
+        * Update to print Clojure version

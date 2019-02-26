@@ -102,7 +102,7 @@
           stdout     (fn [msg]
                        (send-message S-iopub "stream" {:name "stdout" :text msg} parent-message))
           stderr     (fn [msg]
-                       (send-message S-iopub "stream" {:name "stdout" :text msg} parent-message))]
+                       (send-message S-iopub "stream" {:name "stderr" :text msg} parent-message))]
       (doseq [{:keys [ns out err status session ex mime-tagged-value] :as msg}
               (nrepl/message (:nrepl-client self)
                              {:id command-id

@@ -102,7 +102,7 @@
                   (rcomp :language_info :mimetype)
                   (rcomp :language_info :file_extension)
                   (rcomp :language_info :version))))
-       => [messages/protocol-version "ok" "clojupyter" "clojure" "text/x-clojure" ".clj"
+       => [messages/PROTOCOL-VERSION "ok" "clojupyter" "clojure" "text/x-clojure" ".clj"
            (apply format "%d.%d.%d" ((juxt :major :minor :incremental) *clojure-version*))]))
 
 (against-background

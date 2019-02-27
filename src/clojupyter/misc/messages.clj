@@ -18,8 +18,8 @@
    [clojupyter.misc.util		:as u]
    ))
 
-(def ^:private PROTOCOL-VERSION "5.0")
-(def ^:private BANNER "clojupyter-0.1.1-SNAPSHOT")
+(def PROTOCOL-VERSION "5.0")
+(def BANNER "clojupyter-0.1.1-SNAPSHOT")
 
 (defn message-code		[message]	(get-in message [:content :code]))
 (defn message-comm-id		[message]	(get-in message [:content :comm_id]))

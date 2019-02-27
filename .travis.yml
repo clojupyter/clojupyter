@@ -5,5 +5,4 @@ clojure:
 script: lein midje 
 branches:
     only:
-    - gh-pages
     - /clojure-1.10-*/

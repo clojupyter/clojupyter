@@ -4,6 +4,4 @@ clojure:
     - 1.9.0  
     - 1.10.0  
 script: lein midje 
-branches:
-    only:
-    - /clojure-1.10-*/
+

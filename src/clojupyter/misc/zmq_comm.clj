@@ -1,8 +1,10 @@
 (ns clojupyter.misc.zmq-comm
-  (:require [clojure.pprint :as pp]
-            [clojupyter.protocol.zmq-comm :as pzmq]
-            [taoensso.timbre :as log]
-            [zeromq.zmq :as zmq]))
+  (:require
+   [clojure.pprint			:as pp]
+   [taoensso.timbre			:as log]
+   [zeromq.zmq				:as zmq]
+   ,,
+   [clojupyter.protocol.zmq-comm	:as pzmq]))
 
 (defn- string-to-bytes [s]
   (. (. (java.nio.charset.Charset/forName "UTF-8") encode s) array))

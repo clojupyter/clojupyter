@@ -3,7 +3,7 @@
             [midje.sweet :refer :all]
             [clojure.java.io :as io])
   (:import [javax.imageio ImageIO]
-           [java.awt.image.BufferedImage]))
+           [java.awt.image BufferedImage]))
 
 (fact "Should render strings, keywords, and numbers"
       (to-mime 1) => "{\"text/plain\":\"1\"}"

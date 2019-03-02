@@ -1,8 +1,6 @@
-(ns clojupyter.misc.tokenize
-  (:require [clojure.string :as string]))
+(ns clojupyter.misc.tokenize)
 
-
-(defn re-index
+(defn- re-index
   "Returns a sorted-map of indicies to matches."
   [re s]
   (loop [matcher (re-matcher re s)
@@ -11,7 +9,6 @@
       (recur matcher
              (assoc matches (.start matcher) (.group matcher)))
       matches)))
-
 
 (defn token-at
   "Returns the token at the given position."
@@ -24,4 +21,3 @@
         (< position (key (second token-pos))) (val (first token-pos))
         :else (recur (rest token-pos))))
     (re-find #"[^\(\)\{\}\[\]\"\']+")))
-

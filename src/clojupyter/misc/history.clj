@@ -1,33 +1,33 @@
 (ns clojupyter.misc.history
-  (:require [clojure.java.jdbc :as sql]
-            [clojure.java.io :as io]))
+  (:require
+   [clojure.java.jdbc			:as sql]
+   [clojure.java.io			:as io]))
 
 (defn- now [] (new java.util.Date))
 
 (defn init-history [db-file]
-    (let [has-db-file (.exists (io/file db-file))
-          db {:classname   "org.sqlite.JDBC",
-               :subprotocol "sqlite",
-               :subname      db-file}]
-         (if (not has-db-file)
-            (let [history-table (sql/create-table-ddl :history
-                                   [:session    :integer]
-                                   [:line       :integer]
-                                   [:source     :text]
-                                   [:primary :key "(session, line)"])
-                  session-table (sql/create-table-ddl :sessions
-                                             [:session  :integer
-                                              :primary :key
-                                              :autoincrement]
-                                             [:start    :timestamp]
-                                             [:end      :timestamp]
-                                             [:num_cmds :integer
-                                              :default "0"]
-                                             [:remark   :text])]
-              (sql/execute! db [history-table])
-              (sql/execute! db [session-table])) 
-            )
-         db))
+  (let [has-db-file (.exists (io/file db-file))
+        db {:classname   "org.sqlite.JDBC",
+            :subprotocol "sqlite",
+            :subname      db-file}]
+    (if (not has-db-file)
+      (let [history-table (sql/create-table-ddl :history
+                                                [[:session    :integer]
+                                                 [:line       :integer]
+                                                 [:source     :text]
+                                                 [:primary :key "(session, line)"]])
+            session-table (sql/create-table-ddl :sessions
+                                                [[:session  :integer
+                                                   :primary :key
+                                                  :autoincrement]
+                                                 [:start    :timestamp]
+                                                 [:end      :timestamp]
+                                                 [:num_cmds :integer
+                                                  :default "0"]
+                                                 [:remark   :text]])]
+        (sql/execute! db [history-table])
+        (sql/execute! db [session-table])))
+    db))
 
 (defn start-history-session [db]
     (sql/insert! db :sessions {:start (now)})

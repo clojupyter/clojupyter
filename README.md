@@ -44,6 +44,8 @@ and select the Clojure kernel.
 
 #### The Docker way
 
+**Note** The Docker image below runs Clojure 1.8 and clojupyter-0.1.0.  Hopefully we'll be able to provide an up-to-date Docker image soon.
+
 [A Docker image](https://github.com/kxxoling/jupyter-clojure-docker)
 is also made to make the installation easier, and isolate the environment cleaner.
 What you need to do is:

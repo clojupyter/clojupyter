@@ -1,6 +1,8 @@
 (ns clojupyter.misc.helper
-  (:require [cemerick.pomegranate :as pg]
-            [clojupyter.misc.display :as display]))
+  (:require
+   [cemerick.pomegranate		:as pg]
+   ,,
+   [clojupyter.misc.display		:as display]))
 
 (defn add-javascript
   "add a single javascript to front-end, must be last form of cell input

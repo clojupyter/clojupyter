@@ -1,6 +1,6 @@
 (ns clojupyter.misc.stacktrace)
 
-(def ^:dynamic ^:private *stacktrace-printing-enabled* true)
+(def ^:dynamic ^:private *stacktrace-printing-enabled* false)
 
 (defn set-print-stacktraces!
   "It appears that `cider-nrepl` sometimes triggers an uncaught

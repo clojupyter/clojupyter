@@ -140,7 +140,7 @@
                  (if (re-find #"StackOverflowError" ex)
                    ["Stack overflow error (stacktrace not available)."]
                    (stacktrace-string (pnrepl/nrepl-trace self))) 
-                 ["Stacktrace disabled."])))
+                 ["Stacktrace disabled (enable using 'clojupyter.misc.stacktrace/set-print-stacktraces!')."])))
       (log/info "eval-result: " (with-out-str (pp/pprint @result)))
       @result))
   (nrepl-complete [self code]

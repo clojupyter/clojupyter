@@ -1,5 +1,5 @@
-(ns clojupyter.misc.history-test
-  (:require [clojupyter.misc.history :as sut]
+(ns clojupyter.kernel.history-test
+  (:require [clojupyter.kernel.history :as sut]
             [midje.sweet :refer :all]
             [clojure.java.io :as io])
   (:import (java.nio.file Files Paths)))

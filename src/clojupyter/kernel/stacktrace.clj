@@ -1,4 +1,6 @@
-(ns clojupyter.misc.stacktrace)
+(ns clojupyter.kernel.stacktrace
+  (:require
+   [clojupyter.misc.config		:as cfg]))
 
 (def ^:dynamic ^:private *stacktrace-printing-enabled* false)
 
@@ -14,6 +16,12 @@
   [enable?]
   (alter-var-root #'*stacktrace-printing-enabled* (constantly (if enable? true false))))
 
-(defn printing-stacktraces? [] *stacktrace-printing-enabled*)
+(defn printing-stacktraces?
+  "Returns `true` if stacktraces are printed, `false` otherwise."
+  []
+  *stacktrace-printing-enabled*)
 
+(defn init!
+  []
+  (set-print-stacktraces! (cfg/print-stacktraces?)))
 

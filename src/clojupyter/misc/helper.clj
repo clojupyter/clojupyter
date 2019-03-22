@@ -14,6 +14,8 @@
   (display/hiccup-html [:script {:src script-src}]))
 
 (defn add-dependencies
+  "Use Pomegranate to add dependencies with Maven Central and Clojars as
+  default repositories."
   [dependencies & {:keys [repositories]
                    :or {repositories {"central" "https://repo1.maven.org/maven2/"
                                       "clojars" "https://clojars.org/repo"}}}]

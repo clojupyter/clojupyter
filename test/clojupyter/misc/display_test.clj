@@ -3,6 +3,7 @@
             [clojure.string :as str]
             [cheshire.core :as cheshire]
             [clojupyter.misc.display :as display]
+            [clojupyter.misc.mime-convertible]
             [clojupyter.protocol.mime-convertible :as mc]))
 
 (defn pretty-maker [maker]

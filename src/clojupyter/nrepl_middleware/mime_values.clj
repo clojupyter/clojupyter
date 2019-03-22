@@ -1,10 +1,11 @@
-(ns clojupyter.middleware.mime-values
+(ns clojupyter.nrepl-middleware.mime-values
   (:require
    [clojure.pprint				:as pp]
    [nrepl.transport				:as t]
-   [nrepl.middleware.pr-values				:refer [pr-values]]
+   [nrepl.middleware.pr-values					:refer [pr-values]]
    ,,
-   [clojupyter.protocol.mime-convertible	:as mime])
+   [clojupyter.misc.mime-convertible]
+   [clojupyter.protocol.mime-convertible	:as mc])
   (:use
    [nrepl.middleware				:only (set-descriptor!)])
   (:import [nrepl.transport Transport]))
@@ -19,7 +20,7 @@
                            (send [this {:keys [printed-value value] :as resp}]
                              (.send transport
                                     (if-let [[_ v] (find resp :value)]
-                                      (assoc resp :mime-tagged-value (mime/to-mime v))
+                                      (assoc resp :mime-tagged-value (mc/to-mime v))
                                       resp))
                              this))))))
 

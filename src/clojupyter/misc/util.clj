@@ -96,10 +96,17 @@
 ;;; ----------------------------------------------------------------------------------------------------
 
 (defn message-content		[message]	(get-in message [:content]))
+(defn message-allow-stdin	[message]	(get-in message [:content :allow_stdin]))
 (defn message-code		[message]	(get-in message [:content :code]))
 (defn message-comm-id		[message]	(get-in message [:content :comm_id]))
 (defn message-cursor-pos	[message]	(get-in message [:content :cursor_pos]))
 (defn message-restart		[message]	(get-in message [:content :restart]))
+(defn message-silent		[message]	(get-in message [:content :silent]))
+(defn message-stop-on-error?	[message]	(get-in message [:content :stop_on_error]))
+(defn message-store-history?	[message]	(if-let [[_ store?] (find (get message :content) :store_history)]
+                                                  store?
+                                                  true))
+(defn message-user-expressions	[message]	(get-in message [:content :user_expressions]))
 (defn message-value		[message]	(get-in message [:content :value]))
 ,,
 (defn message-header		[message]	(get-in message [:header]))

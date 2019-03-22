@@ -1,9 +1,6 @@
 (ns clojupyter.transport
   (:refer-clojure :exclude [send])
   (:require
-   [clojure.pprint						:refer [pprint]]
-   [taoensso.timbre				:as log]
-   ,,
    [clojupyter.misc.util			:as u]))
 
 (defprotocol Transport
@@ -15,15 +12,15 @@
     "Read full Jupyter message from `socket`.  Not intended to be used directly,
     use `receive-stdin` or `receive-req` instead."))
 
-(defn send-req
+(defn ^{:style/indent :defn} send-req
   [transport msgtype message]
   (send* transport :req msgtype message))
 
-(defn send-stdin
+(defn ^{:style/indent :defn} send-stdin
   [transport msgtype message]
   (send* transport :stdin msgtype message))
 
-(defn send-iopub
+(defn ^{:style/indent :defn} send-iopub
   [transport msgtype message]
   (send* transport :iopub msgtype message))
 
@@ -52,9 +49,9 @@
   `message` and must return the ctx to be provided to the lower
   layer."
   [{:keys [send-fn receive-fn message-fn]}]
-  (let [send-fn		(or send-fn	(fn [{:keys [transport] :as ctx} socket msgtype message]
+  (let [send-fn		(or send-fn	(fn [{:keys [transport]} socket msgtype message]
                                           (send* transport socket msgtype message)))
-        receive-fn	(or receive-fn	(fn [{:keys [transport] :as ctx} socket]
+        receive-fn	(or receive-fn	(fn [{:keys [transport]} socket]
                                           (receive* transport socket)))
         message-fn	(or message-fn	(fn [ctx _] ctx))]
     (fn [handler]
@@ -92,7 +89,7 @@
 
 (defn parent-msgtype-pred
   [msgtype]
-  (fn [{:keys [parent-message] :as ctx}]
+  (fn [{:keys [parent-message]}]
     (= (u/message-msg-type parent-message) msgtype)))
 
 (map (partial u/set-var-indent! :defn)

@@ -84,7 +84,7 @@
 
 (def wrap-kernel-info-request
   (handler-when (parent-msgtype-pred jup/KERNEL-INFO-REQUEST)
-   (fn [{:keys [transport] :as ctx}]
+   (fn [{:keys [transport]}]
      (tp/send-req transport jup/KERNEL-INFO-REPLY
        {:status "ok"
         :protocol_version jup/PROTOCOL-VERSION
@@ -98,7 +98,7 @@
 
 (def wrap-shutdown-request
   (handler-when (parent-msgtype-pred jup/SHUTDOWN-REQUEST)
-   (fn [{:keys [transport parent-message] :as ctx}]
+   (fn [{:keys [transport parent-message]}]
      (tp/send-req transport jup/SHUTDOWN-REPLY
        {:restart (u/message-restart parent-message) :status "ok"}))))
 
@@ -107,6 +107,6 @@
 ;;; ----------------------------------------------------------------------------------------------------
 
 (def not-implemented-handler
-  (fn [{:keys [msgtype parent-message] :as ctx}]
-    (do (log/error "Message type " msgtype " not implemented: Ignored.")
+  (fn [{:keys [msgtype parent-message]}]
+    (do (log/error (str "Message type " msgtype " not implemented: Ignored."))
         (log/debug "Message dump:\n" (u/pp-str parent-message)))))

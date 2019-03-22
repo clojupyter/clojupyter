@@ -172,7 +172,7 @@
   (u/with-debug-logging ["nrepl-eval: " :code code]
     (let [pending	(atom #{})
           command-id	(u/uuid)
-          result	(atom {:result "nil"})]
+          result	(atom {:result nil})]
       (doseq [msg (nrepl/message (:nrepl-client self)
                                  {:id command-id
                                   :op :eval

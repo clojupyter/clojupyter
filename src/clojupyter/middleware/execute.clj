@@ -10,12 +10,16 @@
    [clojupyter.misc.util		:as u]
    ))
 
-(defn- hushed?
+(defn- code-hushed?
   [s]
   (str/ends-with? (str/trimr (or s "")) ";"))
 
+(defn- code-empty?
+  [s]
+  (= "" (str/trim s)))
+
 (defn- submit-eval-request
-  [{:keys [nrepl-comm transport parent-message] :as ctx}]
+  [{:keys [nrepl-comm transport parent-message]}]
   (let [nrepl-resp				(pnrepl/nrepl-eval nrepl-comm transport (u/message-code parent-message))
         {:keys [result ename traceback]}	nrepl-resp
         err					(when ename
@@ -26,25 +30,31 @@
 
 (def wrap-execute-request
   (handler-when (parent-msgtype-pred jup/EXECUTE-REQUEST)
-    (fn [{:keys [transport msgtype parent-message] :as ctx}]
+    (fn [{:keys [transport parent-message] :as ctx}]
       (let [code			(u/message-code parent-message)
-            {:keys [err result]
-             :as eval-response}		(submit-eval-request ctx)
+            silent?			(or (u/message-silent parent-message) (code-empty? code) (code-hushed? code))
+            store-history?		(if silent? false (u/message-store-history? parent-message))
+            {:keys [err result]}	(submit-eval-request ctx)
             content 			(-> err
                                             (or {:status "ok", :user_expressions {}})
                                             (assoc :execution_count (state/execute-count)))]
-        (tp/send-iopub transport jup/EXECUTE-INPUT
-          {:execution_count (state/execute-count), :code (u/message-code parent-message)})
+        (when-not silent?
+          (tp/send-iopub transport jup/EXECUTE-INPUT
+            {:execution_count (state/execute-count), :code (u/message-code parent-message)}))
         (tp/send-req transport jup/EXECUTE-REPLY content)
         (cond
           err
-          ,, (tp/send-iopub transport jup/ERROR err)
-          (not (hushed? code))
+          ,, (when-not silent?
+               (tp/send-iopub transport jup/ERROR content))
+          (not silent?)
           ,, (tp/send-iopub transport jup/EXECUTE-RESULT
                {:execution_count (state/execute-count)
                 :code code
                 :raw-result result
-                :data (u/parse-json-str result true)
+                :data (when-not (nil? result)
+                        (u/parse-json-str result true))
                 :metadata {}}))
-        (state/add-history! code)
-        (state/inc-execute-count!)))))
+        (when-not store-history?
+          (state/add-history! code))
+        (when-not silent?
+         (state/inc-execute-count!))))))

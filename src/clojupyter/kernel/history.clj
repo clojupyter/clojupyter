@@ -46,7 +46,7 @@
   {:db         db
    :session-id ((keyword "max(session)")
                 (first (sql/query db
-                                  "select max(session) from sessions")) )})
+                                  "select max(session) from sessions")))})
 
 (defn end-history-session
   ([session] (end-history-session session 5000))
@@ -56,8 +56,7 @@
                           where rowid not in (select rowid from history
                           order by session desc, line desc
                           limit ?)", max-history])
-     (sql/update! db :sessions {:end (now)}  ["session = ?" (:session-id session)])
-     )))
+     (sql/update! db :sessions {:end (now)}  ["session = ?" (:session-id session)]))))
 
 (defn add-history
   [session line source]
@@ -67,8 +66,7 @@
   (sql/insert! (:db session) :history
                {:session (:session-id session)
                 :line line
-                :source source}
-               )
+                :source source})
   session)
 
 (defn get-history

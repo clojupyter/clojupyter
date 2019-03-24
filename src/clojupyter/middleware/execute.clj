@@ -54,7 +54,7 @@
                 :data (when-not (nil? result)
                         (u/parse-json-str result true))
                 :metadata {}}))
-        (when-not store-history?
+        (when store-history?
           (state/add-history! code))
         (when-not silent?
-         (state/inc-execute-count!))))))
+          (state/inc-execute-count!))))))

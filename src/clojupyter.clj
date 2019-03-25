@@ -1,7 +1,8 @@
 (ns clojupyter
   (:require
-   [clojupyter.misc.helper		:as helper]
    [clojupyter.misc.display		:as display]
+   [clojupyter.misc.helper		:as helper]
+   [clojupyter.misc.javascript-amd	:as jsamd]
    [clojupyter.misc.util		:as u]))
 
 (def display			display/display)
@@ -11,16 +12,23 @@
 (def markdown			display/markdown)
 
 (def add-dependencies		helper/add-dependencies)
-(def add-javascript		helper/add-javascript)
+
+(def amd-add-javascript		jsamd/add-javascript)
+(def amd-add-javascript-html	jsamd/add-javascript-html)
+(def amd-wrap-require		jsamd/wrap-require)
 
 (map (partial apply u/merge-docmeta)
-     [[#'display		#'display/display]
-      [#'hiccup-html		#'display/hiccup-html]
-      [#'html			#'display/html]
-      [#'latex			#'display/latex]
-      [#'markdown		#'display/markdown]
-      [#'add-dependencies	#'helper/add-dependencies]
-      [#'add-javascript		#'helper/add-javascript]])
+     [[#'display			#'display/display]
+      [#'hiccup-html			#'display/hiccup-html]
+      [#'html				#'display/html]
+      [#'latex				#'display/latex]
+      [#'markdown			#'display/markdown]
+      ,,
+      [#'add-dependencies		#'helper/add-dependencies]
+      ,,
+      [#'amd-add-javascript		#'jsamd/add-javascript]
+      [#'amd-add-javascript-html	#'jsamd/add-javascript-html]
+      [#'amd-wrap-require		#'jsamd/wrap-require]])
 
 (def ^:dynamic *clojupyter-version*
   "Value is a map representing the version of clojupyter as a map with

@@ -50,9 +50,7 @@
           ,, (tp/send-iopub transport jup/EXECUTE-RESULT
                {:execution_count (state/execute-count)
                 :code code
-                :raw-result result
-                :data (when-not (nil? result)
-                        (u/parse-json-str result true))
+                :data (when-not (nil? result) (u/parse-json-str result true))
                 :metadata {}}))
         (when store-history?
           (state/add-history! code))

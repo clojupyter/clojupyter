@@ -32,9 +32,9 @@
   (transport-layer
    {:send-fn (fn [{:keys [transport parent-message msgtype] :as ctx} socket resp-msgtype resp-message]
                (let [uuid (subs (u/uuid) 0 6)]
-                 (when (and @logging? (not= socket :iopub)
-                             (log/info (str "wrap-print-messages parent-message (" uuid "):") socket msgtype
-                                       "\n" (with-out-str (pprint (dissoc parent-message ::u/zmq-raw-message)))))
+                 (when @logging? 
+                   (log/info (str "wrap-print-messages parent-message (" uuid "):") socket msgtype
+                             "\n" (with-out-str (pprint (dissoc parent-message ::u/zmq-raw-message))))
                    (log/info (str "wrap-print-messages response-message (" uuid "):") socket resp-msgtype
                              "\n" (with-out-str (pprint resp-message))))
                  (tp/send* transport socket msgtype resp-message)))}))

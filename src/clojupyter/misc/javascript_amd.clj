@@ -27,12 +27,15 @@
 ;;; EXTERNAL INTERFACE
 ;;; ----------------------------------------------------------------------------------------------------
 
-(defn wrap-require
+(defn amd-wrap-require
+  "Cf. docstring in namespace `clojupyter`."
   [ident-vec javascript-function]
   (wrap-statements
    (format "require(%s,%s)" (json/write-str (mapv name ident-vec)) javascript-function)))
 
-(defn add-javascript
+(defn amd-add-javascript
+  "Cf. docstring in namespace `clojupyter`."
+  
   [jsdefs]
   (-> {:paths (->> jsdefs
                    (map (juxt :ident :url))
@@ -43,19 +46,20 @@
       json/write-str
       wrap-requirejs-config))
 
-(defn add-javascript-html
+(defn amd-add-javascript-html
+  "Cf. docstring in namespace `clojupyter`."
   [jsdefs]
-  (display/hiccup-html [:script (wrap-statements (add-javascript jsdefs))]))
+  (display/hiccup-html [:script (wrap-statements (amd-add-javascript jsdefs))]))
 
 (do
-  (s/fdef add-javascript		:args (s/cat :jsdefs ::jsdefs))
-  (s/fdef add-javascript-html		:args (s/cat :jsdefs ::jsdefs))
-  (s/fdef wrap-require			:args (s/cat :ident-vec (s/coll-of ::ident :kind vector?)
+  (s/fdef amd-add-javascript		:args (s/cat :jsdefs ::jsdefs))
+  (s/fdef amd-add-javascript-html	:args (s/cat :jsdefs ::jsdefs))
+  (s/fdef amd-wrap-require		:args (s/cat :ident-vec (s/coll-of ::ident :kind vector?)
                                                      :javascript-function string?))
-  (instrument `add-javascript)
-  (instrument `add-java-script-html)
-  (instrument `wrap-require)
+  (instrument `amd-add-javascript)
+  (instrument `amd-add-javascript-html)
+  (instrument `and-wrap-require)
   (map (partial u/assoc-meta! :style/indent :defn)
-       [#'wrap-require #'wrap-statements #'wrap-requirejs-config]))
+       [#'amd-wrap-require #'wrap-statements #'wrap-requirejs-config]))
 
 

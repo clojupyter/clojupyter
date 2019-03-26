@@ -59,6 +59,12 @@
   * Control printing of stacktraces (workaround, cf elsewhere) in configuration file
   * Control log level in configuration file
   * Control ZMQ traffic logging in configuration file
+* Address reported issues
+  * #30: Dead kernel on startup (`comm_info_request`)
+  * #69: `FileNotFoundException Could not locate... on classpath`
+  * #76: `add-javascript` broken
+  * #83: Hanging after evaluating cell with syntax error
+  * #84: Kernel dies on empty code string
 * Improve tests
   * Convert existing tests to work with new structure
   * Add tests for middleware providing checks for basic message responses

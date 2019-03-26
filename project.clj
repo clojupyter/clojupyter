@@ -23,7 +23,7 @@
                  [pandect			"0.6.1"]
                  [hiccup 			"1.0.5"]
                  [zprint			"0.4.15"]]
-  :main				clojupyter.kernel
+  :main				clojupyter.kernel.core
   :keep-non-project-classes	true
   :profiles	{:dev 		{:dependencies [[midje "1.9.6" :exclusions [org.clojure/clojure]]]
                                  :plugins [[lein-midje "3.2.1"]

@@ -5,10 +5,10 @@
    ,,
    [clojupyter]
    [clojupyter.kernel.state			:as state]
-   [clojupyter.middleware.log-traffic		:as log-traffic]
-   [clojupyter.misc.config			:as cfg]
+   [clojupyter.kernel.middleware.log-traffic	:as log-traffic]
+   [clojupyter.kernel.config			:as cfg]
    [clojupyter.kernel.stacktrace		:as stacktrace]
-   [clojupyter.misc.version			:as version]))
+   [clojupyter.kernel.version			:as version]))
 
 (defn init-global-state!
   "Initializes global state. May only be called once."

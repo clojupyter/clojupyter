@@ -1,15 +1,8 @@
 (ns clojupyter.kernel.state
   (:require
-   [cheshire.core				:as cheshire]
-   [clojure.java.io				:as io]
-   [clojure.pprint				:as pp]
-   [clojure.walk				:as walk]
    [nrepl.server]
-   [taoensso.timbre				:as log]
    ,,
    [clojupyter.kernel.history			:as his]
-   [clojupyter.misc.mime-convertible]
-   [clojupyter.misc.version			:as version]
    [clojupyter.protocol.mime-convertible	:as mc]))
 
 (def ^:private EMPTY-QUEUE [])

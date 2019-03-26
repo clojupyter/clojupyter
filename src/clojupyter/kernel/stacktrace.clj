@@ -1,6 +1,6 @@
 (ns clojupyter.kernel.stacktrace
   (:require
-   [clojupyter.misc.config		:as cfg]))
+   [clojupyter.kernel.config		:as cfg]))
 
 (def ^:dynamic ^:private *stacktrace-printing-enabled* false)
 

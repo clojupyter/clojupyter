@@ -4,8 +4,8 @@
    [taoensso.timbre				:as log]
    [zeromq.zmq					:as zmq]
    ,,
-   [clojupyter.kernel.transport			:as tp]
-   [clojupyter.kernel.util			:as u]))
+   [clojupyter.kernel.jupyter			:as jup]
+   [clojupyter.kernel.transport			:as tp]))
 
 (defn- receive-jupyter-message
   ([zmq-socket flag]
@@ -62,7 +62,7 @@
           :req		(receive-jupyter-message req-socket 0)
           :stdin	(receive-jupyter-message stdin-socket (:no-block zmq/socket-options))
           (throw (ex-info (str "read*: Unknown socket " socket ".") {:socket socket})))
-        u/build-message)))
+        jup/build-message)))
 
 (alter-meta! #'->zmq-transport #(assoc % :private true))
 

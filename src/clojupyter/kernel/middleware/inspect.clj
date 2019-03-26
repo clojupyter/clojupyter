@@ -5,7 +5,6 @@
    [clojupyter.kernel.jupyter			:as jup]
    [clojupyter.kernel.cljsrv.nrepl-comm		:as pnrepl]
    [clojupyter.kernel.transport			:as tp		:refer [handler-when parent-msgtype-pred]]
-   [clojupyter.kernel.util			:as u]
    ))
 
 (defn- re-index
@@ -33,8 +32,8 @@
 (def wrap-inspect-request
   (handler-when (parent-msgtype-pred jup/INSPECT-REQUEST)
    (fn [{:keys [transport nrepl-comm parent-message] :as ctx}]
-     (let [code		(u/message-code parent-message)
-           cursor_pos	(u/message-cursor-pos parent-message)
+     (let [code		(jup/message-code parent-message)
+           cursor_pos	(jup/message-cursor-pos parent-message)
            symstr	(token-at code cursor_pos)
            result	(when-let [doc (pnrepl/nrepl-doc nrepl-comm symstr)]
                           (if-let [i (-> doc (str/index-of \newline) inc)]

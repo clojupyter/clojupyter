@@ -41,7 +41,7 @@
 (defn- handle-message
   [{:keys [parent-message] :as ctx}]
   (m/default-handler ctx)
-  (when (= (u/message-msg-type parent-message) jup/SHUTDOWN-REQUEST)
+  (when (= (jup/message-msg-type parent-message) jup/SHUTDOWN-REQUEST)
     (state/terminate! ctx)))
 
 (defn process-event

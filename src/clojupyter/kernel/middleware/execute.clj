@@ -20,7 +20,7 @@
 
 (defn- submit-eval-request
   [{:keys [nrepl-comm transport parent-message]}]
-  (let [nrepl-resp				(pnrepl/nrepl-eval nrepl-comm transport (u/message-code parent-message))
+  (let [nrepl-resp				(pnrepl/nrepl-eval nrepl-comm transport (jup/message-code parent-message))
         {:keys [result ename traceback]}	nrepl-resp
         err					(when ename
                                                   {:status "error", :ename ename,
@@ -31,16 +31,16 @@
 (def wrap-execute-request
   (handler-when (parent-msgtype-pred jup/EXECUTE-REQUEST)
     (fn [{:keys [transport parent-message] :as ctx}]
-      (let [code			(u/message-code parent-message)
-            silent?			(or (u/message-silent parent-message) (code-empty? code) (code-hushed? code))
-            store-history?		(if silent? false (u/message-store-history? parent-message))
+      (let [code			(jup/message-code parent-message)
+            silent?			(or (jup/message-silent parent-message) (code-empty? code) (code-hushed? code))
+            store-history?		(if silent? false (jup/message-store-history? parent-message))
             {:keys [err result]}	(submit-eval-request ctx)
             content 			(-> err
                                             (or {:status "ok", :user_expressions {}})
                                             (assoc :execution_count (state/execute-count)))]
         (when-not silent?
           (tp/send-iopub transport jup/EXECUTE-INPUT
-            {:execution_count (state/execute-count), :code (u/message-code parent-message)}))
+            {:execution_count (state/execute-count), :code (jup/message-code parent-message)}))
         (tp/send-req transport jup/EXECUTE-REPLY content)
         (cond
           err

@@ -8,7 +8,6 @@
    [clojupyter.kernel.transport			:as tp		:refer [handler-when transport-layer
                                                                         response-mapping-transport
                                                                         parent-msgtype-pred]]
-   [clojupyter.kernel.util			:as u]
    ))
 
 (defn- complete?
@@ -20,19 +19,19 @@
 
 (def wrap-is-complete-request
   (handler-when (parent-msgtype-pred jup/IS-COMPLETE-REQUEST)
-   (fn [{:keys [transport parent-message] :as ctx}]
+   (fn [{:keys [transport parent-message]}]
      (tp/send-req transport jup/IS-COMPLETE-REPLY
-       (if (complete? (u/message-code parent-message))
+       (if (complete? (jup/message-code parent-message))
          {:status "complete"}
          {:status "incomplete"})))))
 
 (def wrap-complete-request
   (handler-when (parent-msgtype-pred jup/COMPLETE-REQUEST)
-   (fn [{:keys [transport nrepl-comm parent-message] :as ctx}]
+   (fn [{:keys [transport nrepl-comm parent-message]}]
      (tp/send-req transport jup/COMPLETE-REPLY
        (let [delimiters #{\( \" \% \space}
-             cursor_pos (u/message-cursor-pos parent-message)
-             codestr (subs (u/message-code parent-message) 0 cursor_pos)
+             cursor_pos (jup/message-cursor-pos parent-message)
+             codestr (subs (jup/message-code parent-message) 0 cursor_pos)
              sym (as-> (reverse codestr) $
                    (take-while #(not (contains? delimiters %)) $)
                    (apply str (reverse $)))]

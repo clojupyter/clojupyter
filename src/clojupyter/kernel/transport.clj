@@ -1,6 +1,7 @@
 (ns clojupyter.kernel.transport
   (:refer-clojure :exclude [send])
   (:require
+   [clojupyter.kernel.jupyter			:as jup]
    [clojupyter.kernel.util			:as u]))
 
 (defprotocol Transport
@@ -90,7 +91,7 @@
 (defn parent-msgtype-pred
   [msgtype]
   (fn [{:keys [parent-message]}]
-    (= (u/message-msg-type parent-message) msgtype)))
+    (= (jup/message-msg-type parent-message) msgtype)))
 
 (map (partial u/set-var-indent! :defn)
      [#'send* #'receive* #'bind-parent-message #'bind-transport

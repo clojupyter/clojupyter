@@ -1,14 +1,13 @@
 (ns clojupyter.kernel.middleware.base
   (:require
-   [clojure.pprint			:as pp		:refer [pprint]]
    [clojure.spec.alpha			:as s]
    [taoensso.timbre			:as log]
    ,,
    [clojupyter.kernel.jupyter		:as jup]
+   [clojupyter.kernel.spec		:as sp]
    [clojupyter.kernel.transport		:as tp		:refer [handler-when transport-layer
                                                                 response-mapping-transport
                                                                 parent-msgtype-pred]]
-   [clojupyter.kernel.spec		:as sp]
    [clojupyter.kernel.util		:as u]
    ))
 
@@ -16,17 +15,17 @@
 
 (defn jupyter-message
   [{:keys [parent-message signer] :as ctx} resp-socket resp-msgtype response]
-  (let [session-id	(u/message-session parent-message)
+  (let [session-id	(jup/message-session parent-message)
         header 		{:date (u/now)
                          :version jup/PROTOCOL-VERSION
                          :msg_id (u/uuid)
                          :username "kernel"
                          :session session-id
                          :msg_type resp-msgtype}
-        parent-header	(u/message-header parent-message)
+        parent-header	(jup/message-header parent-message)
         metadata	{}
         ]
-    {:envelope (if (= resp-socket :req) (u/message-envelope parent-message) [(u/>bytes resp-msgtype)])
+    {:envelope (if (= resp-socket :req) (jup/message-envelope parent-message) [(u/>bytes resp-msgtype)])
      :delimiter "<IDS|MSG>"
      :signature (signer header parent-header metadata response)
      :header header
@@ -98,7 +97,7 @@
   (handler-when (parent-msgtype-pred jup/SHUTDOWN-REQUEST)
    (fn [{:keys [transport parent-message]}]
      (tp/send-req transport jup/SHUTDOWN-REPLY
-       {:restart (u/message-restart parent-message) :status "ok"}))))
+       {:restart (jup/message-restart parent-message) :status "ok"}))))
 
 ;;; ----------------------------------------------------------------------------------------------------
 ;;; HANDLER

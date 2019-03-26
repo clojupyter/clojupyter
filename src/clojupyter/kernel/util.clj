@@ -4,7 +4,6 @@
    [clojure.pprint				:as pp]
    [clojure.spec.alpha				:as s]
    [java-time					:as jtm]
-   [net.cgrand.sjacket.parser			:as p]
    [pandect.algo.sha256						:refer [sha256-hmac]]
    [taoensso.timbre				:as log]
    [zprint.core					:as zp]
@@ -102,42 +101,4 @@
                     #(merge % {:arglists (-> (var ~refname) meta :arglists)
                                  :doc (-> (var ~refname) meta :doc)}))))
 
-;;; ----------------------------------------------------------------------------------------------------
-;;; MESSAGE ACCESSORS
-;;; ----------------------------------------------------------------------------------------------------
 
-
-(defn message-content		[message]	(get-in message [:content]))
-(defn message-allow-stdin	[message]	(get-in message [:content :allow_stdin]))
-(defn message-code		[message]	(get-in message [:content :code]))
-(defn message-comm-id		[message]	(get-in message [:content :comm_id]))
-(defn message-cursor-pos	[message]	(get-in message [:content :cursor_pos]))
-(defn message-restart		[message]	(get-in message [:content :restart]))
-(defn message-silent		[message]	(get-in message [:content :silent]))
-(defn message-stop-on-error?	[message]	(get-in message [:content :stop_on_error]))
-(defn message-store-history?	[message]	(if-let [[_ store?] (find (get message :content) :store_history)]
-                                                  store?
-                                                  true))
-(defn message-user-expressions	[message]	(get-in message [:content :user_expressions]))
-(defn message-value		[message]	(get-in message [:content :value]))
-,,
-(defn message-header		[message]	(get-in message [:header]))
-(defn message-msg-type		[message]	(get-in message [:header :msg_type]))
-(defn message-session		[message]	(get-in message [:header :session]))
-(defn message-username		[message]	(get-in message [:header :username]))
-,,
-(defn message-delimiter		[message]	(get-in message [:delimiter]))
-(defn message-envelope		[message]	(get-in message [:envelope]))
-(defn message-parent-header	[message]	(get-in message [:parent-header]))
-(defn message-signature		[message]	(get-in message [:signature]))
-
-(defn build-message
-  [message]
-  (when message
-    {:envelope (message-envelope message)
-     :delimiter (message-delimiter message)
-     :signature (message-signature message)
-     :header (parse-json-str (message-header message) keyword)
-     :parent-header (parse-json-str (message-parent-header message) keyword)
-     :content (parse-json-str (message-content message) keyword)
-     ::zmq-raw-message message}))

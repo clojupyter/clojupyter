@@ -118,7 +118,7 @@
                                          :stdin "\n", :session session})
             (reset! interrupted false))
         (do (if (message? message) ;; MESSAGE ARRIVED?
-              ,, (let [input (u/message-value message)]
+              ,, (let [input (jup/message-value message)]
                    (swap! pending conj command-id)
                    (log/info "got input " message)
                    (nrepl/message nrepl-client {:id command-id, :op "stdin",

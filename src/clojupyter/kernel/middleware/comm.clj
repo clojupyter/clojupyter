@@ -6,7 +6,6 @@
    [clojupyter.kernel.transport		:as tp		:refer [handler-when transport-layer
                                                                 response-mapping-transport
                                                                 parent-msgtype-pred]]
-   [clojupyter.kernel.util		:as u]
    ))
 
 (def COMM-ID		"d9af479d-10fb-4ceb-a3c2-3c6638081a3c")
@@ -37,5 +36,5 @@
 (def wrap-comm-open
   (handler-when (parent-msgtype-pred jup/COMM-OPEN)
    (fn [{:keys [transport parent-message] :as ctx}]
-     (tp/send-req transport jup/COMM-CLOSE {:comm_id (u/message-comm-id parent-message), :data {}}))))
+     (tp/send-req transport jup/COMM-CLOSE {:comm_id (jup/message-comm-id parent-message), :data {}}))))
 

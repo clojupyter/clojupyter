@@ -4,7 +4,7 @@
   :license {:name "MIT"}
   :dependencies [[beckon			"0.1.1"]
                  [cheshire			"5.8.1"]
-                 [cider/cider-nrepl		"0.20.0"]
+                 [cider/cider-nrepl		"0.21.1"]
 		 [clojure.java-time		"0.3.2"]
                  [com.cemerick/pomegranate 	"1.1.0"]
                  [com.grammarly/omniconf	"0.3.2"]
@@ -17,7 +17,7 @@
                  [org.clojure/data.json		"0.2.6"]
                  [org.clojure/java.jdbc		"0.7.9"]
                  [org.xerial/sqlite-jdbc	"3.25.2"]
-                 [nrepl 			"0.5.3"]
+                 [nrepl 			"0.6.0"]
                  [org.zeromq/cljzmq 		"0.1.4" :exclusions [org.zeromq/jzmq]]
                  [org.zeromq/jeromq 		"0.5.0"]
                  [pandect			"0.6.1"]

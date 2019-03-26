@@ -2,7 +2,13 @@
   (:require
    [clojupyter.kernel.config		:as cfg]))
 
-(def ^:dynamic ^:private *stacktrace-printing-enabled* false)
+(def ^:dynamic ^:private *stacktrace-printing-enabled*
+  "Controls whether a stacktrace is printed in Jupyter when an exception
+  occurs. 
+
+  NOTE: The default behaviour is controlled via clojupyter's
+  configuration file."
+  true)
 
 (defn set-print-stacktraces!
   "It appears that `cider-nrepl` sometimes triggers an uncaught

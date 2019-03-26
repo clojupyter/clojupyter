@@ -1,6 +1,6 @@
 (ns clojupyter.kernel.cljsrv.nrepl-middleware
   (:require
-   [nrepl.middleware.pr-values					:refer [pr-values]]
+   [nrepl.middleware.print				:refer [wrap-print]]
    ,,
    [clojupyter.misc.mime-convertible]
    [clojupyter.protocol.mime-convertible	:as mc])
@@ -23,6 +23,6 @@
                              this))))))
 
 (set-descriptor! #'mime-values 
-                 {:requires #{#'pr-values}
+                 {:requires #{#'wrap-print}
                   :expects #{"eval"}
                   :handles {}})

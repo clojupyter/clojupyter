@@ -12,7 +12,7 @@
    :print-stacktraces?		{:description	(str "Print stacktrace on error. "
                                                      "Temporary workaround for issue with uncaught exceptions in nrepl.")
                                  :type		:boolean
-                                 :default	false}
+                                 :default	true}
    :traffic-logging?		{:description	"Log all incoming and outgoing ZMQ message to stdout."
                                  :type		:boolean
                                  :default	false}})

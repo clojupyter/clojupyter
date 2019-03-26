@@ -1,12 +1,9 @@
 (ns clojupyter.misc.display
   (:require
-   [cheshire.core				:as cheshire]
-   [clojure.data.codec.base64			:as b64]
-   [clojure.java.io				:as io]
    [hiccup.core					:as hiccup]
    ,,
    [clojupyter.kernel.state			:as state]
-   [clojupyter.misc.util			:as u]
+   [clojupyter.kernel.util			:as u]
    [clojupyter.protocol.mime-convertible	:as mc])
   (:import
    [javax.imageio ImageIO]

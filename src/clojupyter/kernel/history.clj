@@ -3,7 +3,7 @@
    [clojure.java.jdbc			:as sql]
    [clojure.java.io			:as io]
    ,,
-   [clojupyter.misc.config		:as cfg]))
+   [clojupyter.kernel.config		:as cfg]))
 
 (defn- now [] (new java.util.Date))
 

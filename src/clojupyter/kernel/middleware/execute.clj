@@ -32,7 +32,7 @@
   (handler-when (parent-msgtype-pred jup/EXECUTE-REQUEST)
     (fn [{:keys [transport parent-message] :as ctx}]
       (let [code			(jup/message-code parent-message)
-            silent?			(or (jup/message-silent parent-message) (code-empty? code) (code-hushed? code))
+            silent?			(or (jup/message-silent parent-message) (code-empty? code))
             store-history?		(if silent? false (jup/message-store-history? parent-message))
             {:keys [err result]}	(submit-eval-request ctx)
             content 			(-> err
@@ -46,7 +46,7 @@
           err
           ,, (when-not silent?
                (tp/send-iopub transport jup/ERROR content))
-          (not silent?)
+          (and (not silent?) (not (code-hushed? code)))
           ,, (tp/send-iopub transport jup/EXECUTE-RESULT
                {:execution_count (state/execute-count)
                 :code code

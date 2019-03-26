@@ -45,10 +45,51 @@
             wrap-base-handlers))
     ```
 
-  * Move kernel-specific functionality into `clojupyter.kernel.*`:
-    * `state.clj`: Move to `clojupyter.kernel.state`.
-    * `stacktrace.clj`: Move to `clojupyter.kernel.stacktrace`
-    * `history.clj`: Move to `clojupyter.kernel.history`
+  * Reorganize code structure, now looks like this
+  ```
+  14:15 > tree src
+  src
+  ├── clojupyter
+  │   ├── display.clj
+  │   ├── javascript
+  │   │   └── alpha.clj
+  │   ├── kernel
+  │   │   ├── cljsrv
+  │   │   │   ├── nrepl_comm.clj
+  │   │   │   ├── nrepl_middleware.clj
+  │   │   │   └── nrepl_server.clj
+  │   │   ├── config.clj
+  │   │   ├── core.clj
+  │   │   ├── history.clj
+  │   │   ├── init.clj
+  │   │   ├── jupyter.clj
+  │   │   ├── middleware
+  │   │   │   ├── base.clj
+  │   │   │   ├── comm.clj
+  │   │   │   ├── complete.clj
+  │   │   │   ├── execute.clj
+  │   │   │   ├── history.clj
+  │   │   │   ├── inspect.clj
+  │   │   │   └── log_traffic.clj
+  │   │   ├── middleware.clj
+  │   │   ├── spec.clj
+  │   │   ├── stacktrace.clj
+  │   │   ├── state.clj
+  │   │   ├── transport
+  │   │   │   └── zmq.clj
+  │   │   ├── transport.clj
+  │   │   ├── util.clj
+  │   │   └── version.clj
+  │   ├── misc
+  │   │   ├── display.clj
+  │   │   ├── helper.clj
+  │   │   └── mime_convertible.clj
+  │   └── protocol
+  │       └── mime_convertible.clj
+  └── clojupyter.clj
+
+  8 directories, 30 files
+  ```
   * Make functionality provided by `clojupyter.misc.display` and `clojupyter.misc.helper`
     available in namespace `clojupyter`
     * Longer term `clojupyter` should contain functions for core functionality. Eventually

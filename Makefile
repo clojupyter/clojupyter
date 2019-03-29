@@ -15,9 +15,10 @@ all:
 	chmod +x bin/clojupyter
 
 clean:
+	lein clean
 	rm -f *.jar
 	rm -f target/*.jar
-	rm -f bin/clojuypyter
+	rm -f bin/clojupyter
 
 install:
 	mkdir -p $(kernelDir)

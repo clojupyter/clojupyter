@@ -1,8 +1,20 @@
+<img src="https://github.com/klausharbo/clojupyter-private/blob/feature-improve-docs/resources/(clojupyter) 350x80.png">
 
-# clojupyter
-A Jupyter kernel for Clojure. This will let you run Clojure code from the
-Jupyter console and notebook.
+A Jupyter kernel for Clojure - run Clojure code from Jupyter Lab, Notebook and Console.
+
 [![Build Status](https://travis-ci.org/clojupyter/clojupyter.svg?branch=master)](https://travis-ci.org/clojupyter/clojupyter)
+
+
+### Table of Contents
+
+* [Getting Started](#getting-started)
+* [Installation](#installation)
+* [The Docker Way](#the-docker-way)
+* [Installation on Windows](#installation-on-windows)
+* [To do](#to-do)
+* [Collaboration](#collaboration)
+
+##
 
 ![clojupyter](https://raw.github.com/roryk/clojupyter/master/images/demo.png)
 

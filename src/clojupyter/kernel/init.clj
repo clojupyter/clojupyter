@@ -15,8 +15,9 @@
   []
   (cfg/init!)
   (log/set-level! (cfg/log-level))
-  (alter-var-root #'clojupyter/*clojupyter-version* (constantly (version/version)))
-  (println (str "Clojupyter: Version " (version/version-string) "."))
+  (let [ver (version/version)]
+    (alter-var-root #'clojupyter/*version* (constantly ver))
+    (println (str "Clojupyter: Version " (:version-string ver) ".")))
   (when-let [config-file (cfg/config-file)]
     (println (str "Clojupyter: Configuration read from " config-file "."))
     (println (str "Clojupyter configuration: "))

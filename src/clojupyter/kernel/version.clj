@@ -13,19 +13,22 @@
      (when-let [f (io/resource "version.edn")]
        (-> f slurp edn/read-string)))))
 
-(defn version-string
+(defn version-string*
   "Returns clojupyter's version as a string."
-  ([] (version-string (version-data)))
-  ([{:keys [version]}]
-   (str (or version "0.0.0"))))
+  ([] (version-string* (version-data)))
+  ([{:keys [version-string]}]
+   (str (or version-string "0.0.0"))))
 
 (defn- version-map
   [s]
   (when s
-    (if-let [[_ major minor incr qual] (re-find #"^(\d+)\.(\d+)\.(\d+)(?:-(.*))?$" s)]
-      {:major (read-digits major), :minor (read-digits minor),
-       :incremental (read-digits incr), :qualifier qual}
-      {:major 0, :minor 0, :incremental 0, :qualifier nil})))
+    (let [prefix "clojupyter-v"]
+      (if-let [[_ major minor incr qual] (re-find #"^(\d+)\.(\d+)\.(\d+)(?:-(.*))?$" s)]
+        {:major (read-digits major), :minor (read-digits minor),
+         :incremental (read-digits incr), :qualifier qual,
+         :formatted-version (str prefix s)}
+        {:major 0, :minor 0, :incremental 0, :qualifier nil,
+         :formatted-version (str prefix "0.0.0")}))))
 
 (def version
   "Returns version information as a map with the keys `:major`,
@@ -35,4 +38,4 @@
   (memoize
    (fn []
      (let [data (version-data)]
-       (merge data (version-map (version-string data)))))))
+       (merge data (version-map (version-string* data)))))))

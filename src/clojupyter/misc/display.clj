@@ -80,4 +80,14 @@
   [markdown-str]
   (markdown markdown-str))
 
+;; Vega Lite
 
+(defn vega-lite
+  [v]
+  (u/stream-to-string {:application/vnd.vegalite.v1+json v}))
+
+(defn render-mime
+  [mime-type v]
+  (reify mc/PMimeConvertible
+    (to-mime [_]
+      (u/stream-to-string (hash-map mime-type v)))))

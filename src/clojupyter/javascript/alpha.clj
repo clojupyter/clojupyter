@@ -92,7 +92,13 @@
   symbol `Highcharts` from the Highchart library which is referenced
   by `:hicharts`.  The number of ident-bindings in `wrap-require` and
   the number of arguments in the Javascript function must be the same,
-  and referenced symbols are bound in order."
+  and referenced symbols are bound in order.
+
+  NOTE: The result of calling `amd-add-javascript` must be the last
+  form of the cell for the Javascript to be evaluated.  Consider using
+  `amd-add-javascript-html` which creates a HTML `div` element which
+  both add the Javascript library and provides a textual
+  confirmation."
   [jsdefs]
   (-> {:paths (->> jsdefs
                    (map (juxt :ident :url))
@@ -106,16 +112,28 @@
 (defn amd-add-javascript-html
   "Same as `amd-add-javascript` except the returned string is embedded in a
   `script` element wrapped in a `hiccup-html` form.
-  Cf. `amd-add-javascript` for details."
-  [jsdefs]
-  (display/hiccup-html [:script (amd-wrap-semicolons (amd-add-javascript jsdefs))]))
+  Cf. `amd-add-javascript` for details.
+
+  NOTE: Evaluation of `amd-add-javascript-html` must be the last form
+  of the cell.  The message 'Javascript library loaded...' indicates
+  that the library was loaded."
+  ([jsdefs] (amd-add-javascript-html {} jsdefs))
+  ([{:keys [brief?] :or {brief? false}} jsdefs]
+   (display/hiccup-html [:div
+                         [:script (amd-wrap-semicolons (amd-add-javascript jsdefs))]
+                         (if brief?
+                           [:pre "Javascript libraries added."]
+                           (if (= (count jsdefs) 1)
+                             [:pre (str "Javascript library added: " (-> jsdefs first :url) ".")]
+                             [:pre (str "Javascript libraries added:\n")
+                              (str/join "\n" (map #(str "  - " (:url %)) jsdefs))]))])))
 
 (do
   (s/fdef amd-add-javascript
     :args (s/cat :jsdefs ::jsdefs)
     :ret string?)
   (s/fdef amd-add-javascript-html
-    :args (s/cat :jsdefs ::jsdefs)
+    :args (s/cat :opts (s/? map?) :jsdefs ::jsdefs)
     :ret string?)
   (s/fdef amd-wrap-require
     :args (s/cat :ident-vec (s/coll-of ::ident :kind vector?)

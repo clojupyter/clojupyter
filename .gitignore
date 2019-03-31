@@ -11,3 +11,4 @@ bin/clojupyter
 .idea
 clojupyter.iml
 deps.edn
+resources/version.edn

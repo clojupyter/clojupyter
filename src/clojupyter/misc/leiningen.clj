@@ -1,64 +1,19 @@
 (ns clojupyter.misc.leiningen
   (:require
-   [clojure.edn				:as edn]
    [clojure.string			:as str]
    [clojure.java.io			:as io]
    [clojure.java.shell			:as sh]
-   [java-time				:as jtm] 
+   [clojure.tools.cli			:as cli]
    ,,
    [clojupyter.kernel.util		:as u]
    [clojupyter.kernel.version		:as version])
   (:gen-class))
 
-;;; ----------------------------------------------------------------------------------------------------
-;;; BUILD CLOJUPYTER EXECUTABLE
-;;; ----------------------------------------------------------------------------------------------------
-
-(def ^:private INSTALL-DIR-RELATIVE		"clojure")
-(def ^:private VERSION-RESOURCE			"version.edn")
-(def ^:private JAR-RE-PATTERN			 #"/clojupyter.*standalone.*\.jar$")
-(def ^:private CLOJUPYTER-TEMPLATE-RESOURCE	"clojupyter.template")
 (def ^:private KERNEL-JSON			"kernel.json")
 
 (defn- print-prefix
   [s]
   (str s ": "))
-
-(defn- target-path
-  []
-  "./target")
-
-(defn- standalone-jarfile
-  []
-  (let [fs (->> (target-path)
-                io/file
-                file-seq
-                (filter (u/rcomp str (partial re-find JAR-RE-PATTERN))))]
-    (case (count fs)
-      0		(throw (Exception. "Uberjar not found in ./target"))
-      1		(first fs)
-      ,,	(throw (ex-info (str "Multiple standalone jar files found in " (target-path) ".")
-                         {:files fs})))))
-
-(defn- write-binary
-  [outfile]
-  (with-open [outstream (-> outfile io/output-stream)
-              template-instream (if-let [r (io/resource CLOJUPYTER-TEMPLATE-RESOURCE)]
-                                  (io/input-stream r)
-                                  (throw (ex-info (str "clojupyter template resource not found")
-                                           {:missing-resource-name CLOJUPYTER-TEMPLATE-RESOURCE})))]
-    (io/copy template-instream outstream)
-    (io/copy (io/input-stream (standalone-jarfile)) outstream)))
-
-(defn- make-executable-for-everybody
-  [f]
-  (.setExecutable f true false))
-
-(defn- write-clojupyter-exe
-  [{:keys [prefix]} outfile]
-  (println (str prefix "Writing clojupyter executable to '" (str outfile) "'."))
-  (write-binary outfile)
-  (make-executable-for-everybody outfile))
 
 ;;; ----------------------------------------------------------------------------------------------------
 ;;; OS SUPPORT
@@ -75,18 +30,13 @@
   (or (mac?)
       #_(linux?)))
 
+(println "TBD: Reintroduce Linux support!" )
+
 (defn- operating-system []
   (cond
     (mac?)	:MacOS
     (linux?)	:Linux
     true	nil))
-
-(defn- exe-name
-  []
-  (case (operating-system)
-    :MacOS	"clojupyter"
-    :Linux	"clojupyter"
-    nil))
 
 (defn- jar-name
   ([] (jar-name (version/version)))
@@ -106,16 +56,12 @@
   []
   (assert (.exists (user-homedir)) (str "User home directory not found: '" (user-homedir) "'.")))
 
-(defn- kernel-installdir
-  [rel]
-  (str rel "/" INSTALL-DIR-RELATIVE))
-
 (defn- install-dir
   []
   (assert-homedir)
   (when-let [relpath (case (operating-system)
-                       :MacOS	(kernel-installdir "Library/Jupyter/kernels")
-                       :Linux	(kernel-installdir ".local/share/jupyter/kernels")
+                       :MacOS	"Library/Jupyter/kernels"
+                       :Linux	".local/share/jupyter/kernels"
                        nil)]
     (io/file (str (user-homedir) "/" relpath))))
 
@@ -155,12 +101,8 @@
 (def ^:private CONVERT-EXE	"convert")
 (def ^:private LOGO32-FILENAME	"logo-32x32.png")
 (def ^:private LOGO64-FILENAME	"logo-64x64.png")
-(def ^:private LOGO64-RESOURCE	(let [nm LOGO64-FILENAME]
-                                  (or #_(io/resource nm)
-                                      (io/file "resources/" nm))))
-(def ^:private LOGO32-RESOURCE	(let [nm LOGO32-FILENAME]
-                                  (or #_(io/resource nm)
-                                      (io/file "resources/" nm))))
+(def ^:private LOGO64-RESOURCE	(io/file (str "resources/" LOGO64-FILENAME)))
+(def ^:private LOGO32-RESOURCE	(io/file (str "resources/" LOGO32-FILENAME)))
 
 (defn- convert-cmdline
   [{:keys [major minor incremental qual-suffix]} destfile]
@@ -188,22 +130,49 @@
 ;;; EXTERNAL INTERFACE
 ;;; ----------------------------------------------------------------------------------------------------
 
+(def KERNEL-PATH-REGEX "^[\\.\\w\\d-#@]+$")
+
+(def ^:private INSTALL-OPTIONS
+  [[nil "--kernel-relpath KERNEL-RELPATH"
+    (str "Relative name of install directory (must match regex " KERNEL-PATH-REGEX ").")
+    :default "clojupyter"
+    :parse-fn (fn [v] (if (= v ":version") (str "clojupyter-" (:version (version/version))) v))
+    :validate [(partial re-find (re-pattern KERNEL-PATH-REGEX))]]])
+
+(defn- falsey? [v] (or (= v nil) (= v false)))
+(def truthy? (complement falsey?))
+
+(defn- parse-install-cmdline
+  [opts args]
+  (let [{:keys [options errors] :as result} (cli/parse-opts args INSTALL-OPTIONS)]
+    (if (some truthy? errors) 
+      result
+      options)))
+
 (defn clojupyter-install
   ""
-  []
+  [& args]
   (let [prefix (print-prefix "clojupyter-install")
         opts {:prefix prefix}
-        destdir (install-dir)
-        jarfile (jar-name)
-        dest-jarfile (io/file (str destdir "/" (.getName jarfile)))
-        {:keys [formatted-version] :as version-map} (version/version)]
-    (ensure-destdir opts dest-jarfile)
-    (copy-jarfile opts jarfile dest-jarfile)
-    (write-kernel-spec opts destdir dest-jarfile formatted-version)
-    (write-icons opts destdir version-map)
-    (println (str prefix "Done (ok)."))
-    (println)
-    (System/exit 0)))
+        {:keys [errors kernel-relpath summary]} (parse-install-cmdline opts args)]
+    (if (some truthy? errors)
+      (do
+        (println [:errors errors])
+        (println (str prefix "Error parsing command line."))
+        (doseq [err (remove nil? errors)]
+          (println (str prefix err)) )
+        (println (str prefix "Summary - " summary))
+        (System/exit 1))
+      (let [destdir (io/file (str (install-dir) "/" kernel-relpath))
+            jarfile (jar-name)
+            dest-jarfile (io/file (str destdir "/" (.getName jarfile)))
+            {:keys [formatted-version] :as version-map} (version/version)]
+        (ensure-destdir opts dest-jarfile)
+        (copy-jarfile opts jarfile dest-jarfile)
+        (write-kernel-spec opts destdir dest-jarfile formatted-version)
+        (write-icons opts destdir version-map)
+        (println (str prefix "Done (ok)."))
+        (System/exit 0)))))
 
 (defn check-os-support
   "Reports whether present operating system is supported by clojupyter.
@@ -212,7 +181,7 @@
   Call via lein:
 
         `bash$ lein check-os-support`"
-  [& args]
+  []
   (let [supp? (supported-os?)
         pfx (print-prefix "check-os-support")]
     (if-let [os (operating-system)]

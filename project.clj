@@ -7,7 +7,7 @@
   :aliases	{"clojupyter-install"		["run" "-m" "clojupyter.misc.leiningen/clojupyter-install"]
                  "check-os-support"		["run" "-m" "clojupyter.misc.leiningen/check-os-support"]
                  "check-install-dir"		["run" "-m" "clojupyter.misc.leiningen/check-install-dir"]
-                 "update-version"		["v" "cache" "resources" "edn"]}
+                 "update-version-edn"		["v" "cache" "resources" "edn"]}
 
   :dependencies [[beckon			"0.1.1"]
                  [cheshire			"5.8.1"]
@@ -23,6 +23,7 @@
                  [org.clojure/data.codec 	"0.1.1"]
                  [org.clojure/data.json		"0.2.6"]
                  [org.clojure/java.jdbc		"0.7.9"]
+                 [org.clojure/tools.cli		"0.4.2"]
                  [org.xerial/sqlite-jdbc	"3.25.2"]
                  [nrepl 			"0.6.0"]
                  [org.zeromq/cljzmq 		"0.1.4" :exclusions [org.zeromq/jzmq]]

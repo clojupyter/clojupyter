@@ -30,8 +30,6 @@
   (or (mac?)
       #_(linux?)))
 
-(println "TBD: Reintroduce Linux support!" )
-
 (defn- operating-system []
   (cond
     (mac?)	:MacOS

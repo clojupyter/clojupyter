@@ -48,6 +48,9 @@
   [& fs]
   (apply comp (reverse fs)))
 
+(defn- falsey? [v] (or (= v nil) (= v false)))
+(def truthy? (complement falsey?))
+
 (defmacro with-debug-logging
   [[& args] & forms]
   `(let [uuid# (str "#" (subs (uuid) 0 8))]

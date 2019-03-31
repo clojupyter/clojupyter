@@ -113,37 +113,40 @@
      destfile]))
 
 (defn- write-icons
-  [{:keys [prefix]} destdir version-map]
+  [{:keys [prefix]} tag-icons? destdir version-map]
   (let [destfile (str destdir "/" LOGO64-FILENAME)]
     (println (str prefix "Copying icons to " destdir "."))
     (io/copy LOGO32-RESOURCE (io/file (str destdir "/" LOGO32-FILENAME)))
-    (let [cmdline (convert-cmdline version-map destfile)
-          {:keys [exit stdout err]} (apply sh/sh cmdline)]
-      (if (zero? exit)
-        :ok
-        (ex-info (str "Copying icons failed: " err)
-          {:exit-code exit, :stdout stdout, :err err, :cmdline cmdline})))))
+    (if tag-icons?
+      (let [cmdline (convert-cmdline version-map destfile)
+            {:keys [exit stdout err]} (apply sh/sh cmdline)]
+        (if (zero? exit)
+          :ok
+          (ex-info (str "Copying icons failed: " err)
+            {:exit-code exit, :stdout stdout, :err err, :cmdline cmdline})))
+      (io/copy LOGO64-RESOURCE (io/file (str destdir "/" LOGO64-FILENAME))))))
 
 ;;; ----------------------------------------------------------------------------------------------------
 ;;; EXTERNAL INTERFACE
 ;;; ----------------------------------------------------------------------------------------------------
 
-(def KERNEL-PATH-REGEX "^[\\.\\w\\d-#@]+$")
+(def KERNEL-DIR-REGEX "^[\\.\\w\\d-#@]+$")
 
 (def ^:private INSTALL-OPTIONS
-  [[nil "--kernel-relpath KERNEL-RELPATH"
-    (str "Relative name of install directory (must match regex " KERNEL-PATH-REGEX ").")
+  [[nil "--jupyter-kernel-dir JUPYTER-KERNEL-DIR"
+    (str "Relative name of install directory (must match regex " KERNEL-DIR-REGEX ").")
     :default "clojupyter"
     :parse-fn (fn [v] (if (= v ":version") (str "clojupyter-" (:version (version/version))) v))
-    :validate [(partial re-find (re-pattern KERNEL-PATH-REGEX))]]])
-
-(defn- falsey? [v] (or (= v nil) (= v false)))
-(def truthy? (complement falsey?))
+    :validate [(partial re-find (re-pattern KERNEL-DIR-REGEX))]]
+   [nil "--tag-icons"
+    "If specified: Add text to icons indicating clojupyter's version."
+    :default false
+    :parse-fn (constantly true)]])
 
 (defn- parse-install-cmdline
   [opts args]
   (let [{:keys [options errors] :as result} (cli/parse-opts args INSTALL-OPTIONS)]
-    (if (some truthy? errors) 
+    (if (some u/truthy? errors) 
       result
       options)))
 
@@ -152,23 +155,24 @@
   [& args]
   (let [prefix (print-prefix "clojupyter-install")
         opts {:prefix prefix}
-        {:keys [errors kernel-relpath summary]} (parse-install-cmdline opts args)]
-    (if (some truthy? errors)
+        {:keys [errors jupyter-kernel-dir tag-icons summary]} (parse-install-cmdline opts args)]
+    (if (some u/truthy? errors)
       (do
         (println [:errors errors])
         (println (str prefix "Error parsing command line."))
         (doseq [err (remove nil? errors)]
           (println (str prefix err)) )
-        (println (str prefix "Summary - " summary))
+        (println (str prefix "Command line summary:"))
+        (println summary)
         (System/exit 1))
-      (let [destdir (io/file (str (install-dir) "/" kernel-relpath))
+      (let [destdir (io/file (str (install-dir) "/" jupyter-kernel-dir))
             jarfile (jar-name)
             dest-jarfile (io/file (str destdir "/" (.getName jarfile)))
             {:keys [formatted-version] :as version-map} (version/version)]
         (ensure-destdir opts dest-jarfile)
         (copy-jarfile opts jarfile dest-jarfile)
         (write-kernel-spec opts destdir dest-jarfile formatted-version)
-        (write-icons opts destdir version-map)
+        (write-icons opts tag-icons destdir version-map)
         (println (str prefix "Done (ok)."))
         (System/exit 0)))))
 

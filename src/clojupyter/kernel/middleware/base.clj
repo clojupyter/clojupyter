@@ -9,9 +9,8 @@
                                                                 response-mapping-transport
                                                                 parent-msgtype-pred]]
    [clojupyter.kernel.util		:as u]
+   [clojupyter.kernel.version		:as ver]
    ))
-
-(def BANNER "clojupyter-0.1.1-SNAPSHOT")
 
 (defn jupyter-message
   [{:keys [parent-message signer] :as ctx} resp-socket resp-msgtype response]
@@ -90,7 +89,7 @@
                         :version (clojure-version)
                         :mimetype "text/x-clojure"
                         :file_extension ".clj"}
-        :banner BANNER
+        :banner (or (:formatted-version (ver/version)) "clojupyter-v0.0.0")
         :help_links []}))))
 
 (def wrap-shutdown-request

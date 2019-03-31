@@ -11,6 +11,8 @@ install: uberjar
 	lein clojupyter-install
 
 install-version: uberjar
-	lein clojupyter-install --kernel-relpath :version
+	lein clojupyter-install --jupyter-kernel-dir :version
 
-#eof
+install-version-tag-icons: uberjar
+	lein clojupyter-install --jupyter-kernel-dir :version --tag-icons
+

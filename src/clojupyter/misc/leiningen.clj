@@ -109,7 +109,7 @@
      (str LOGO64-RESOURCE)
      "-fill" "white"
      "-gravity" "South" "-annotate" "+0+0" ver
-     "-gravity" "North" "-annotate" "+0+0" qual-suffix
+     "-gravity" "North" "-annotate" "+0+0" (or qual-suffix "")
      destfile]))
 
 (defn- write-icons
@@ -122,8 +122,7 @@
             {:keys [exit stdout err]} (apply sh/sh cmdline)]
         (if (zero? exit)
           :ok
-          (ex-info (str "Copying icons failed: " err)
-            {:exit-code exit, :stdout stdout, :err err, :cmdline cmdline})))
+          (throw (Exception. (str "Copying icons failed: " err)))))
       (io/copy LOGO64-RESOURCE (io/file (str destdir "/" LOGO64-FILENAME))))))
 
 ;;; ----------------------------------------------------------------------------------------------------

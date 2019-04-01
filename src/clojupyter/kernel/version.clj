@@ -12,7 +12,8 @@
 (def ^:private version-data
   (fn []
     (when-let [f (or (io/resource VERSION-FILENAME)
-                     (io/file (str "resources/" VERSION-FILENAME)))]
+                     (io/file (str "resources/" VERSION-FILENAME))
+                     (throw (Exception. "version.edn not found")))]
       (-> f slurp edn/read-string))))
 
 (defn version-string*

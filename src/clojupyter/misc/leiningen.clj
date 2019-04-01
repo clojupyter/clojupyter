@@ -73,7 +73,7 @@
 (defn- copy-jarfile
   [{:keys [prefix]} jarfile dest-jarfile]
   (when-not (.exists jarfile)
-    (ex-info (str "copy-jarfile: " jarfile " not found.") {:jarfile jarfile}))
+    (throw (ex-info (str "copy-jarfile: " jarfile " not found.") {:jarfile jarfile})))
   (println (str prefix "Copying " jarfile " to " (.getParent dest-jarfile) "."))
   (io/copy jarfile dest-jarfile))
 

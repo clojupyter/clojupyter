@@ -1,4 +1,4 @@
-<img src="https://github.com/klausharbo/clojupyter-private/blob/feature-improve-docs/resources/(clojupyter) 350x80.png">
+<img src="./resources/(clojupyter) 350x80.png">
 
 A Jupyter kernel for Clojure - run Clojure code from Jupyter Lab, Notebook and Console.
 
@@ -15,7 +15,7 @@ A Jupyter kernel for Clojure - run Clojure code from Jupyter Lab, Notebook and C
 
 ##
 
-![clojupyter](https://raw.github.com/roryk/clojupyter/master/images/demo.png)
+![clojupyter](./images/demo.png)
 
 ## Getting Started
 
@@ -24,7 +24,7 @@ of clojupyter.  See
 [this notebook](https://github.com/clojupyter/develop/blob/feature/prepare-docs-for-release/examples/demo-clojupyter.ipynb)
 showing examples of how you can display HTML and use external Javascript:
 
-<img src="https://raw.githubusercontent.com/aria42/clojupyter/mime-improvements/images/html-demo.png" width="100%"/>
+<img src="./images/html-demo.png" width="100%"/>
 
 There are 3 example notebooks because Jupyter offers several distinct
 user interfaces - Jupyter Lab, Jupyter Notebook and Jupyter Console -
@@ -37,7 +37,7 @@ Jupyter Lab.
 
 You can also use existing JVM charting libraries since you can render any Java BufferedImage.
 
-<img src="https://raw.githubusercontent.com/aria42/clojupyter/mime-improvements/images/incanter-demo.png" width="100%"/>
+<img src="./images/incanter-demo.png" width="100%"/>
 
 ## Installation
 

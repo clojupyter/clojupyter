@@ -9,8 +9,7 @@ A Jupyter kernel for Clojure - run Clojure code from Jupyter Lab, Notebook and C
 * [Getting Started](#getting-started)
 * [Installation](#installation)
 * [The Docker Way](#the-docker-way)
-* [Installation on Windows](#installation-on-windows)
-* [To do](#to-do)
+* [To do](#todo)
 * [Collaboration](#collaboration)
 
 ##
@@ -95,7 +94,7 @@ The first time you start it Docker will pull the Docker image from `hub.docker.c
 More detailed introduction and usage guide on 
 [the home page of the clojupyter Docker image](https://github.com/klausharbo/jupyter-clojure-docker).
 
-## TODO / Roadmap
+## TODO
 
 Development progress is based on voluntary efforts so we can't make any promises, but the near-term
 road map for clojupyter development looks something like this:

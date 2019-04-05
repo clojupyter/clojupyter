@@ -132,14 +132,14 @@
   Linux (per XDG Base Directory specification)
   * [x] Move location history file to `~/Library/Caches` on MacOS and `~/.local/share` (per XDG Base
     Directory specification)
-  * [x] Control printing of stacktraces (workaround, cf elsewhere) in configuration file
+  * [x] Control printing of stacktraces (workaround, base issue addressed by upgrade to nREPL 0.6) in configuration file
   * [x] Control log level in configuration file
   * [x] Control ZMQ traffic logging in configuration file
 * [x] **Improve tests**
   * [x] Convert existing tests to work with new structure
   * [x] Add tests for middleware providing checks for basic message responses
 * [x] Miscellaneous
-  * [x] Upgrade Jupyter messing protocol to v5.3* (from 5.0) - no apparent impact
+  * [x] Upgrade Jupyter messing protocol to v5.3 (from v5.0) - no apparent impact
   * [x] Replace `clj-time` with `clojure.java-time`
   * [x] Rename `idents` in ZMQ messages to `envelope`
   * [x] Define names for Jupyter message identifiers (in `clojupyter.misc.jupyter`)

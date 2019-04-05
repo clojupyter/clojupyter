@@ -1,28 +1,18 @@
-kernelDir = $(HOME)/.local/share/jupyter/kernels/clojure
-
-ifeq ($(shell uname -s), Linux)
-        kernelDir:=$(HOME)/.local/share/jupyter/kernels/clojure
-endif
-
-ifeq ($(shell uname -s), Darwin)
-        kernelDir:=$(HOME)/Library/Jupyter/kernels/clojure
-endif
-
-
-all:
+uberjar: update-version-edn
 	lein uberjar
-	cat bin/clojupyter.template $$(find . -maxdepth 2 -type f | grep -e ".*standalone.*\.jar") > bin/clojupyter
-	chmod +x bin/clojupyter
+
+update-version-edn:
+	lein update-version-edn
 
 clean:
-	rm -f *.jar
-	rm -f target/*.jar
-	rm -f bin/clojuypyter
+	lein clean
 
-install:
-	mkdir -p $(kernelDir)
-	cp bin/clojupyter $(kernelDir)/clojupyter
-	@if [ ! -f $(kernelDir)/kernel.json ]; then\
-		sed 's|KERNEL|'${kernelDir}/clojupyter'|' resources/kernel.json > $(kernelDir)/kernel.json;\
-	fi
+install: uberjar
+	lein clojupyter-install
+
+install-version: uberjar
+	lein clojupyter-install --jupyter-kernel-dir :version
+
+install-version-tag-icons: uberjar
+	lein clojupyter-install --jupyter-kernel-dir :version --tag-icons
 

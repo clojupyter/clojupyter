@@ -10,3 +10,4 @@ pom.xml.asc
 bin/clojupyter
 .idea
 clojupyter.iml
+deps.edn

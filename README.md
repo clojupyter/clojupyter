@@ -81,18 +81,16 @@ jupyter-console --kernel=clojupyter
 
 ## The Docker way
 
-[A Docker image](https://github.com/klausharbo/clojupyter)
-is also made to make the installation easier, and isolate the environment cleaner.
-What you need to do is:
+A Docker image  exists to make trying out clojupyter easier.  To try it:
 
 1. [Install Docker](https://docs.docker.com/engine/installation/) based on your platform.
-2. Run `docker run  -p 8888:8888 klausharbo/clojupyter` to have clojupyter
+2. Run `docker run -p 8888:8888 --rm simplect/clojupyter:0.2.2` to have clojupyter
    run on your machine.
 
 The first time you start it Docker will pull the Docker image from `hub.docker.com`, which takes time.
 
-More detailed introduction and usage guide on 
-[the home page of the clojupyter Docker image](https://github.com/klausharbo/jupyter-clojure-docker).
+More detailed introduction and usage guide is available on 
+[the home page of the clojupyter Docker image](https://github.com/klausharbo/clojupyter-docker).
 
 ## TODO
 

@@ -20,7 +20,7 @@ A Jupyter kernel for Clojure - run Clojure code from Jupyter Lab, Notebook and C
 
 In the `examples` folder of the repository there 3 example notebooks showing some of the features
 of clojupyter.  See
-[this notebook](https://github.com/clojupyter/develop/blob/feature/prepare-docs-for-release/examples/demo-clojupyter.ipynb)
+[this notebook](https://github.com/clojupyter/clojupyter/blob/master/examples/demo-clojupyter.ipynb)
 showing examples of how you can display HTML and use external Javascript:
 
 <img src="./images/html-demo.png" width="100%"/>
@@ -89,7 +89,7 @@ A Docker image  exists to make trying out clojupyter easier.  To try it:
 
 The first time you start it Docker will pull the Docker image from `hub.docker.com`, which takes time.
 
-More detailed introduction and usage guide is available on 
+More detailed introduction and usage guide is available on
 [the home page of the clojupyter Docker image](https://github.com/klausharbo/clojupyter-docker).
 
 ## TODO

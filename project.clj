@@ -1,4 +1,4 @@
-(defproject clojupyter "0.2.3-SNAPSHOT"
+(defproject clojupyter "0.2.3-ALPHA1"
   :description "A Jupyter kernel for Clojure"
   :url "http://github.com/clojupyter/clojupyter"
   :license {:name "MIT"}

@@ -5,7 +5,9 @@
    [zeromq.zmq					:as zmq]
    ,,
    [clojupyter.kernel.jupyter			:as jup]
-   [clojupyter.kernel.transport			:as tp]))
+   [clojupyter.kernel.transport			:as tp]
+   [clojupyter.util				:as u]
+   [clojupyter.util-actions			:as u!]))
 
 (defn- receive-jupyter-message
   ([zmq-socket flag]
@@ -54,17 +56,17 @@
                    :req		req-socket
                    :stdin	stdin-socket
                    :iopub	iopub-socket
-                   (throw (ex-info (str "send*: Unknown socket " socket ".") {:socket socket})))
+                   (u!/throw-info (str "send*: Unknown socket " socket ".") {:socket socket}))
           n (dec (count encoded-jupyter-message))]
       (send-segments socket encoded-jupyter-message)))
   (tp/receive* [_ socket]
     (-> (case socket
           :req		(receive-jupyter-message req-socket 0)
           :stdin	(receive-jupyter-message stdin-socket (:no-block zmq/socket-options))
-          (throw (ex-info (str "read*: Unknown socket " socket ".") {:socket socket})))
+          (u!/throw-info (str "read*: Unknown socket " socket ".") {:socket socket}))
         jup/build-message)))
 
-(alter-meta! #'->zmq-transport #(assoc % :private true))
+(u!/set-var-private! #'->zmq-transport)
 
 (defn make-zmq-transport
   ([S req-socket stdin-socket iopub-socket]

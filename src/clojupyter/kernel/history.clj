@@ -3,9 +3,10 @@
    [clojure.java.jdbc			:as sql]
    [clojure.java.io			:as io]
    ,,
-   [clojupyter.kernel.config		:as cfg]))
+   [clojupyter.kernel.config		:as cfg]
+   [clojupyter.util-actions		:as u!]))
 
-(defn- now [] (new java.util.Date))
+
 
 (def ^:private JUPYTER-HISTORY-FILE "jupyter-history")
 
@@ -42,7 +43,7 @@
 
 (defn start-history-session
   [db]
-  (sql/insert! db :sessions {:start (now)})
+  (sql/insert! db :sessions {:start (u!/java-util-data-now)})
   {:db         db
    :session-id ((keyword "max(session)")
                 (first (sql/query db
@@ -56,7 +57,7 @@
                           where rowid not in (select rowid from history
                           order by session desc, line desc
                           limit ?)", max-history])
-     (sql/update! db :sessions {:end (now)}  ["session = ?" (:session-id session)]))))
+     (sql/update! db :sessions {:end (u!/java-util-data-now)}  ["session = ?" (:session-id session)]))))
 
 (defn add-history
   [session line source]

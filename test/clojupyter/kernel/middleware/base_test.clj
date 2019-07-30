@@ -1,13 +1,14 @@
 (ns clojupyter.kernel.middleware.base-test
   (:require
    [clojure.spec.alpha				:as s]
+   [io.simplect.compose						:refer [γ Γ π Π λ]]
    [midje.sweet							:refer [fact =>]]
    ,,
    [clojupyter.kernel.middleware		:as M]
    [clojupyter.kernel.middleware.base		:as B]
    [clojupyter.kernel.jupyter			:as jup]
    [clojupyter.kernel.spec			:as sp]
-   [clojupyter.kernel.util			:as u]
+   [clojupyter.util				:as u]
    ,,
    [clojupyter.kernel.transport-test		:as TT]))
 
@@ -88,9 +89,9 @@
         ctx	(TT/test-ctx {} K-INFO-MSG)]
     (H ctx)
     (-> ctx :transport TT/sent :req first ((juxt :msgtype
-                                                 (u/rcomp :message :status)
-                                                 (u/rcomp :message :implementation)
-                                                 (u/rcomp :message :language_info :name)))))
+                                                 (Γ :message :status)
+                                                 (Γ :message :implementation)
+                                                 (Γ :message :language_info :name)))))
   =>
   [jup/KERNEL-INFO-REPLY "ok" "clojupyter" "clojure"])
 
@@ -100,8 +101,8 @@
         ctx	(TT/test-ctx {} SHUT-MSG)]
     (H ctx)
     (-> ctx :transport TT/sent :req first ((juxt :msgtype
-                                                 (u/rcomp :message :status)
-                                                 (u/rcomp :message :restart)))))
+                                                 (Γ :message :status)
+                                                 (Γ :message :restart)))))
   =>
   [jup/SHUTDOWN-REPLY "ok" false])
 
@@ -112,7 +113,7 @@
         ctx	(TT/test-ctx {} UNKN-MSG)]
     (H ctx)
     [(->> ctx :transport TT/sent :req first :msgtype)
-     (->> ctx :transport TT/sent :iopub (mapv (u/rcomp :message :execution_state)))])
+     (->> ctx :transport TT/sent :iopub (mapv (Γ :message :execution_state)))])
   =>
   ["unhandled:unknown_message" ["busy" "idle"]])
 
@@ -125,25 +126,25 @@
         ctx	(TT/test-ctx {:signer signer, :checker checker} K-INFO-MSG)]
     (H ctx)
     [(->> ctx :transport TT/sent :req
-          (mapv (u/rcomp :message
-                         :jupyter-message
-                         (partial s/valid? ::sp/jupyter-message)))
+          (mapv (Γ :message
+                   :jupyter-message
+                   (partial s/valid? ::sp/jupyter-message)))
           (reduce #(and %1 %2)))
-     (let [get-envelope (u/rcomp :transport
-                                 TT/sent
-                                 :req
-                                 first
-                                 :message
-                                 :jupyter-message
-                                 :envelope
-                                 (partial map seq))
+     (let [get-envelope (Γ :transport
+                           TT/sent
+                           :req
+                           first
+                           :message
+                           :jupyter-message
+                           :envelope
+                           (partial map seq))
            envelope (get-envelope ctx)]
        (= envelope
           (->> ctx :transport TT/sent :req first 
-               ((u/rcomp :message
-                         :encoded-jupyter-message
-                         (partial take (count envelope))
-                         (partial map seq))))))])
+               ((Γ :message
+                   :encoded-jupyter-message
+                   (partial take (count envelope))
+                   (partial map seq))))))])
   =>
   [true true])
 

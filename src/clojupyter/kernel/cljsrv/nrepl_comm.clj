@@ -8,8 +8,8 @@
    [clojupyter.kernel.stacktrace	:as stacktrace]
    [clojupyter.kernel.state		:as state]
    [clojupyter.kernel.transport		:as tp]
-   [clojupyter.kernel.util		:as u]
-   ))
+   [clojupyter.util			:as u]
+   [clojupyter.util-actions		:as u!]))
 
 (defprotocol nrepl-comm-proto
   (nrepl-trace [self])
@@ -35,7 +35,7 @@
 
 (defn- nrepl-trace*
   [self]
-  (u/with-debug-logging ["nrepl-trace: " :self self]
+  (u!/with-debug-logging ["nrepl-trace: " :self self]
       (-> (:nrepl-client self)
           (nrepl/message {:op :stacktrace, :session (:nrepl-session self)})
           nrepl/combine-responses
@@ -43,7 +43,7 @@
 
 (defn- nrepl-interrupt*
   [self interrupted need-input]
-  (u/with-debug-logging ["nrepl-interrupt: " :self self]
+  (u!/with-debug-logging ["nrepl-interrupt: " :self self]
     (reset! interrupted true)
     (if (not @need-input)
       (-> (:nrepl-client self)
@@ -60,7 +60,7 @@
 
 (defn- nrepl-complete*
   [self code current-ns]
-  (u/with-debug-logging ["nrepl-complete: " :self self :code code]
+  (u!/with-debug-logging ["nrepl-complete: " :self self :code code]
     (->> (do (-> (:nrepl-client self)
                  (nrepl/message {:op :complete, :session (:nrepl-session self)
                                  :symbol code, :ns @current-ns})
@@ -70,7 +70,7 @@
 
 (defn- nrepl-doc*
   [{:keys [nrepl-session nrepl-client] :as self} sym]
-  (u/with-debug-logging ["nrepl-doc" sym]
+  (u!/with-debug-logging ["nrepl-doc" sym]
     (let [code (format "(clojure.core/with-out-str (clojure.repl/doc %s))" sym)]
       (apply str (-> nrepl-client
                      (nrepl/message {"op" "eval", "code" code})
@@ -111,7 +111,7 @@
   (input-request zt)
   ;; READ MESSAGES UNTIL INPUT REPLY ARRIVES
   (loop [message (tp/receive-stdin zt)]
-    (let [command-id (u/uuid)]
+    (let [command-id (u!/uuid)]
       (if @interrupted
         (do (log/info "interrupted during waiting for input")
             (nrepl/message nrepl-client {:id command-id, :op "stdin",
@@ -166,9 +166,9 @@
 
 (defn- nrepl-eval*
   [self zt code nrepl-client current-ns interrupted need-input]
-  (u/with-debug-logging ["nrepl-eval: " :code code]
+  (u!/with-debug-logging ["nrepl-eval: " :code code]
     (let [pending	(atom #{})
-          command-id	(u/uuid)
+          command-id	(u!/uuid)
           result	(atom {:result nil})]
       (doseq [msg (nrepl/message (:nrepl-client self)
                                  {:id command-id
@@ -197,7 +197,7 @@
   (nrepl-eval [self zt code]
     (nrepl-eval* self zt code nrepl-client current-ns interrupted need-input)))
 
-(alter-meta! #'->NreplComm #(assoc % :private true))
+(u!/set-var-private! #'->NreplComm)
 
 (defn make-nrepl-comm
   [nrepl-server nrepl-transport]

@@ -3,7 +3,8 @@
    [nrepl.server]
    ,,
    [clojupyter.kernel.history			:as his]
-   [clojupyter.protocol.mime-convertible	:as mc]))
+   [clojupyter.protocol.mime-convertible	:as mc]
+   [clojupyter.util-actions			:as u!]))
 
 (def ^:private EMPTY-QUEUE [])
 
@@ -11,7 +12,7 @@
 
 (defrecord State [execute-count term? display-queue history-session])
 
-(alter-meta! #'->State #(assoc % :private true))
+(u!/set-var-private! #'->State)
 
 (defn make-state
   ;; Not private to enable testing

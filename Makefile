@@ -1,18 +1,15 @@
-uberjar: update-version-edn
-	lein uberjar
+clean:
+	lein clean
 
 update-version-edn:
 	lein update-version-edn
 
-clean:
-	lein clean
+uberjar: update-version-edn
+	lein uberjar
 
 install: uberjar
-	lein clojupyter-install
+	lein clojupyter install
 
-install-version: uberjar
-	lein clojupyter-install --jupyter-kernel-dir :version
-
-install-version-tag-icons: uberjar
-	lein clojupyter-install --jupyter-kernel-dir :version --tag-icons
-
+conda-build: uberjar
+	@echo "BUILDNUM=${BUILDNUM}"
+	lein clojupyter conda-build --buildnum "${BUILDNUM}"

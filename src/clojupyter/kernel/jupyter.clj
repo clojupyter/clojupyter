@@ -1,6 +1,6 @@
 (ns clojupyter.kernel.jupyter
   (:require
-   [clojupyter.kernel.util			:as u]))
+   [clojupyter.util				:as u]))
 
 (def PROTOCOL-VERSION "5.3")
 

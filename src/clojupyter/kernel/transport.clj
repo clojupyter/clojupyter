@@ -2,7 +2,7 @@
   (:refer-clojure :exclude [send])
   (:require
    [clojupyter.kernel.jupyter			:as jup]
-   [clojupyter.kernel.util			:as u]))
+   [clojupyter.util-actions			:as u!]))
 
 (defprotocol Transport
   (send* [_ socket msgtype message]
@@ -93,6 +93,5 @@
   (fn [{:keys [parent-message]}]
     (= (jup/message-msg-type parent-message) msgtype)))
 
-(map (partial u/set-var-indent! :defn)
-     [#'send* #'receive* #'bind-parent-message #'bind-transport
-      #'transport-layer #'handler-when])
+(u!/set-defn-indent! #'send* #'receive* #'bind-parent-message
+                       #'bind-transport #'transport-layer #'handler-when)

@@ -7,7 +7,8 @@
    [clojupyter.kernel.transport		:as tp		:refer [handler-when transport-layer
                                                                 response-mapping-transport
                                                                 parent-msgtype-pred]]
-   [clojupyter.kernel.util		:as u]
+   [clojupyter.util			:as u]
+   [clojupyter.util-actions		:as u!]
    ))
 
 (def ^:private logging? (atom false))
@@ -27,7 +28,7 @@
 (def wrap-print-messages
   (transport-layer
    {:send-fn (fn [{:keys [transport parent-message msgtype] :as ctx} socket resp-msgtype resp-message]
-               (let [uuid (subs (u/uuid) 0 6)]
+               (let [uuid (subs (u!/uuid) 0 6)]
                  (when @logging? 
                    (log/info (str "wrap-print-messages parent-message (" uuid "):") socket msgtype
                              "\n" (with-out-str (pprint (dissoc parent-message ::u/zmq-raw-message))))

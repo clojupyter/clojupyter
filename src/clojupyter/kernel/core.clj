@@ -16,7 +16,8 @@
    [clojupyter.kernel.state			:as state]
    [clojupyter.kernel.transport			:as tp]
    [clojupyter.kernel.transport.zmq		:as tpz]
-   [clojupyter.kernel.util			:as u]
+   [clojupyter.util				:as u]
+   [clojupyter.util-actions			:as u!]
    )
   (:gen-class))
 
@@ -47,7 +48,7 @@
 (defn process-event
   ;; Not private to enable testing
   [{:keys [transport] :as proto-ctx}]
-  (u/with-debug-logging ["process-event"]
+  (u!/with-debug-logging ["process-event"]
     (log/debug "process-event " proto-ctx)
     (let [parent-message	(tp/receive-req transport)
           ctx			(tp/bind-parent-message proto-ctx parent-message)]
@@ -120,3 +121,5 @@
   [& arglist]
   (init/init-global-state!)
   (run-kernel (parse-jupyter-arglist arglist)))
+
+

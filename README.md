@@ -4,6 +4,8 @@ A Jupyter kernel for Clojure - run Clojure code from Jupyter Lab, Notebook and C
 
 [![Build Status](https://travis-ci.org/clojupyter/clojupyter.svg?branch=master)](https://travis-ci.org/clojupyter/clojupyter)
 
+**NOTE** A new version of Clojupyter is being released, see release branches!
+
 ## Table of Contents
 
 * [Getting Started](#getting-started)
@@ -97,13 +99,15 @@ More detailed introduction and usage guide is available on
 Development progress is based on voluntary efforts so we can't make any promises, but the near-term
 road map for clojupyter development looks something like this:
 
-### v0.2.3 (tentative)
-* [ ] Packaging: Support `conda install` on Mac
-  * [ ] Create basic conda-build artifact
-  * [ ] Add ability install in Anaconda cloud
-  * [ ] Setup proof-of-concept conda install
-* [ ] Reach: Support `conda install` on Linux
-* [ ] Reach: Support `conda install` on Windows
+### v0.2.3 (being released, see release branches)
+* [x] Packaging: Support `conda install` on Mac
+  * [x] Create basic conda-build artifact
+  * [x] Add ability install from [Anaconda Cloud](https://anaconda.org)
+  * [x] Setup proof-of-concept conda install
+* [x] Reach: Support `conda install` on Linux
+* [x] Reach: Support `conda install` on Windows
+* [x] Support using Clojupyter as a library available on Clojars
+* [x] Extend command line interface to manage installed kernels
 
 ### v0.2.4 (tentative)
 * [ ] Support reindentation (clj-fmt?)

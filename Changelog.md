@@ -1,5 +1,39 @@
 # Changelog
 
+## v0.2.3
+
+* Add support for `conda install` of Clojupyter supporting installs on Linux, MacOS, and Windows
+  * Make implementation of installation more flexible to support both local installs, building Conda
+    packages, and installing the Clojupyter conda package on end-user machine
+  * Eliminate all Unixy dependencies as shell scripts, use Java and Clojupyter jarfile for all
+    build/install/uninstall operations
+  * Build Conda packages for Linux, MacOS, and Windows
+  * Install and remove Clojupyter on end-user machines directly using Conda on Linux, MacOS, and Windows.
+    * Install: `conda install -c simplect clojupyter`
+	* Remove: `conda remove clojupyter`
+* Add support for using Clojupyter as a library where resulting standalone jar knows how to install
+  itself as a Jupyter kernel
+  * Covers part of the functionality of `lein-jupyter` without dependency on Leiningen
+* Improve and extend command line interface
+  * Control the kernel identifier shown in Jupyter Lab and Notebook
+  * List, remove, and install Clojupyter kernels using the command line interface
+  * Build an application and use the Clojupyter command line interface to install and run it
+  * Get version info
+  * Remove dependency on `lein` but maintain compatibility
+* Minor
+  * Regularize version info and interface
+  * Move resources to `./resources/clojupyter` to reduce risk of conflicts when Clojupyter is used
+    as a library
+  * Distinguish more clearly between pure and impure functions
+    * In new code (`clojupyter.install.*`): Side-effecting functions located in `*_actions.clj` files
+	* In new code (`clojupyter.install.*`): `io.simplect.compose.action` objects reify inspectable
+      actions, enabling property-based testing of logic
+  * Add test.check-based tests for clojupyter.install.*
+  * Details
+    * Regularize throws to use clojupyter.util-actions/throw-info
+	* `project.clj`: remove `:keep-non-project-classes true`, does not appear we need it
+* No functional changes to kernel
+
 ## v0.2.2
 
 * [x] Enhancement: **Upgrade to nREPL v0.6** - eliminate uncaught stacktrace error

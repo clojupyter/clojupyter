@@ -1,8 +1,9 @@
-<img src="./resources/(clojupyter) 350x80.png">
+<img src="./resources/clojupyter/assets/logo-350x80.png">
 
-A Jupyter kernel for Clojure - run Clojure code from Jupyter Lab, Notebook and Console.
+A Jupyter kernel for Clojure - run Clojure code in Jupyter Lab, Notebook and Console.
 
 [![Build Status](https://travis-ci.org/clojupyter/clojupyter.svg?branch=master)](https://travis-ci.org/clojupyter/clojupyter)
+[![Clojars Project](https://img.shields.io/clojars/v/clojupyter.svg)](https://clojars.org/clojupyter)
 
 **NOTE** A new version of Clojupyter is being released, see release branches!
 
@@ -10,7 +11,11 @@ A Jupyter kernel for Clojure - run Clojure code from Jupyter Lab, Notebook and C
 
 * [Getting Started](#getting-started)
 * [Installation](#installation)
-* [The Docker Way](#the-docker-way)
+  * [Usage Scenarios - check here to see options for using Clojupyter](./doc/usage-scenarios.md)
+  * [Using Clojupyter as a library](./doc/library.md)
+  * [Clojupyter and Conda](./doc/clojupyter-and-conda.md)
+   * [Conda-installing Clojupyter](./doc/conda-installing.md)
+* [Command line interface](#command-line-interface)
 * [To do](#todo)
 * [Collaboration](#collaboration)
 
@@ -20,9 +25,9 @@ A Jupyter kernel for Clojure - run Clojure code from Jupyter Lab, Notebook and C
 
 ## Getting Started
 
-In the `examples` folder of the repository there 3 example notebooks showing some of the features
-of clojupyter.  See
-[this notebook](https://github.com/clojupyter/clojupyter/blob/master/examples/demo-clojupyter.ipynb)
+In the `examples` folder of the repository are there 3 example notebooks showing some of the
+features of clojupyter.  See [this
+notebook](https://github.com/clojupyter/clojupyter/blob/master/examples/demo-clojupyter.ipynb)
 showing examples of how you can display HTML and use external Javascript:
 
 <img src="./images/html-demo.png" width="100%"/>
@@ -42,17 +47,11 @@ You can also use existing JVM charting libraries since you can render any Java B
 
 ## Installation
 
-1. `git clone https://github.com/clojupyter/clojupyter`
-2. `cd clojupyter`
-3. `make`
-4. `make install`
+Clojupyter can be used in several ways, please read [Usage Scenarios](doc/usage-scenarios.md) to
+find out which type of use model best fits you needs, and how to install Clojupyter in that
+scenario.
 
-This will install a clojupyter kernel and a configuration file to tell
-Jupyter how to use clojupyter in from jupyter's user kernel location (in
-`~/.local/share/jupyter/kernels` on linux and `~/Library/Jupyter/kernels`
-on Mac).
-
-## Running Jupyter with clojupyter
+## Running Jupyter with Clojupyter
 
 
 #### Jupyter Notebook
@@ -81,21 +80,48 @@ You can also start the Jupyter Console by doing:
 jupyter-console --kernel=clojupyter
 ```
 
-## The Docker way
+## Command Line Interface
 
-A Docker image  exists to make trying out clojupyter easier.  To try it:
+If you are using Clojupyter as a library, you can use Clojupyter's command line interface to perform
+operations such as listing, installing, and removing Clojupyter kernels.
 
-1. [Install Docker](https://docs.docker.com/engine/installation/) based on your platform.
-2. Run `docker run -p 8888:8888 --rm simplect/clojupyter:0.2.2` to have clojupyter
-   run on your machine.
+For example, in a Clojure repository which includes Clojuputer, you can get the list of available
+commands:
 
-The first time you start it Docker will pull the Docker image from `hub.docker.com`, which takes time.
+```
+bash> clj -m clojupyter.cmdline list-commands
+Clojupyter v0.2.3 - List commands
 
-More detailed introduction and usage guide is available on
-[the home page of the clojupyter Docker image](https://github.com/klausharbo/clojupyter-docker).
+    Clojupyter commands:
+
+       - help
+       - install
+       - list-commands
+       - list-installs
+       - list-installs-matching
+       - remove-installs-matching
+       - remove-install
+       - version
+
+    You can invoke Clojupyter commands like this:
+
+       clj -m clojupyter.cmdline <command>
+
+    or, if you have set up lein configuration, like this:
+
+       lein clojupyter <command>
+
+    See documentation for details.
+
+exit(0)
+```
+
+See [Command Line Interface](doc/command-line.md) for more details.
+
 
 ## TODO
 
+<<<<<<< HEAD
 Development progress is based on voluntary efforts so we can't make any promises, but the near-term
 road map for clojupyter development looks something like this:
 
@@ -125,6 +151,17 @@ road map for clojupyter development looks something like this:
 * [ ] Improve middleware implementation (async, pluggable)
 
 Feed-back on development priorities is welcome, use the issue list for input and suggestions.
+=======
+Development progress is based on voluntary efforts so we can't make any promises, but the
+wish list for clojupyter development looks something like this:
+
+* [ ] Front-end: Support reindentation, Parinfer, syntax highlighting in code blocks
+* [ ] Connect running kernel to running Clojure instances
+* [ ] Clarify/simplify external access to rendering - eliminate dependency from Oz to clojupyter
+* [ ] Support interactive Jupyter Widgets
+
+Feed-back on development priorities is welcome, use the [issue list](https://github.com/clojupyter/clojupyter/issues) for input and suggestions.
+>>>>>>> clojupyter/develop
 
 ## Collaboration
 If you submit a pull request that ends up getting merged, we will give you commit access.

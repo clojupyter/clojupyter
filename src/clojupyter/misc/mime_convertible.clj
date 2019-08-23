@@ -3,8 +3,8 @@
    [clojure.data.codec.base64			:as b64]
    [clojure.java.io				:as io]
    ,,
-   [clojupyter.kernel.util			:as u]
-   [clojupyter.protocol.mime-convertible	:as mc])
+   [clojupyter.protocol.mime-convertible	:as mc]
+   [clojupyter.util				:as u])
   (:import
    [javax.imageio ImageIO]
    [java.awt.image BufferedImage]))

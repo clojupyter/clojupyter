@@ -16,7 +16,8 @@
    [clojure.string				:as str]
    [clojure.spec.test.alpha					:refer [instrument]]
    ,,
-   [clojupyter.kernel.util			:as u]
+   [clojupyter.util				:as u]
+   [clojupyter.util-actions			:as u!]
    ))
 
 ;;; ----------------------------------------------------------------------------------------------------
@@ -142,7 +143,7 @@
   (instrument `amd-add-javascript)
   (instrument `amd-add-javascript-html)
   (instrument `and-wrap-require)
-  (map (partial u/assoc-meta! :style/indent :defn)
+  (map (partial u!/assoc-meta! :style/indent :defn)
        [#'amd-wrap-require #'amd-wrap-semicolons #'amd-wrap-config]))
 
 

@@ -1,11 +1,12 @@
 (ns clojupyter.display
   (:require
-   [clojupyter.misc.display			:as dis]
-   [clojupyter.kernel.util			:as u]))
+   [io.simplect.compose						:refer [redefn]]
+   ,,
+   [clojupyter.misc.display			:as dis]))
 
-(u/re-defn display		dis/display)
-(u/re-defn hiccup-html		dis/hiccup-html)
-(u/re-defn html			dis/html)
-(u/re-defn latex		dis/latex)
-(u/re-defn markdown		dis/markdown)
-(u/re-defn render-mime		dis/render-mime)
+(redefn display		dis/display)
+(redefn hiccup-html	dis/hiccup-html)
+(redefn html		dis/html)
+(redefn latex		dis/latex)
+(redefn markdown	dis/markdown)
+(redefn render-mime	dis/render-mime)

@@ -3,8 +3,8 @@
    [hiccup.core					:as hiccup]
    ,,
    [clojupyter.kernel.state			:as state]
-   [clojupyter.kernel.util			:as u]
-   [clojupyter.protocol.mime-convertible	:as mc])
+   [clojupyter.protocol.mime-convertible	:as mc]
+   [clojupyter.util				:as u])
   (:import
    [javax.imageio ImageIO]
    [java.awt.image BufferedImage]))

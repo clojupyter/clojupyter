@@ -27,12 +27,6 @@
 (def ^:private mac? (os? "mac"))
 (def ^:private linux? (os? "linux"))
 
-(defn operating-system []
-  (cond
-    (mac?)	:MacOS
-    (linux?)	:Linux
-    true	nil))
-
 (defn- user-homedir
   []
   (io/file

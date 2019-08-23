@@ -7,7 +7,7 @@
    [clojupyter.kernel.cljsrv.nrepl-comm		:as pnrepl]
    [clojupyter.kernel.transport			:as tp		:refer [handler-when parent-msgtype-pred]]
    [clojupyter.kernel.state			:as state]
-   [clojupyter.kernel.util			:as u]
+   [clojupyter.util				:as u]
    ))
 
 (defn- code-hushed?

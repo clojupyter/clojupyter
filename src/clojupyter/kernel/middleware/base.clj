@@ -8,16 +8,17 @@
    [clojupyter.kernel.transport		:as tp		:refer [handler-when transport-layer
                                                                 response-mapping-transport
                                                                 parent-msgtype-pred]]
-   [clojupyter.kernel.util		:as u]
    [clojupyter.kernel.version		:as ver]
+   [clojupyter.util			:as u]
+   [clojupyter.util-actions		:as u!]
    ))
 
 (defn jupyter-message
   [{:keys [parent-message signer] :as ctx} resp-socket resp-msgtype response]
   (let [session-id	(jup/message-session parent-message)
-        header 		{:date (u/now)
+        header 		{:date (u!/now)
                          :version jup/PROTOCOL-VERSION
-                         :msg_id (u/uuid)
+                         :msg_id (u!/uuid)
                          :username "kernel"
                          :session session-id
                          :msg_type resp-msgtype}
@@ -50,8 +51,8 @@
   (handler-when (complement u/ctx?)
     (fn [ctx]
       (let [s (s/explain-str ::sp/ctx ctx)]
-        (throw (ex-info (str "Bad ctx: " s)
-                 {:ctx ctx, :explain-str s}))))))
+        (u!/throw-info (str "Bad ctx: " s)
+          {:ctx ctx, :explain-str s})))))
 
 (def wrapin-bind-msgtype
   (fn [handler]
@@ -89,7 +90,7 @@
                         :version (clojure-version)
                         :mimetype "text/x-clojure"
                         :file_extension ".clj"}
-        :banner (or (:formatted-version (ver/version)) "clojupyter-v0.0.0")
+        :banner (or (ver/version-string) "clojupyter-0.0.0")
         :help_links []}))))
 
 (def wrap-shutdown-request

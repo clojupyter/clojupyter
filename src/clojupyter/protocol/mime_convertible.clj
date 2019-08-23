@@ -1,6 +1,6 @@
 (ns clojupyter.protocol.mime-convertible
   (:require
-   [clojupyter.kernel.util		:as u]))
+   [clojupyter.util			:as u]))
 
 (defprotocol PMimeConvertible
   (to-mime [o]))

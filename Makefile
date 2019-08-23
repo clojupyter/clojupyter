@@ -4,7 +4,7 @@ clean:
 update-version-edn:
 	lein update-version-edn
 
-uberjar: update-version-edn
+uberjar:
 	lein uberjar
 
 install: uberjar

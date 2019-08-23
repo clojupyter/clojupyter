@@ -36,26 +36,7 @@ Anaconda Cloud) is straightforward:
 
 ```
 > conda install -y -c simplect clojupyter
-Collecting package metadata (repodata.json): done
-Solving environment: done
-
-## Package Plan ##
-
-  environment location: ~/anaconda3
-
-  added / updated specs:
-    - clojupyter
-
-
-The following NEW packages will be INSTALLED:
-
-  clojupyter         simplect/osx-64::clojupyter-0.2.3snapshot-2
-  maven              conda-forge/osx-64::maven-3.6.0-0
-
-
-Preparing transaction: done
-Verifying transaction: done
-Executing transaction: | b'Clojupyter v0.2.3-SNAPSHOT - \n\n \
+...elided...
 Successfully installed Clojupyter into ~/anaconda3/share/jupyter/kernels/conda-clojupyter.\
 \n\nexit(0)\n'
 done
@@ -64,9 +45,7 @@ done
 
 This should work on all supported platforms: Linux, MacOS and Windows.
 
-The `-y` flag tells `conda` to install without prompting for confirmation (you may want this),
-and. `-c simplect` tells `conda` to install from the `simplect` channel in Anaconda Cloud.
-
+More details on installing below.
 
 ## Using Conda: Installing Clojupyter
 
@@ -146,7 +125,7 @@ Conda will normally prompt you to confirm the action it is about to take; you ca
 prompting using the `-y` flag.
 
 Using both version and buildnum enables you tell conda to go back and forth between versions as
-needed, including *downgrades* (not the warning from conda in the middle of the output):
+needed, including *downgrades* (note the warning from conda in the middle of the output):
 
 ```
 > conda list | grep clojupyter
@@ -191,7 +170,7 @@ command.
 
 ## Using Conda: Upgrading Clojupyter
 
-Conda enables you upgrade packages using the `conda` subcommand 'update':
+Conda enables you upgrade packages using the `conda` subcommand `update`:
 
 ```
 > conda list | grep clojupyter

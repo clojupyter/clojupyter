@@ -14,7 +14,7 @@ preferred workflow may look differently, hopefully the features provided will fi
 Let's look at the simplest possible Clojure project, initially with only 2 files:
 
 ```
-> tree .
+bash> tree .
 .
 ├── deps.edn
 └── src
@@ -23,12 +23,12 @@ Let's look at the simplest possible Clojure project, initially with only 2 files
 1 directory, 2 files
 ```
 
-The `deps.edn` file references Clojupyter and `depstar` which we'll see later let's us build an
+The `deps.edn` file references Clojupyter and `depstar` which we'll see later lets us build an
 uberjar:
 
 ```
-> cat deps.edn
-{:deps {clojupyter {:mvn/version "0.2.3-SNAPSHOT"}}
+bash> cat deps.edn
+{:deps {clojupyter {:mvn/version "0.2.3"}}
  :aliases {:depstar
            {:extra-deps
             {seancorfield/depstar {:mvn/version "0.3.0"}}}}}
@@ -37,7 +37,7 @@ uberjar:
 In `user.clj` we use a tiny bit of Clojupyter:
 
 ```
- > cat src/user.clj
+bash> cat src/user.clj
 (ns user (:require [clojupyter.kernel.version :as ver]))
 
 (defn user-ver []
@@ -48,7 +48,7 @@ To ensure we have Clojupyter available in the cache - which let's start using Cl
 interface - we start by generating an uberjar using `depstar`:
 
 ```
-> clojure -A:depstar -m hf.depstar.uberjar clojupyter-standalone.jar
+bash> clojure -A:depstar -m hf.depstar.uberjar clojupyter-standalone.jar
 Building uber jar: clojupyter-standalone.jar
 {:warning "clashing jar item", :path "META-INF/sisu/javax.inject.Named", :strategy :noop}
 {:warning "clashing jar item", :path "META-INF/plexus/components.xml", :strategy :noop}
@@ -58,8 +58,8 @@ Building uber jar: clojupyter-standalone.jar
 We start by noticing that no Clojupyter kernels are installed currently:
 
 ```
- > clj -m clojupyter.cmdline list-installs
-Clojupyter v0.2.3-SNAPSHOT - All Clojupyter kernels
+bash> clj -m clojupyter.cmdline list-installs
+Clojupyter v0.2.3 - All Clojupyter kernels
 
     No kernels match ''.
 
@@ -69,7 +69,7 @@ exit(1)
 So now that we have an uberjar
 
 ```
- > tree
+bash> tree
 .
 ├── clojupyter-standalone.jar
 ├── deps.edn
@@ -82,8 +82,8 @@ So now that we have an uberjar
 Let's install it with a custom name:
 
 ```
- > clj -m clojupyter.cmdline install --ident mykernel-1 --jarfile clojupyter-standalone.jar
-Clojupyter v0.2.3-SNAPSHOT - Install local
+bash> clj -m clojupyter.cmdline install --ident mykernel-1 --jarfile clojupyter-standalone.jar
+Clojupyter v0.2.3 - Install local
 
     Installed jar:	clojupyter-standalone.jar
     Install directory:	~/Library/Jupyter/kernels/mykernel-1
@@ -97,8 +97,8 @@ exit(0)
 and check using `list-installs`:
 
 ```
- > clj -m clojupyter.cmdline list-installs
-Clojupyter v0.2.3-SNAPSHOT - All Clojupyter kernels
+bash> clj -m clojupyter.cmdline list-installs
+Clojupyter v0.2.3 - All Clojupyter kernels
 
     |      IDENT |                                  DIR |
     |------------+--------------------------------------|
@@ -119,7 +119,7 @@ If we start the kernel we see that it contains the litte function we defined (cf
 If we make a small change to `user.clj`:
 
 ```
- > cat src/user.clj
+bash> cat src/user.clj
 (ns user (:require [clojupyter.kernel.version :as ver]))
 
 (defn user-ver []
@@ -129,7 +129,7 @@ If we make a small change to `user.clj`:
 generate a new uberjar:
 
 ```
- > clojure -A:depstar -m hf.depstar.uberjar kernel2.jar
+bash> clojure -A:depstar -m hf.depstar.uberjar kernel2.jar
 Building uber jar: kernel2.jar
 {:warning "clashing jar item", :path "META-INF/sisu/javax.inject.Named", :strategy :noop}
 ...warnings elided...
@@ -138,8 +138,8 @@ Building uber jar: kernel2.jar
 and install this as kernel with a new identifier:
 
 ```
-> clj -m clojupyter.cmdline install --ident mykernel-2 --jarfile kernel2.jar
-Clojupyter v0.2.3-SNAPSHOT - Install local
+bash> clj -m clojupyter.cmdline install --ident mykernel-2 --jarfile kernel2.jar
+Clojupyter v0.2.3 - Install local
 
     Installed jar:	kernel2.jar
     Install directory:	~/Library/Jupyter/kernels/mykernel-2
@@ -153,8 +153,8 @@ exit(0)
 we now have a new kernel installed:
 
 ```
-> clj -m clojupyter.cmdline list-installs
-Clojupyter v0.2.3-SNAPSHOT - All Clojupyter kernels
+bash> clj -m clojupyter.cmdline list-installs
+Clojupyter v0.2.3 - All Clojupyter kernels
 
     |      IDENT |                                  DIR |
     |------------+--------------------------------------|
@@ -175,11 +175,11 @@ and behaves differently than the first edition of the kernel:
 Let's leave the system like we found it by removing the kernels:
 
 ```
- > clj -m clojupyter.cmdline remove-installs-matching 'mykernel-[12]'
-Clojupyter v0.2.3-SNAPSHOT - Remove installs
+bash> clj -m clojupyter.cmdline remove-installs-matching 'mykernel-[12]'
+Clojupyter v0.2.3 - Remove installs
 
-    Step: Delete /Users/klaush/Library/Jupyter/kernels/mykernel-1
-    Step: Delete /Users/klaush/Library/Jupyter/kernels/mykernel-2
+    Step: Delete ~/Library/Jupyter/kernels/mykernel-1
+    Step: Delete ~/Library/Jupyter/kernels/mykernel-2
 
     Status: Removals successfully completed.
 
@@ -189,8 +189,8 @@ exit(0)
 which leaves us without any Clojupyter kernels:
 
 ```
- > clj -m clojupyter.cmdline list-installs
-Clojupyter v0.2.3-SNAPSHOT - All Clojupyter kernels
+bash> clj -m clojupyter.cmdline list-installs
+Clojupyter v0.2.3 - All Clojupyter kernels
 
     No kernels match ''.
 

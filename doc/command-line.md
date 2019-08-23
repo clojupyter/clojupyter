@@ -148,9 +148,9 @@ In addition to providing access to various facilities for managing Clojupyter ke
 line interface is also used in the tool chain providing Anaconda installation: All the code for
 building, linking (installing) and unlinking (removing) conda-installed Clojupyter kernels use the
 command line interface.  Using Clojure allows us to leverage Java's platform independence to support
-conda-based installation on Linux, MacOS *and* Windows.  (In fact, behind the scenes, conda's
-package management machinery uses Clojupyter's own jarfile to install and uninstall Clojupyter
-including the jarfile itself - *keine hexerei, nur behändigkeit* 😄).
+conda-based installation on Linux, MacOS and Windows.  In fact, behind the scenes, conda's package
+management machinery uses Clojupyter's own jarfile to install and uninstall the Clojupyter kernel
+which includes the jarfile itself!
 
 ## Available commands
 

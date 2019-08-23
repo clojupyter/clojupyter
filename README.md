@@ -1,8 +1,20 @@
-<img src="./resources/(clojupyter) 350x80.png">
+<img src="./resources/clojupyter/assets/logo-350x80.png">
 
 A Jupyter kernel for Clojure - run Clojure code from Jupyter Lab, Notebook and Console.
 
 [![Build Status](https://travis-ci.org/clojupyter/clojupyter.svg?branch=master)](https://travis-ci.org/clojupyter/clojupyter)
+
+Clojupyter is available in clojars.  Leiningen/Boot:
+
+```
+[clojupyter "0.2.3-ALPHA1"]
+```
+
+`tools.deps`:
+
+```
+clojupyter {:mvn/version "0.2.3-ALPHA1"}
+```
 
 ## Table of Contents
 
@@ -11,6 +23,12 @@ A Jupyter kernel for Clojure - run Clojure code from Jupyter Lab, Notebook and C
 * [The Docker Way](#the-docker-way)
 * [To do](#todo)
 * [Collaboration](#collaboration)
+* 0.2.3alpha1 Added Documentation (work in progress)
+  * [Usage Scenarios - check here to see options for using Clojupyter](./doc/usage-scenarios.md)
+  * [Using Clojupyter as a library](./doc/library.md)
+  * [Using the Clojupyter command line interface](./doc/command-line.md)
+  * [Clojupyter and Conda](./doc/clojupyter-and-conda.md)
+   * [Conda-installing Clojupyter](./doc/conda-installing.md)
 
 ##
 
@@ -39,6 +57,8 @@ You can also use existing JVM charting libraries since you can render any Java B
 <img src="./images/incanter-demo.png" width="100%"/>
 
 ## Installation
+
+**New installation options in v0.2.3 - see above!** 
 
 1. `git clone https://github.com/clojupyter/clojupyter`
 2. `cd clojupyter`
@@ -97,13 +117,14 @@ More detailed introduction and usage guide is available on
 Development progress is based on voluntary efforts so we can't make any promises, but the near-term
 road map for clojupyter development looks something like this:
 
-### v0.2.3 (tentative)
-* [ ] Packaging: Support `conda install` on Mac
-  * [ ] Create basic conda-build artifact
-  * [ ] Add ability install in Anaconda cloud
-  * [ ] Setup proof-of-concept conda install
-* [ ] Reach: Support `conda install` on Linux
-* [ ] Reach: Support `conda install` on Windows
+### v0.2.3 (being released)
+
+- [x] Packaging: Support `conda install` on Mac
+  - [x] Create basic conda-build artifact
+  - [x] Add ability install in Anaconda cloud
+  - [x] Setup proof-of-concept conda install
+- [x] Reach: Support `conda install` on Linux
+- [x] Reach: Support `conda install` on Windows
 
 ### v0.2.4 (tentative)
 * [ ] Support reindentation (clj-fmt?)

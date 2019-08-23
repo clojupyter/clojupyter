@@ -1,1 +1,0 @@
-# Managing Clojupyter kernels

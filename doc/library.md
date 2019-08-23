@@ -1,3 +1,5 @@
+See [`README`](../README.md) to find Clojars coordinates of the current Clojupyter version.
+
 # Using Clojupyter as a library
 
 Clojupyter can be used as a standard Clojure library, when you include it your application gains the

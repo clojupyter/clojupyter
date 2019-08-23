@@ -20,15 +20,14 @@
  (ver/version {})
  => nil
  (ver/version {:version "0.1.2"})
- => {:version/major 0, :version/minor 1, :version/incremental 2, :version/qualifier nil}
+ => {:version/major 0, :version/minor 1, :version/incremental 2}
  (ver/version {:raw-version "abcd"})
  => nil)
 
 (facts
  "Version data derived correctly"
  (ver/version {:version "0.1.2" :raw-version "abcd"})
- => {:version/major 0, :version/minor 1, :version/incremental 2
-     :version/qualifier nil, :version/lein-v-raw "abcd"}
+ => {:version/major 0, :version/minor 1, :version/incremental 2, :version/lein-v-raw "abcd"}
  (ver/version {:version "0.1.2-SNAPSHOT" :raw-version "abcd"})
  => {:version/major 0, :version/minor 1, :version/incremental 2
      :version/qualifier "SNAPSHOT", :version/lein-v-raw "abcd"}

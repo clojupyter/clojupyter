@@ -43,8 +43,9 @@
            major (read-digits (or major "0"))
            minor (read-digits (or minor "0"))
            incr (read-digits (or incr "0"))]
-       (merge {:version/major major, :version/minor minor, :version/incremental incr,
-               :version/qualifier qual}
+       (merge {:version/major major, :version/minor minor, :version/incremental incr}
+              (when qual
+                {:version/qualifier qual})
               (when raw-version
                 {:version/lein-v-raw raw-version}))))))
 

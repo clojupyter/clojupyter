@@ -294,7 +294,8 @@
               (cmdline/outputs error-messages)
               (cmdline/set-result {:bad-buildnum buildnum, :args args})
               (cmdline/set-exit-code 1))
-           (conda-build/s*conda-build blddir install-env build-env build-params))))))
+           (Γ (conda-build/s*conda-build blddir install-env build-env build-params)
+              conda-build/s*report-conda-build))))))
 
 ;;; ----------------------------------------------------------------------------------------------------
 ;;; CONDA LINK

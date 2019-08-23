@@ -113,7 +113,7 @@
               (log/s*report-log log)
               (cmdline/set-result S)
               (cmdline/set-exit-code 1))
-        (execute-success? S)
+        (and (execute-success? S) (zero? build-cmd-exit-code))
         ,, (let [outloc (output-location build-cmd-out)]
              (Γ (cmdline/output "Conda build completed successfully.")
                 (if (-> outloc count (= 1))

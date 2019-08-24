@@ -121,7 +121,6 @@ See [Command Line Interface](doc/command-line.md) for more details.
 
 ## TODO
 
-<<<<<<< HEAD
 Development progress is based on voluntary efforts so we can't make any promises, but the near-term
 road map for clojupyter development looks something like this:
 
@@ -151,7 +150,7 @@ road map for clojupyter development looks something like this:
 * [ ] Improve middleware implementation (async, pluggable)
 
 Feed-back on development priorities is welcome, use the issue list for input and suggestions.
-=======
+
 Development progress is based on voluntary efforts so we can't make any promises, but the
 wish list for clojupyter development looks something like this:
 
@@ -160,8 +159,9 @@ wish list for clojupyter development looks something like this:
 * [ ] Clarify/simplify external access to rendering - eliminate dependency from Oz to clojupyter
 * [ ] Support interactive Jupyter Widgets
 
-Feed-back on development priorities is welcome, use the [issue list](https://github.com/clojupyter/clojupyter/issues) for input and suggestions.
->>>>>>> clojupyter/develop
+Feed-back on development priorities is welcome, use the [issue
+list](https://github.com/clojupyter/clojupyter/issues) for input and suggestions.
+
 
 ## Collaboration
 If you submit a pull request that ends up getting merged, we will give you commit access.

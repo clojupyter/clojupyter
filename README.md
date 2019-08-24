@@ -5,8 +5,6 @@ A Jupyter kernel for Clojure - run Clojure code in Jupyter Lab, Notebook and Con
 [![Build Status](https://travis-ci.org/clojupyter/clojupyter.svg?branch=master)](https://travis-ci.org/clojupyter/clojupyter)
 [![Clojars Project](https://img.shields.io/clojars/v/clojupyter.svg)](https://clojars.org/clojupyter)
 
-**NOTE** A new version of Clojupyter is being released, see release branches!
-
 ## Table of Contents
 
 * [Getting Started](#getting-started)
@@ -120,36 +118,6 @@ See [Command Line Interface](doc/command-line.md) for more details.
 
 
 ## TODO
-
-Development progress is based on voluntary efforts so we can't make any promises, but the near-term
-road map for clojupyter development looks something like this:
-
-### v0.2.3 (being released, see release branches)
-* [x] Packaging: Support `conda install` on Mac
-  * [x] Create basic conda-build artifact
-  * [x] Add ability install from [Anaconda Cloud](https://anaconda.org)
-  * [x] Setup proof-of-concept conda install
-* [x] Reach: Support `conda install` on Linux
-* [x] Reach: Support `conda install` on Windows
-* [x] Support using Clojupyter as a library available on Clojars
-* [x] Extend command line interface to manage installed kernels
-
-### v0.2.4 (tentative)
-* [ ] Support reindentation (clj-fmt?)
-  * [ ] Create proof-of-concept
-  * [ ] Figure out how to install/uninstall feature easily
-* [ ] Clarify/simplify external access to rendering
-* [ ] Simplify Oz interface to clojupyter (eliminate dependency from Oz to clojupyter)
-  * [ ] Create Oz PR to eliminate dependency
-  * [ ] When accepted: Eliminate clojupyter.protocol.mime-convertible
-
-### v0.2.5 (tentative)
-* [ ] Accept input from user
-* [ ] Refactor clojupyter.nrepl.nrepl-comm
-* [ ] Connect to running Clojure instance using nREPL
-* [ ] Improve middleware implementation (async, pluggable)
-
-Feed-back on development priorities is welcome, use the issue list for input and suggestions.
 
 Development progress is based on voluntary efforts so we can't make any promises, but the
 wish list for clojupyter development looks something like this:

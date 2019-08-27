@@ -72,10 +72,14 @@ jupyter lab
 
 #### Jupyter Console
 
-You can also start the Jupyter Console by doing:
+You can also start the Jupyter Console by:
 
 ```bash
-jupyter-console --kernel=clojupyter
+jupyter-console --kernel=<clojupyter-kernel-name>
+```
+Use `jupyter-kernelspec list` to list all available kernels. So e.g. in case of installing clojupyter using conda the start command is:
+```bash
+jupyter-console --kernel=conda-clojupyter
 ```
 
 ## Command Line Interface

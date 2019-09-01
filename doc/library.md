@@ -2,16 +2,9 @@ See [`README`](../README.md) to find Clojars coordinates of the current Clojupyt
 
 # Using Clojupyter as a library
 
-Clojupyter can be used as a standard Clojure library, when you include it your application gains the
-ability to be used as a Jupyter kernel.  Another way to think about it is that you can customize
-Clojupyter to include libraries and custom code which will then be available from the beginning of
-the Jupyter session rendering thereby avoiding the need to load the libraries in the notebook.
+Your Clojure project can be turned to a Jupyter kernel by adding Clojupyter to your project dependencies.
 
-Including Clojupyter in your project also provides Clojupyter's command line interface which is
-you'll use to manage the project's kernels.  The following illustrates how this works.  Your
-preferred workflow may look differently, hopefully the features provided will fit into that as well.
-
-Let's look at the simplest possible Clojure project, initially with only 2 files:
+Here's an example of how to do it. Let's have a simple Clojure project with Clojupyter included in its dependencies:
 
 ```
 bash> tree .
@@ -21,22 +14,13 @@ bash> tree .
     └── user.clj
 
 1 directory, 2 files
-```
 
-The `deps.edn` file references Clojupyter and `depstar` which we'll see later lets us build an
-uberjar:
-
-```
 bash> cat deps.edn
 {:deps {clojupyter {:mvn/version "0.2.3"}}
  :aliases {:depstar
            {:extra-deps
             {seancorfield/depstar {:mvn/version "0.3.0"}}}}}
-```
-
-In `user.clj` we use a tiny bit of Clojupyter:
-
-```
+            
 bash> cat src/user.clj
 (ns user (:require [clojupyter.kernel.version :as ver]))
 
@@ -44,29 +28,14 @@ bash> cat src/user.clj
   (ver/version-string-long))
 ```
 
-To ensure we have Clojupyter available in the cache - which let's start using Clojupyter's cmdline
-interface - we start by generating an uberjar using `depstar`:
-
+Now create an uberjar using the `depstar` option from Clojupyter's command line interface. This way we ensure the Clojupyter is properly included.
 ```
 bash> clojure -A:depstar -m hf.depstar.uberjar clojupyter-standalone.jar
 Building uber jar: clojupyter-standalone.jar
 {:warning "clashing jar item", :path "META-INF/sisu/javax.inject.Named", :strategy :noop}
-{:warning "clashing jar item", :path "META-INF/plexus/components.xml", :strategy :noop}
-...more warnings elided...
+...rest of warnings elided...
 ```
-
-We start by noticing that no Clojupyter kernels are installed currently:
-
-```
-bash> clj -m clojupyter.cmdline list-installs
-Clojupyter v0.2.3 - All Clojupyter kernels
-
-    No kernels match ''.
-
-exit(1)
-```
-
-So now that we have an uberjar
+If everything's all right a new file `clojupyter-standalone.jar` is created:
 
 ```
 bash> tree
@@ -79,7 +48,7 @@ bash> tree
 1 directory, 3 files
 ```
 
-Let's install it with a custom name:
+Now let's install this jar file as a Jupyter kernel under the name `mykernel-1`:
 
 ```
 bash> clj -m clojupyter.cmdline install --ident mykernel-1 --jarfile clojupyter-standalone.jar
@@ -94,7 +63,7 @@ Clojupyter v0.2.3 - Install local
 exit(0)
 ```
 
-and check using `list-installs`:
+and check the installation using `list-installs`:
 
 ```
 bash> clj -m clojupyter.cmdline list-installs
@@ -196,4 +165,3 @@ Clojupyter v0.2.3 - All Clojupyter kernels
 
 exit(1)
 ```
-

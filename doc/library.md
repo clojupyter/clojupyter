@@ -2,7 +2,7 @@ See [`README`](../README.md) to find Clojars coordinates of the current Clojupyt
 
 # Using Clojupyter as a library
 
-Your Clojure project can be turned to a Jupyter kernel by adding Clojupyter to your project dependencies.
+Your Clojure project can be turned into a Jupyter kernel by adding Clojupyter to your project dependencies.
 
 Here's an example of how to do it. Let's have a simple Clojure project with Clojupyter included in its dependencies:
 

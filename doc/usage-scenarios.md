@@ -17,7 +17,7 @@ Details of each scenario described below.
 
 Clojupyter supports [Anaconda](https://www.anaconda.org) which is the installation method
 [recommended by the Jupyter project](https://jupyter.readthedocs.io/en/latest/install.html#installing-jupyter-using-anaconda-and-conda).
-If you are new to Clojupter and/or Clojure, we recommend that you use this method to install
+If you are new to Clojupyter and/or Clojure, we recommend that you use this method to install
 Clojupyter.
 
 Installing Clojupyter using Anaconda gets you a generic Clojupyter kernel providing essentially

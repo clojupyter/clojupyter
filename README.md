@@ -72,10 +72,14 @@ jupyter lab
 
 #### Jupyter Console
 
-You can also start the Jupyter Console by doing:
+You can also start the Jupyter Console by:
 
 ```bash
-jupyter-console --kernel=clojupyter
+jupyter-console --kernel=<clojupyter-kernel-name>
+```
+Use `jupyter-kernelspec list` to list all available kernels. So e.g. in case of installing clojupyter using conda the start command is:
+```bash
+jupyter-console --kernel=conda-clojupyter
 ```
 
 ## Command Line Interface
@@ -127,7 +131,9 @@ wish list for clojupyter development looks something like this:
 * [ ] Clarify/simplify external access to rendering - eliminate dependency from Oz to clojupyter
 * [ ] Support interactive Jupyter Widgets
 
-Feed-back on development priorities is welcome, use the [issue list](https://github.com/clojupyter/clojupyter/issues) for input and suggestions.
+Feed-back on development priorities is welcome, use the [issue
+list](https://github.com/clojupyter/clojupyter/issues) for input and suggestions.
+
 
 ## Collaboration
 If you submit a pull request that ends up getting merged, we will give you commit access.

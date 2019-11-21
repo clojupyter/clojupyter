@@ -22,7 +22,7 @@ Clojupyter.
 
 Installing Clojupyter using Anaconda gets you a generic Clojupyter kernel providing essentially
 unlimited functionality.  One of the key advantages to the Conda install is that, by leveraging the
-infrastructure provided by [Anaconda](www.anaconda.org), it provides a very simple way to install
+infrastructure provided by [Anaconda](https://www.anaconda.org), it provides a very simple way to install
 Clojupyter on both **Linux**, **MacOS** and **Windows**: All you need to do is (1) install
 Anaconda and (2) use a single command to install Clojupyter.
 

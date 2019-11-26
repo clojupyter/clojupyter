@@ -13,9 +13,13 @@
 (def KERNEL-JSON		"kernel.json")
 (def CONDA-JARNAME-RE		(re-pattern (str (str/replace DEFAULT-TARGET-JARNAME "." "\\.") "$")))
 (def LOGO-ASSET			"clojupyter/assets/logo-64x64.png")
-(def SCRIPT-ASSETS		["clojupyter/assets/conda-build/post-link.sh"
+(def SCRIPT-ASSETS		["clojupyter/assets/conda-build/build.sh"
+                                 "clojupyter/assets/conda-build/post-link.sh"
                                  "clojupyter/assets/conda-build/pre-unlink.sh"
-                                 "clojupyter/assets/conda-build/post-link.bat"])
+                                 "clojupyter/assets/conda-build/bld.bat"
+                                 "clojupyter/assets/conda-build/post-link.bat"
+                                 "clojupyter/assets/conda-build/pre-unlink.bat"
+                                 ])
 
 (s/def :local/file				(π instance? java.io.File))
 (s/def :local/filetype				(s/nilable #{:filetype/file :filetype/directory}))

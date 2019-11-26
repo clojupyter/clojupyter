@@ -51,7 +51,6 @@
 (s/def :local/user-kernel-dir			:local/file)
 
 (s/def :local/install-env			(s/keys :req [
-                                                              :local/convert-exe
                                                               :local/default-ident
                                                               :local/filemap
                                                               :local/host-kernel-dir
@@ -62,7 +61,8 @@
                                                               :local/user-homedir
                                                               :local/user-kernel-dir
                                                               :version/version-map
-                                                              ]))
+                                                              ]
+                                                        :opt [:local/convert-exe]))
 (s/def :local/user-opts				(s/keys :req [
                                                               :local/allow-deletions?
                                                               :local/allow-destdir?
@@ -82,7 +82,6 @@
 (s/def :local/install-spec			(s/keys :req [
                                                               :local/allow-deletions?
                                                               :local/allow-destdir?
-                                                              :local/convert-exe
                                                               :local/customize-icons?
                                                               :local/destdir
                                                               :local/filemap
@@ -96,7 +95,8 @@
                                                               :local/resource-copyspec
                                                               :local/resource-map
                                                               :version/version-map
-                                                              ]))
+                                                              ]
+                                                        :opt [:local/convert-exe]))
 
 (def DEFAULT-USER-OPTS
   {:local/allow-deletions?		false

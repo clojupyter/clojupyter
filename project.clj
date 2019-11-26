@@ -39,8 +39,6 @@
                  [zprint			"0.4.15"]
                  ]
   :resource-paths		["resources"]
-  :main				clojupyter.kernel.core
-  :aot				[clojupyter.cmdline]
   :profiles	{:dev 		{:dependencies [[midje "1.9.6" :exclusions [org.clojure/clojure]]]
                                  :plugins [[lein-midje "3.2.1"]
                                            [com.roomkey/lein-v "7.0.0"]]}

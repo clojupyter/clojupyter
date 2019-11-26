@@ -1,5 +1,9 @@
 # Changelog
 
+## 2019-11-26
+* Merged hotfix for [Issue #104: Clojupyter Jupyter kernelspec is not installed in non-base conda environment](https://github.com/clojupyter/clojupyter/issues/104)
+* Merged hotfix/workaround for [Issue #103: syntax error on `make install` / Imagemagick needed to install Clojupyter](https://github.com/clojupyter/clojupyter/issues/103)
+
 ## v0.2.3
 
 * Add support for `conda install` of Clojupyter supporting installs on Linux, MacOS, and Windows

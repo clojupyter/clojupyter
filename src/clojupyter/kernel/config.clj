@@ -1,8 +1,7 @@
 (ns clojupyter.kernel.config
-  (:require
-   [clojure.java.io		:as io]
-   [clojure.string		:as str]
-   [omniconf.core		:as cfg]))
+  (:require [clojure.java.io :as io]
+            [clojure.string :as str]
+            [omniconf.core :as cfg]))
 
 (cfg/define
   {:log-level			{:description	"Default log level as defined by com.taoensso/timbre."
@@ -13,7 +12,7 @@
                                                      "Temporary workaround for issue with uncaught exceptions in nrepl.")
                                  :type		:boolean
                                  :default	true}
-   :traffic-logging?		{:description	"Log all incoming and outgoing ZMQ message to stdout."
+   :log-traffic?		{:description	"Use log/debug to print messages going to/from Jupyter."
                                  :type		:boolean
                                  :default	false}})
 
@@ -22,7 +21,7 @@
 ;;; ----------------------------------------------------------------------------------------------------
 
 (defn- osname [] (-> (System/getProperty "os.name") str/lower-case str/trim))
-(defn- os? [idstr] (fn [] (not (neg? (.indexOf (osname) idstr)))))
+(defn- os? [idstr] (fn [] (not (neg? (.indexOf ^String (osname) ^String idstr)))))
 
 (def ^:private mac? (os? "mac"))
 (def ^:private linux? (os? "linux"))
@@ -105,11 +104,11 @@
   configuration.  Returns `:ok` if errors are not found, otherwise
   throws an exception."
   []
-  (when-let [config-file (config-file)]
+  (when-let [config-file ^java.io.File (config-file)]
     (when (.exists config-file)
       (cfg/populate-from-file config-file)))
   (cfg/verify :silent true)
-  :ok) 
+  :ok)
 
 ;;; ----------------------------------------------------------------------------------------------------
 ;;; CONFIG-SPECIFIC
@@ -119,10 +118,6 @@
   []
   (cfg/get))
 
-(defn log-traffic?
-  []
-  (cfg/get :traffic-logging?))
-
 (defn print-stacktraces?
   []
   (cfg/get :print-stacktraces?))
@@ -131,3 +126,6 @@
   []
   (cfg/get :log-level))
 
+(defn log-traffic?
+  []
+  (cfg/get :log-traffic?))

@@ -1,27 +1,19 @@
 (ns clojupyter.cmdline-test
-  (:require
-   [clojure.java.io				:as io]
-   [clojure.set					:as set]
-   [clojure.spec.alpha				:as s]
-   [clojure.string				:as str]
-   [clojure.test.check				:as tc]
-   [clojure.test.check.generators		:as gen 	:refer [sample generate]]
-   [clojure.test.check.properties		:as prop]
-   [io.simplect.compose						:refer [def- γ Γ π Π >>-> >->>]]
-   [me.raynes.fs				:as fs]
-   [midje.sweet							:refer [fact facts =>]]
-   ,,
-   [clojupyter.cmdline				:as cmdline]
-   [clojupyter.install.local			:as local]
-   [clojupyter.install.local-actions		:as local!]
-   [clojupyter.install.plan					:refer :all]
-   [clojupyter.util				:as u]
-   [clojupyter.util-actions			:as u!]
-   ,,
-   [clojupyter.test-shared					:refer :all]
-   [clojupyter.kernel.version-test				:refer [g-version]]))
+  (:require [clojupyter.cmdline :as cmdline]
+            [clojupyter.install.local :as local]
+            [clojupyter.install.local-specs :as lsp]
+            [clojupyter.test-shared :as ts]
+            [clojupyter.test-shared-generators :as shg :refer [==> R]]
+            [clojure.spec.alpha :as s]
+            [clojure.test.check.generators :as gen]
+            [clojure.test.check.properties :as prop]
+            [io.simplect.compose :refer [P]]))
 
 (use 'clojure.pprint)
+
+(def LSP-DEPEND
+  "Ensures dependency due to use of `:local/...` keywords.  Do not delete."
+  lsp/DEPEND-DUMMY)
 
 ;;; ----------------------------------------------------------------------------------------------------
 ;;; CMDLINE - LOCAL INSTALL
@@ -37,53 +29,53 @@
   (gen/elements [nil "--icon-top"]))
 
 (def g-local-install-icon-value
-  (gen/frequency [[5 (g-alphanum 1 8)]
-                  [5 (g-name 1 8)]
-                  [1 (g-constant "")]
+  (gen/frequency [[5 (shg/g-alphanum 1 8)]
+                  [5 (shg/g-name 1 8)]
+                  [1 (shg/g-constant "")]
                   [1 gen/string]]))
 
 (def g-local-install-icon-value
-  (gen/frequency [[9 (g-alphanum 1 8)]
-                  [1 (g-constant "")]
+  (gen/frequency [[9 (shg/g-alphanum 1 8)]
+                  [1 (shg/g-constant "")]
                   [1 gen/string]]))
 
 (def g-local-install-ident-flag
   (gen/elements [nil "-i" "--ident"]))
 
 (def g-local-install-ident-value
-  (gen/frequency [[9 (g-alphanum 1 8)]
-                  [1 (g-constant "")]
+  (gen/frequency [[9 (shg/g-alphanum 1 8)]
+                  [1 (shg/g-constant "")]
                   [1 gen/string]]))
 
 (def g-local-install-jarfile-flag
   (gen/elements [nil "-j" "--jarfile"]))
 
 (def g-local-install-jarfile-value
-  (gen/let [nm (gen/frequency [[5 (g-constant "clojupyter-standalone.jar")]
-                               [1 (gen/fmap (Π str ".jar") (g-name 1 10))]
+  (gen/let [nm (gen/frequency [[5 (shg/g-constant "clojupyter-standalone.jar")]
+                               [1 (gen/fmap (P str ".jar") (shg/g-name 1 10))]
                                [1 gen/string]])
-            path (gen/frequency [[3 (g-constant ".")]
-                                 [1 g-path]])]
+            path (gen/frequency [[3 (shg/g-constant ".")]
+                                 [1 shg/g-path]])]
     (R (str path "/" nm))))
 
 (def g-local-install-skip-icon-tags-flag
   (gen/elements [nil "--skip-icon-tags"]))
 
 (def g-random-flag
-  (gen/frequency [[9 g-nil]
-                  [1 g-flag-double]
-                  [1 g-flag-single]]))
+  (gen/frequency [[9 shg/g-nil]
+                  [1 shg/g-flag-double]
+                  [1 shg/g-flag-single]]))
 
 (def g-local-install-cmdline
   (gen/let [host-flag g-local-install-host-flag
-            [botval bot] (g-combine-flag-and-val g-local-install-icon-bot-flag
-                                                 g-local-install-icon-value)
-            [topval top] (g-combine-flag-and-val g-local-install-icon-top-flag
-                                                 g-local-install-icon-value)
-            [identval ident] (g-combine-flag-and-val g-local-install-ident-flag
-                                                     g-local-install-ident-value)
-            [jarval jar] (g-combine-flag-and-val g-local-install-jarfile-flag
-                                                 g-local-install-jarfile-value)
+            [botval bot] (shg/g-combine-flag-and-val g-local-install-icon-bot-flag
+                                                    g-local-install-icon-value)
+            [topval top] (shg/g-combine-flag-and-val g-local-install-icon-top-flag
+                                                    g-local-install-icon-value)
+            [identval ident] (shg/g-combine-flag-and-val g-local-install-ident-flag
+                                                        g-local-install-ident-value)
+            [jarval jar] (shg/g-combine-flag-and-val g-local-install-jarfile-flag
+                                                    g-local-install-jarfile-value)
             random-flag g-random-flag
             host (R (if host-flag [host-flag] []))
             random (R (if random-flag [random-flag] []))]

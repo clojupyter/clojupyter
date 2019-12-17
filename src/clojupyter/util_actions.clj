@@ -1,20 +1,27 @@
 (ns clojupyter.util-actions
-  (:require
-   [clojure.java.io				:as io]
-   [clojure.java.shell				:as sh]
-   [clojure.string				:as str]
-   [clojure.walk				:as walk]
-   [io.simplect.compose						:refer [call-if def- redefn γ Γ π Π λ μ ρ]]
-   [java-time					:as jtm]
-   [me.raynes.fs				:as fs]
-   [slingshot.slingshot						:refer [throw+ try+]]
-   ,,
-   [clojupyter.kernel.os			:as os]
-   [clojupyter.kernel.version			:as ver]
-   [clojupyter.util				:as u])
-  (:import [java.time.format DateTimeFormatter]))
+  (:require [clojupyter.kernel.os :as os]
+            [clojupyter.kernel.version :as ver]
+            [clojupyter.log :as log]
+            [clojure.core.async :as async]
+            [clojure.java.io :as io]
+            [clojure.java.shell :as sh]
+            [clojure.stacktrace :as stacktrace]
+            [clojure.string :as str]
+            [clojure.walk :as walk]
+            [io.simplect.compose :refer [C call-if def- p P redefn]]
+            [io.simplect.compose.action :as a]
+            [java-time :as jtm]
+            [me.raynes.fs :as fs]
+            [slingshot.slingshot :refer [try+]])
+  (:import java.time.format.DateTimeFormatter))
 
 (def ^:dynamic *actually-exit?* true)
+
+(defmacro ^{:style/indent :defn} closing-channels-on-exit!
+  [channels & body]
+  `(try ~@body
+        (finally ~@(for [chan channels]
+                     `(async/close! ~chan)))))
 
 (defn exiting-on-completion*
   ;; needs to be external due inclusion in macro expansion
@@ -25,11 +32,11 @@
             (System/exit exit-code)))))
 
 (def- homedir-as-tilde*
-  (Π str/replace (System/getProperty "user.home") "~"))
+  (P str/replace (System/getProperty "user.home") "~"))
 
 (defn- set-indent-style!*
   [var style]
-  (alter-meta! var (Π assoc :style/indent style)))
+  (alter-meta! var (P assoc :style/indent style)))
 
 (defn- throw-info*
   ([msg] (throw-info* msg {}))
@@ -37,8 +44,8 @@
    (throw (ex-info msg (assoc m :msg msg)))))
 
 (def- tildeize-filename*
-  (call-if (π instance? java.io.File)
-           (Γ fs/normalized str homedir-as-tilde*)))
+  (call-if (p instance? java.io.File)
+           (C fs/normalized str homedir-as-tilde*)))
 
 (defn- uuid*
   "Returns a random UUID as a string."
@@ -59,6 +66,7 @@
   [k v var]
   (alter-meta! var #(assoc % k v)))
 
+
 (defn create-temp-diretory!
   "Creates a new readable/writable directory and returns its name as a `java.io.File`.  Throws an
   exception if the temp directory could not be created."
@@ -69,12 +77,12 @@
         (if (.mkdir tmpdir)
           tmpdir
           (throw-info* (str "Failed to create temp dir: " tmpdir)
-            {:sysdir sysdir, :tmpdir tmpdir})))
+                       {:sysdir sysdir, :tmpdir tmpdir})))
       (throw (Exception. "Failed to get location for temp files (java.io.tmpdir).")))))
 
 (defn delete-files-recursively!
   [f]
-  (letfn [(delete-f [file]
+  (letfn [(delete-f [^java.io.File file]
             (when (.isDirectory file)
               (doseq [child-file (.listFiles file)]
                 (delete-f child-file)))
@@ -84,17 +92,27 @@
         (delete-files-recursively! (io/file f))
         (delete-f f)))))
 
-(defn default-ident 
+(defn default-ident
   ([] (default-ident (ver/version)))
   ([ver]
    (str "clojupyter-" (ver/version-string-long ver))))
+
+(defn execute-leave-action
+  [result]
+  (if-let [leave-action (:leave-action result)]
+    (let [action-result (leave-action {})]
+      (if (a/success? action-result)
+        (assoc result :leave-action action-result)
+        (throw (ex-info (str "Action failed: " action-result)
+                 {:action leave-action, :action-result action-result}))))
+    result))
 
 (defmacro  exiting-on-completion
   [& body]
   `(exiting-on-completion* (fn [] ~@body)))
 
 (def files-as-strings
-  (π walk/postwalk (Γ (call-if (π instance? java.net.URL) str)
+  (p walk/postwalk (C (call-if (p instance? java.net.URL) str)
                       tildeize-filename*)))
 
 (defn file-filetype
@@ -122,18 +140,35 @@
 
 (redefn homedir-as-tilde homedir-as-tilde*)
 
+(defmacro ignore-exceptions
+  [& exprs]
+  `(try (do ~@exprs)
+        (catch Exception e# nil)))
+
 (defn java-util-data-now
   []
   (new java.util.Date))
 
-(defn merge-docmeta
-  "Add the values for keys `:doc` and `:arglists` from `refvar` to the
-  meta of `var`."
-  [var refvar]
-  (alter-meta! var #(merge % (select-keys (meta refvar) [:doc :arglists]))))
+(defn merge-arglists-meta
+  "Returns function which merges `:arglists` meta from `from-var`.
+
+  Example use:
+
+    (alter-meta! #'to-var (u!/merge-arglists-meta #'from-var))"
+  [from-var]
+  #(merge % (select-keys (meta from-var) [:arglists])))
+
+(defn merge-docstring-meta
+  "Returns function which merges `:doc` meta from `from-var`.
+
+  Example use:
+
+    (alter-meta! #'to-var (u!/merge-arglists-docstring #'from-var))"
+  [from-var]
+  #(merge % (select-keys (meta from-var) [:doc])))
 
 (def normalized-file
-  (call-if (complement nil?) (Γ io/file fs/normalized)))
+  (call-if (complement nil?) (C io/file fs/normalized)))
 
 (defn now []
   (->> (.withNano (java.time.ZonedDateTime/now) 0)
@@ -148,7 +183,7 @@
 
 (defn set-var-private!
   [var]
-  (alter-meta! var (Π assoc :private true)))
+  (alter-meta! var (P assoc :private true)))
 
 (defn set-var-indent!
   [indent-style var]
@@ -170,13 +205,19 @@
   `(binding [*actually-exit?* false]
      ~@body))
 
-(defmacro with-debug-logging
-  [[& args] & forms]
-  `(let [uuid# (str "#" (subs (uuid) 0 8))]
-     (log/debug uuid# "START" ~@args)
-     (let [res# (do ~@forms)]
-       (log/debug uuid# "END"  )
-       res#)))
+(defn- with-exception-logging*
+  ([form finally-form]
+   `(try ~form
+         (catch Exception e#
+           (do (log/error e#)
+               (throw e#)))
+         (finally ~finally-form))))
+
+(defmacro ^{:style/indent 1} with-exception-logging
+  ([form]
+   (with-exception-logging* form '(do)))
+  ([form finally-form]
+   (with-exception-logging* form finally-form)))
 
 (defmacro with-temp-directory!
   "Evaluates `body` with `dir` bound to a newly created, readable and writable directory.  Upon exit
@@ -189,5 +230,16 @@
             (when-not ~keep-files?
               (delete-files-recursively! tmpdir#))))))
 
-(set-defn-indent! #'exiting-on-completion #'without-exiting #'with-temp-directory!
-                  #'with-debug-logging)
+(defn wrap-report-and-absorb-exceptions
+  ([f]
+   (wrap-report-and-absorb-exceptions nil f))
+  ([return-value f]
+   (fn [& args]
+     (try (with-exception-logging
+              (apply f args))
+      (catch Exception e
+        (log/error e)
+        (Thread/sleep 10)
+        [return-value (str e) e])))))
+
+(set-defn-indent! #'exiting-on-completion #'without-exiting #'with-temp-directory!)

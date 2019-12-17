@@ -1,32 +1,33 @@
 (ns clojupyter.cmdline
-  (:require
-   [clojure.edn					:as edn]
-   [clojure.java.io				:as io]
-   [clojure.pprint						:refer [pprint]]
-   [clojure.set					:as set]
-   [clojure.spec.alpha				:as s]
-   [clojure.spec.test.alpha					:refer [instrument]]
-   [clojure.string				:as str]
-   [clojure.tools.cli				:as cli]
-   [io.simplect.compose						:refer [def- redefn sdefn sdefn- >->> >>-> π Π γ Γ λ]]
-   ,,
-   [clojupyter.cmdline.api			:as cmdline]
-   [clojupyter.install.conda.build		:as conda-build]
-   [clojupyter.install.conda.build-actions	:as conda-build!]
-   [clojupyter.install.conda.link		:as link]
-   [clojupyter.install.conda.link-actions	:as link!]
-   [clojupyter.install.conda.unlink		:as unlink]
-   [clojupyter.install.conda.unlink-actions	:as unlink!]
-   [clojupyter.install.filemap			:as fm]
-   [clojupyter.install.local			:as local]
-   [clojupyter.install.local-actions		:as local!]
-   [clojupyter.install.local-specs		:as lsp]
-   [clojupyter.install.plan					:refer :all]
-   [clojupyter.kernel.os			:as os]
-   [clojupyter.kernel.version			:as ver]
-   [clojupyter.util				:as u]
-   [clojupyter.util-actions			:as u!		:refer [side-effecting!]])
-  (:gen-class))
+  (:gen-class)
+  (:require [clojupyter.cmdline.api :as cmdline]
+            [clojupyter.install.conda.build :as conda-build]
+            [clojupyter.install.conda.build-actions :as conda-build!]
+            [clojupyter.install.conda.link :as link]
+            [clojupyter.install.conda.link-actions :as link!]
+            [clojupyter.install.conda.conda-specs :as csp]
+            [clojupyter.install.conda.unlink :as unlink]
+            [clojupyter.install.conda.unlink-actions :as unlink!]
+            [clojupyter.install.filemap :as fm]
+            [clojupyter.install.local :as local]
+            [clojupyter.install.local-actions :as local!]
+            [clojupyter.install.local-specs :as lsp]
+            [clojupyter.kernel.os :as os]
+            [clojupyter.kernel.version :as ver]
+            [clojupyter.plan :as pl :refer [s*when s*when-not]]
+            [clojupyter.util :as u]
+            [clojupyter.util-actions :as u!]
+            [clojure.edn :as edn]
+            [clojure.java.io :as io]
+            [clojure.pprint :refer [pprint]]
+            [clojure.set :as set]
+            [clojure.spec.alpha :as s]
+            [clojure.spec.test.alpha :refer [instrument]]
+            [clojure.string :as str]
+            [clojure.tools.cli :as cli]
+            [io.simplect.compose :refer [C def- p sdefn sdefn-]]))
+
+(def DEPEND [csp/DEPEND-DUMMY lsp/DEPEND-DUMMY])
 
 (defmulti ^:private handle-cmd (fn [_ cmdname] cmdname))
 
@@ -37,7 +38,7 @@
            {:cmdline-args args, :cmdline-opts cmdline-opts}
            (when (some u/truthy? errors)
              {:error-messages (concat ["Error parsing command line:" ""]
-                                      (map (π str "  ") errors)
+                                      (map (p str "  ") errors)
                                       ["" "Options summary:" ""]
                                       (str/split-lines summary)
                                       [""])}))))
@@ -53,7 +54,7 @@
                  pprint
                  with-out-str
                  str/split-lines)]
-    (Γ (cmdline/set-header "EVAL")
+    (C (cmdline/set-header "EVAL")
        (cmdline/set-prefix "   ")
        (cmdline/outputs [(str s " => ") ""])
        (cmdline/outputs res)
@@ -61,7 +62,7 @@
 
 (defn- s*getenv
   [env-var]
-  (Γ (cmdline/set-header "GETENV")
+  (C (cmdline/set-header "GETENV")
      (cmdline/outputs ["" (str "getenv(" env-var ") = " (System/getenv env-var)) ""])
      (cmdline/set-exit-code 0)))
 
@@ -80,12 +81,12 @@
          :else		(concat [(str "Docstring for '" arg "':") ""]
                                 (->> docstr
                                      str/split-lines
-                                     (map (π str "    ")))))))
+                                     (map (p str "    ")))))))
     (cmdline/outputs ["" "Usage: <clojupyter> help [command]"])))
 
 (defn- s*help
   [& args]
-  (Γ (cmdline/set-header "Help")
+  (C (cmdline/set-header "Help")
      (cmdline/outputs ["Use command 'list-commands' to see a list of available commands." ""
                        "Use command 'help <cmd>' to get documentation for individual commands." ""])
      (s*when (-> args count pos?)
@@ -95,11 +96,11 @@
 (defn- s*list-commands
   [cmds]
   (fn []
-    (Γ (cmdline/set-header "List commands")
+    (C (cmdline/set-header "List commands")
        (cmdline/set-prefix "Command: ")
        (cmdline/set-result {:cmds cmds})
        (cmdline/outputs ["Clojupyter commands:" ""])
-       (cmdline/outputs (mapv (π str "   - ") cmds))
+       (cmdline/outputs (mapv (p str "   - ") cmds))
        (cmdline/set-prefix "")
        (cmdline/outputs [""
                          "You can invoke Clojupyter commands like this:"
@@ -117,7 +118,7 @@
   (let [supp?	(os/supported-os?)
         supp	(if supp? "Supported." "Not supported.")
         ex	(if supp? 0 1)]
-    (Γ (cmdline/set-header "Operating System")
+    (C (cmdline/set-header "Operating System")
        (cmdline/set-result {:osname (os/osname), :supported-os? supp?})
        (cmdline/output (if-let [os (os/operating-system)]
                          (str "OS seems to be " (str/upper-case (name os)) ". " supp)
@@ -125,7 +126,7 @@
 
 (defn- s*unknown-command
   [cmd]
-  (Γ (cmdline/set-header (str "Unknown command '" cmd "'"))
+  (C (cmdline/set-header (str "Unknown command '" cmd "'"))
      (cmdline/output "Use 'list-commands' to see available commands.")
      (cmdline/set-result {:unknown-command cmd})
      (cmdline/set-exit-code 1)))
@@ -133,14 +134,14 @@
 (defn- s*version
   []
   (let [ver (ver/version)]
-    (Γ (cmdline/set-header "Version")
+    (C (cmdline/set-header "Version")
        (cmdline/set-prefix "  ")
        (cmdline/set-result {:version ver})
        (cmdline/outputs (->> ver
                              pprint
                              with-out-str
                              str/split-lines
-                             (map (π str "   ")))))))
+                             (map (p str "   ")))))))
 
 (defn- s*list-installs-matching
   [regex-string]
@@ -148,7 +149,7 @@
 
 (defn- s*list-installs
   []
-  (Γ (s*list-installs-matching "")
+  (C (s*list-installs-matching "")
      (cmdline/set-header "All Clojupyter kernels")))
 
 ;;; ----------------------------------------------------------------------------------------------------
@@ -159,14 +160,14 @@
   ([regex-string] (s*remove-installs-matching {} regex-string))
   ([{:keys [dont-execute]} regex-string]
    (let [env (local!/remove-kernel-environment)]
-     (Γ (s*when-not dont-execute s*set-do-execute)
+     (C (s*when-not dont-execute pl/s*set-do-execute)
         (local/s*generate-remove-action regex-string env)
-        s*execute
+        pl/s*execute
         local/s*report-remove))))
 
 (defn- s*remove-install
   [regex-string]
-  (Γ (s*remove-installs-matching (str "^" regex-string "$"))
+  (C (s*remove-installs-matching (str "^" regex-string "$"))
      (cmdline/set-header (str "Remove kernel '" regex-string "'"))))
 
 ;;; ----------------------------------------------------------------------------------------------------
@@ -175,7 +176,7 @@
 
 (def- TOPMIN 1)
 (def- TOPMAX 8)
-(def- topbot-validate (Γ count #(<= TOPMIN % TOPMAX)))
+(def- topbot-validate (C count #(<= TOPMIN % TOPMAX)))
 
 (defn- topbot-help
   [s topmin topmax]
@@ -193,10 +194,10 @@
     :validate [topbot-validate]]
    ["-i" "--ident KERNEL-IDENT"
     (str "Kernel identifier as shown in Jupyter, a string matching the regex #\"" lsp/IDENT-REGEX "\".")
-    :validate [(π re-find lsp/IDENT-REGEX)]]
+    :validate [(p re-find lsp/IDENT-REGEX)]]
    ["-j" "--jarfile JARFILE"
     "JAR file to use for installation, must be a '.jar' file."
-    :validate [(Γ str (π re-find #".jar$"))]
+    :validate [(C str (p re-find #".jar$"))]
     :parse-fn io/file]
    [nil "--skip-icon-tags"
     "If specified does not add icon tags."
@@ -239,19 +240,19 @@
          :explain-str (s/explain-str :local/user-opts user-opts)}))
     user-opts))
 
-(def parse-install-local-cmdline (π parse-cmdline INSTALL-OPTIONS))
+(def parse-install-local-cmdline (p parse-cmdline INSTALL-OPTIONS))
 
 (sdefn- s*install (s/nilable (s/coll-of string? :type vector?))
   [& args]
   (let [{:keys [error-messages arguments] :as result} (parse-install-local-cmdline args)
         result (assoc result :cmdline-args args)]
-    (Γ (cmdline/set-header "Install Clojupyter")
+    (C (cmdline/set-header "Install Clojupyter")
        (cond
          error-messages
-         ,, (Γ (cmdline/set-exit-code 1)
+         ,, (C (cmdline/set-exit-code 1)
                (cmdline/outputs error-messages))
          (-> arguments count pos?)
-         ,, (Γ (cmdline/set-exit-code 1)
+         ,, (C (cmdline/set-exit-code 1)
                (cmdline/outputs [(str "Command line arguments not permitted: " arguments)
                                  "To specify a kernel identifier use the \"--ident\" option."]))
          :else
@@ -275,7 +276,7 @@
     "TEST ONLY.  If specified: Calculate only, do not perform actions."
     :default false]])
 
-(def parse-build-conda-cmdline (π parse-cmdline BUILD-CONDA-OPTIONS))
+(def parse-build-conda-cmdline (p parse-cmdline BUILD-CONDA-OPTIONS))
 
 (defn s*conda-build
   [& args]
@@ -291,14 +292,14 @@
                         :conda-build-params/filemap (fm/filemap jarfile)
                         :local/ident (str (u!/uuid))
                         :local/source-jarfiles (if jarfile #{jarfile} #{})}]
-      (Γ (cmdline/set-header "Build Conda package")
+      (C (cmdline/set-header "Build Conda package")
          (if (or error-messages (not (s/valid? :conda-build-params/buildnum buildnum)))
-           (Γ (cmdline/set-error {:message "Error parsing command line.", :parse-result parse-result})
+           (C (cmdline/set-error {:message "Error parsing command line.", :parse-result parse-result})
               (cmdline/outputs error-messages)
               (cmdline/set-result {:bad-buildnum buildnum, :args args})
               (cmdline/set-exit-code 1))
-           (Γ (conda-build/s*conda-build opts blddir install-env build-env build-params)
-              (s*when-executing
+           (C (conda-build/s*conda-build opts blddir install-env build-env build-params)
+              (pl/s*when-executing
                 conda-build/s*report-conda-build)))))))
 
 ;;; ----------------------------------------------------------------------------------------------------
@@ -311,12 +312,12 @@
     :parse-fn #(when (-> % count pos?) %)]
    ["-j" "--jarfile=jarfile"
     "TEST ONLY.  Filename of jar file to install, must end in '.jar'. If not specified: Look in PREFIX dir."
-    :validate [(every-pred (Γ count pos?) (π re-find #".+\.jar$"))]]
+    :validate [(every-pred (C count pos?) (p re-find #".+\.jar$"))]]
    ["-n" "--no-actions"
     "TEST ONLY.  If specified: Calculate only, do not perform install actions."
     :default false]])
 
-(def- parse-conda-link-cmdline (π parse-cmdline CONDA-LINK-OPTIONS))
+(def- parse-conda-link-cmdline (p parse-cmdline CONDA-LINK-OPTIONS))
 
 (defn s*conda-link
   [& args]
@@ -325,7 +326,7 @@
         ,, (parse-conda-link-cmdline args)
         arguments? (-> arguments count pos?)]
     (if (or error-messages arguments?)
-      (Γ (cmdline/set-header "Conda Link")
+      (C (cmdline/set-header "Conda Link")
          (cmdline/set-result (assoc parse-result :conda-link/cmdline-args args))
          (cmdline/outputs error-messages)
          (cmdline/set-exit-code 1))
@@ -357,9 +358,9 @@
         env (unlink!/get-unlink-environment prefix)
         {:keys [:conda-unlink/kernel-dir]} env
         arguments? (-> arguments count pos?)]
-    (Γ (cmdline/set-header "Conda Unlink")
+    (C (cmdline/set-header "Conda Unlink")
        (if (or error-messages arguments?)
-         (Γ (cmdline/set-result (assoc parse-result :conda-unlink/cmdline-args args))
+         (C (cmdline/set-result (assoc parse-result :conda-unlink/cmdline-args args))
             (cmdline/outputs error-messages)
             (s*when arguments?
               (cmdline/output (str "Arguments not allowed: " arguments))))
@@ -373,7 +374,7 @@
 
 (defn s*argc-failure
   [usage-string exit-code]
-  (Γ (cmdline/output (str usage-string))
+  (C (cmdline/output (str usage-string))
      (cmdline/set-exit-code exit-code)))
 
 (defn invoke-s*fn
@@ -427,7 +428,7 @@
 (defn- format-report
   [version-map {:keys [:cmdline/exit-code :cmdline/header :cmdline/output :cmdline/prefix]}]
   (->> (concat [(str "Clojupyter v" (ver/version-string-long version-map) " - " header)  ""]
-               (->> output (map (π str "  " prefix "  ")))
+               (->> output (map (p str "  " prefix "  ")))
                ["" (str "exit(" exit-code ")")])
        (str/join "\n")))
 
@@ -744,7 +745,7 @@
 
   PROCESSES
 
-  1. The `conda-build` command spawns a `conda` process to perform the actual build in a temporary 
+  1. The `conda-build` command spawns a `conda` process to perform the actual build in a temporary
      directory.
 
   2. If icon tags are to customised an additional process from the Imagemgick package is spawned to
@@ -828,7 +829,7 @@
 
     -j, --jarfile.      Jarfile to used for build.  ONLY RELEVANT FOR TEST.
 
-    -n, --no-actions    If specified: Do not make any changes to Conda environment.  ONLY RELEVANT 
+    -n, --no-actions    If specified: Do not make any changes to Conda environment.  ONLY RELEVANT
                         FOR TEST.
 
   EXAMPLE USE:          N/A"
@@ -854,7 +855,7 @@
 
     -p, --prefix        Conda PREFIX, controls into which Conda environment to install Clojupyter.
 
-    -n, --no-actions    If specified: Do not make any changes to Conda environment.  ONLY RELEVANT 
+    -n, --no-actions    If specified: Do not make any changes to Conda environment.  ONLY RELEVANT
                         FOR TEST.
 
   EXAMPLE USE:          N/A"
@@ -938,12 +939,12 @@
   "Clojupyter development cmdline command: Provides help for Clojupyter commands.
 
   SUMMARY
-  
+
     - Use command 'list-commands' to see a list of available commands.
     - Use command 'help <cmd>' to get documentation for individual commands.
 
   EXAMPLE USE:
-  
+
     > clj -m clojupyter.cmdline help version
     Clojupyter v0.2.3 - Help
 

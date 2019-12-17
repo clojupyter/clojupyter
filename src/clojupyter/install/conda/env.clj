@@ -1,20 +1,14 @@
 (ns clojupyter.install.conda.env
-  ;;
-  ;; Nearly all the functionality in this namespace is not used but provided for completeness' sake
-  ;; since it was easily produced from the Conda documentation and hard to remember.  In the end
-  ;; very little of it turned out to be needed to conda builds, installs and removes for Clojupyter.
-  ;;
-  (:require
-   [clojure.java.io				:as io]
-   [clojure.string				:as str]
-   [io.simplect.compose						:refer [γ Γ π Π λ]]))
+  (:require [clojure.java.io :as io]
+            [clojure.string :as str]
+            [io.simplect.compose :refer [C]]))
 
 (defn- mkcomment
   [platforms comment]
   (let [platforms (if (= platforms :all) [:macos :linux :windows] platforms)]
     (str/join \newline [comment
                         nil
-                        (str "  Platforms: " (str/join ", " (map (Γ name str/upper-case) platforms)))])))
+                        (str "  Platforms: " (str/join ", " (map (C name str/upper-case) platforms)))])))
 
 (defmacro ^:private def-conda-var
   [nm platforms comment]

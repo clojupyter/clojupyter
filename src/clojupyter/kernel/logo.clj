@@ -1,12 +1,8 @@
 (ns clojupyter.kernel.logo
-  (:require
-   [clojure.edn			:as edn]
-   [clojure.java.io		:as io]
-   ,,
-   [clojupyter.display		:as dis]
-)
-  (:import
-   [javax.imageio ImageIO]))
+  (:require [clojupyter.display :as dis]
+            [clojure.edn :as edn]
+            [clojure.java.io :as io])
+  (:import javax.imageio.ImageIO))
 
 (def ^:private LOGO-PATH	"clojupyter/assets/logo-350x80.png")
 (def ^:private LICENSE-PATH	"clojupyter/assets/license.txt")
@@ -31,7 +27,7 @@
 (defn logo-image
   "Returns a clojupyter logo as a `java.awt.image.BufferedImage`."
   []
-  (ImageIO/read (logo-resource)))
+  (ImageIO/read ^java.net.URL (logo-resource)))
 
 
 (defn render-license

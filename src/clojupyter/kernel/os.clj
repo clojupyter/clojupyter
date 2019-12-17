@@ -1,12 +1,11 @@
 (ns clojupyter.kernel.os
-  (:require
-   [clojure.string				:as str]))
+  (:require [clojure.string :as str]))
 
 (def ^:private SUPPORTED-OPERATING-SYSTEMS #{:linux :macos :windows})
 
 (defn osname [] (-> (System/getProperty "os.name") str/lower-case str/trim))
 
-(defn- os? [idstr] (not (neg? (.indexOf (osname) idstr))))
+(defn- os? [idstr] (not (neg? (.indexOf ^String (osname) ^String idstr))))
 
 (defn operating-system
   "Returns a keyword representing the operating system. Returns `nil` if the operating system is not

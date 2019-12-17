@@ -1,10 +1,12 @@
 (ns clojupyter.install.local-specs
-  (:require
-   [clojure.spec.alpha			:as s]
-   [clojure.string			:as str]
-   [io.simplect.compose					:refer [def- γ Γ π Π]]
-   ,,
-   [clojupyter.install.filemap		:as fm]))
+  (:require [clojupyter.install.filemap :as fm]
+            [clojure.spec.alpha :as s]
+            [clojure.string :as str]
+            [io.simplect.compose :refer [p]]))
+
+(def DEPEND-DUMMY
+  "Namespaces which depend on keyword-based definitions in this refer to this value."
+  nil)
 
 (def IDENT-CHAR-REGEX-STR	"[\\w\\d-_\\.=]")
 (def IDENT-CHAR-REGEX		(re-pattern IDENT-CHAR-REGEX-STR))
@@ -21,9 +23,9 @@
                                  "clojupyter/assets/conda-build/pre-unlink.bat"
                                  ])
 
-(s/def :local/file				(π instance? java.io.File))
+(s/def :local/file				(p instance? java.io.File))
 (s/def :local/filetype				(s/nilable #{:filetype/file :filetype/directory}))
-(s/def :local/resource				(s/nilable (π instance? java.net.URL)))
+(s/def :local/resource				(s/nilable (p instance? java.net.URL)))
 
 (s/def :local/allow-deletions?			boolean?)
 (s/def :local/allow-destdir?			boolean?)
@@ -34,7 +36,7 @@
 (s/def :local/host-kernel-dir			:local/file)
 (s/def :local/icon-bot				string?)
 (s/def :local/icon-top				string?)
-(s/def :local/ident				(s/and string? (π re-find IDENT-REGEX)))
+(s/def :local/ident				(s/and string? (p re-find IDENT-REGEX)))
 (s/def :local/default-ident			:local/ident)
 (s/def :local/installed-kernel-info		(s/keys :req [:kernel/ident :kernel/display-name :kernel/ident]))
 (s/def :local/installed-kernels			(s/map-of string? :local/installed-kernel-info))

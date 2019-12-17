@@ -1,8 +1,33 @@
 # Changelog
 
+## v0.2.4 (work-in-progress)
+
+* Add IPYWIDGET definitions (preliminary - most things don't work yet)
+* Add `comm_atom` representing the state of COMM objects synchronized with the Jupyter COMM model
+  manager.
+* Implement support for `COMM` messages, necessary for interactive widget support
+* Use `tools.deps` and `lein-tools-deps`, update `project.clj` and `.travis.yml` accordingly
+* Change multithreading model from 2 independent (and mutually ignoring) threads to threads handling
+  ZeroMQ and a kernel threads.
+* ZeroMQ communication reimplemented and moved to clojupyter.zmq*, including
+  * Elimination of potential race condition on ZeroMQ sockets, necessary to support multithreading
+  * Move to jeromq `ZContext`-based implementation using `ZMQ$Socket`
+* Kernel communicates using `core.async` channels
+* Move to `io.pedestal.interceptor` gaining flexibility, higher degrees of pure functions, and
+  possibility of asynchronuous event handling.  Remove middleware model.
+* Improved format of logging, introduction of `slf4j-timbre` to capture logging from interceptors
+* Specification of all Jupyter protocol messages using `clojure.spec`
+* Test coverage significantly expanded including generators for all Jupyter protocol messages
+* nrepl communication reimplemented incresing use of pure functions
+* Switch from Greek to Latin letters when using io.simplect.compose
+* Various dependencies updated
+* Stop using functions and macros from `io.simplect.compose` with Greek characters
+
 ## 2019-11-26
-* Merged hotfix for [Issue #104: Clojupyter Jupyter kernelspec is not installed in non-base conda environment](https://github.com/clojupyter/clojupyter/issues/104)
-* Merged hotfix/workaround for [Issue #103: syntax error on `make install` / Imagemagick needed to install Clojupyter](https://github.com/clojupyter/clojupyter/issues/103)
+* Merged hotfix for [Issue #104: Clojupyter Jupyter kernelspec is not installed in non-base conda
+  environment](https://github.com/clojupyter/clojupyter/issues/104)
+* Merged hotfix/workaround for [Issue #103: syntax error on `make install` / Imagemagick needed to
+  install Clojupyter](https://github.com/clojupyter/clojupyter/issues/103)
 
 ## v0.2.3
 

@@ -1,28 +1,29 @@
 (ns clojupyter.install.local-test
-  (:require
-   [clojure.java.io				:as io]
-   [clojure.set					:as set]
-   [clojure.spec.alpha				:as s]
-   [clojure.string				:as str]
-   [clojure.test.check				:as tc]
-   [clojure.test.check.generators		:as gen 	:refer [sample]]
-   [clojure.test.check.properties		:as prop]
-   [io.simplect.compose						:refer [def- γ Γ π Π >>-> >->>]]
-   [me.raynes.fs				:as fs]
-   [midje.sweet							:refer [fact facts =>]]
-   ,,
-   [clojupyter.install.filemap			:as fm]
-   [clojupyter.install.local			:as local]
-   [clojupyter.install.local-actions		:as local!]
-   [clojupyter.install.local-specs		:as lsp]
-   [clojupyter.install.plan					:refer :all]
-   [clojupyter.util				:as u]
-   [clojupyter.util-actions			:as u!]
-   ,,
-   [clojupyter.test-shared					:refer :all]
-   [clojupyter.kernel.version-test				:refer [g-version]]))
+  (:require [clojupyter.install.filemap :as fm]
+            [clojupyter.install.local :as local]
+            [clojupyter.install.local-actions :as local!]
+            [clojupyter.install.local-specs :as lsp]
+            [clojupyter.kernel.version-test :refer [g-version]]
+            [clojupyter.plan :as pl]
+            [clojupyter.test-shared :as ts]
+            [clojupyter.test-shared-generators :as shg :refer [<==> ==> R]]
+            [clojupyter.util :as u]
+            [clojupyter.util-actions :as u!]
+            [clojure.java.io :as io]
+            [clojure.set :as set]
+            [clojure.spec.alpha :as s]
+            [clojure.test.check :as tc]
+            [clojure.test.check.generators :as gen]
+            [clojure.test.check.properties :as prop]
+            [io.simplect.compose :refer [C def- p P]]
+            [me.raynes.fs :as fs]
+            [midje.sweet :refer [=> fact]]))
 
 (use 'clojure.pprint)
+
+(def LSP-DEPEND
+  "Ensures dependency due to use of `:local/...` keywords.  Do not delete."
+  lsp/DEPEND-DUMMY)
 
 (def- QC-ITERS 500)
 
@@ -31,27 +32,27 @@
 ;;; ----------------------------------------------------------------------------------------------------
 
 (def g-clojupyter-jar
-  (gen/let [path g-path
-            typ (gen/frequency [[9 (g-constant "jar")]
-                                [1 (g-alphanum 3 3)]])
-            nm (gen/frequency [[9 (g-constant "clojupyter-standalone")]
-                               [1 (g-alphanum 1 20)]])]
+  (gen/let [path shg/g-path
+            typ (gen/frequency [[9 (shg/g-constant "jar")]
+                                [1 (shg/g-alphanum 3 3)]])
+            nm (gen/frequency [[9 (shg/g-constant "clojupyter-standalone")]
+                               [1 (shg/g-alphanum 1 20)]])]
     (R (io/file (str path "/" nm "." typ)))))
 
 (def g-kerneldir-parents
   "Generator producing 2 path names representing the :user and :host kerneldir-parent directories."
-  (gen/such-that (π apply not=) (gen/vector g-path 2 2)))
+  (gen/such-that (p apply not=) (gen/vector shg/g-path 2 2)))
 
 (def g-remove-env
   "Generator producig the environment map needed to generator kernel removal action."
   (gen/let [kerneldir-parents g-kerneldir-parents
             N (gen/choose 1 10)
             dirnames (gen/vector (gen/elements kerneldir-parents) N)
-            idents (gen/vector (g-name 3 10) N)]
+            idents (gen/vector (shg/g-name 3 10) N)]
     (let [kerneldirs (map (fn [dir id] (io/file (str dir "/" id))) dirnames idents)
           jsons (for [dir kerneldirs] (io/file (str dir "/" lsp/KERNEL-JSON)))
           kernelmap (->> (for [[ident json] (map vector idents jsons)]
-                           (let [jarfile (-> json .getParent (str "/" lsp/DEFAULT-TARGET-JARNAME))] 
+                           (let [jarfile (-> json .getParent (str "/" lsp/DEFAULT-TARGET-JARNAME))]
                              [json (u/kernel-spec jarfile ident)]))
                          (into {}))
           res {:kerneldir-parents kerneldir-parents
@@ -73,7 +74,7 @@
          (= jsons (->> env :local/kernelmap keys (into #{})))
          (= kerneldir-parents (:local/kerneldir-parents env))
          (->> (for [dir kerneldirs]
-                (some (Π u/file-ancestor-of dir) kerneldir-parents))
+                (some (P u/file-ancestor-of dir) kerneldir-parents))
               (every? true?)))))
 
 (fact "Generated remove-environments are correct"
@@ -84,28 +85,28 @@
   "Properties of correctly generated kernel removal action."
   (prop/for-all [{:keys [kerneldir-parents kerneldirs idents env]} g-remove-env
                  ;; Select some arbitrary strings to try in addition to the kernel idents
-                 ;; They are very unlikely to be one of the idents which are generated using g-name
+                 ;; They are very unlikely to be one of the idents which are generated using shg/g-name
                  extra-idents (gen/set gen/string {:min-elements 10 :max-elements 20})]
     (every? true?
             (for [id (set/union idents extra-idents)]
-              (let [matching? (boolean (some (π u/re-find+ id) idents))
-                    delete-step? (Γ first (π = `fs/delete-dir))
-                    S ((Γ s*set-do-execute (local/s*generate-remove-action id env)) {})
-                    ;;action-spec (get-action-spec S)
-                    ;;doing? (executing? S)
+              (let [matching? (boolean (some (p u/re-find+ id) idents))
+                    delete-step? (C first (p = `fs/delete-dir))
+                    S ((C pl/s*set-do-execute (local/s*generate-remove-action id env)) {})
+                    action-spec (pl/get-action-spec S)
+                    doing? (pl/executing? S)
                     ]
                 (and
                  ;; 1A) If we match something then we do something
                  ;; 1B) If we do something then we matched something
                  true
-                 #_(<==> matching? doing?)
+                 (<==> matching? doing?)
                  ;; 2) If we do something, it's deleting
-                 #_(==> doing? (->> action-spec (remove delete-step?) count zero?))
+                 (==> doing? (->> action-spec (remove delete-step?) count zero?))
                  ;; 3) If we delete something, it's one of the kernel directories
-                 #_(==> doing?
+                 (==> doing?
                       (->> action-spec
                            (filter delete-step?)
-                           (map (Γ second (π contains? kerneldirs)))
+                           (map (C second (p contains? kerneldirs)))
                            (every? true?)))))))))
 
 (fact "Remove only matching kerneldirs"
@@ -117,22 +118,22 @@
 ;;; ----------------------------------------------------------------------------------------------------
 
 (def g-icon-text
-  (gen/one-of [(g-constant "") (g-alphanum 1 8)]))
+  (gen/one-of [(shg/g-constant "") (shg/g-alphanum 1 8)]))
 
 (def g-jarfile
-  (gen/fmap #(io/file (str % "/" lsp/DEFAULT-TARGET-JARNAME)) g-path))
+  (gen/fmap #(io/file (str % "/" lsp/DEFAULT-TARGET-JARNAME)) shg/g-path))
 
 (def g-local-install-user-opts
   (gen/let [deletions? gen/boolean
             destdir? gen/boolean
             bot g-icon-text
             top g-icon-text
-            destdir (g-nilable g-path)
+            destdir (shg/g-nilable shg/g-path)
             gen-json? gen/boolean
             loc (gen/elements [:loc/user :loc/host])
             cust? gen/boolean
             jarfiles (gen/set g-jarfile {:min-elements 0, :max-elements 1})
-            filemap (g-filemap (set/union jarfiles #{destdir}))]
+            filemap (shg/g-filemap (set/union jarfiles #{destdir}))]
     (let [res (merge {:local/allow-deletions? deletions?
                       :local/allow-destdir? destdir?
                       :local/customize-icons? cust?
@@ -155,17 +156,17 @@
 ;;; ----------------------------------------------------------------------------------------------------
 
 (def g-convert-exe
-  (gen/fmap #(io/file (str % "/convert")) g-path))
+  (gen/fmap #(io/file (str % "/convert")) shg/g-path))
 
 (def g-install-resources
   (let [res-names local!/DEFAULT-RESOURCE-NAMES]
-    (gen/let [resources (gen/vector g-resource (count res-names))]
+    (gen/let [resources (gen/vector shg/g-resource (count res-names))]
       (R (into {} (map vector res-names resources))))))
 
 (def g-installed-kernel-info
-  (gen/hash-map :kernel/ident (g-name 1 10)
-                :kernel/dir g-path
-                :kernel/display-name (g-name 1 10)))
+  (gen/hash-map :kernel/ident (shg/g-name 1 10)
+                :kernel/dir shg/g-path
+                :kernel/display-name (shg/g-name 1 10)))
 
 (def g-installed-kernels
   (gen/let [kernels (gen/vector g-installed-kernel-info 0 10)]
@@ -173,20 +174,20 @@
 
 (def g-local-install-env
   (gen/let [convert-exe g-convert-exe
-            default-ident g-ident
-            host-kernel-dir g-path
+            default-ident shg/g-ident
+            host-kernel-dir shg/g-path
             installed-kernels g-installed-kernels
             resource-map g-install-resources
             jarfiles (gen/set g-jarfile {:max-elements 10})
-            logo-resource (g-constant lsp/LOGO-ASSET)
-            user-kernel-dir g-path
-            user-homedir g-path
-            version-map (g-constant {})
+            logo-resource (shg/g-constant lsp/LOGO-ASSET)
+            user-kernel-dir shg/g-path
+            user-homedir shg/g-path
+            version-map (shg/g-constant {})
             ,,
-            jarfilemap (R (->> (map (Π vector :filetype/file) jarfiles)
+            jarfilemap (R (->> (map (P vector :filetype/file) jarfiles)
                                (into {})
                                fm/filemap))
-            filemap (g-filemap [host-kernel-dir user-kernel-dir])
+            filemap (shg/g-filemap [host-kernel-dir user-kernel-dir])
             version-map g-version]
     (let [filemap (fm/filemap jarfilemap filemap)
           env {:local/convert-exe convert-exe
@@ -253,26 +254,26 @@
   (prop/for-all [opts g-local-install-user-opts
                  env g-local-install-env]
     (let [spec (local/install-spec opts env)
-          res ((Γ s*set-do-execute
+          res ((C pl/s*set-do-execute
                   (local/s*generate-install-effects spec)) {})
-          aspec (get-action-spec res)
+          aspec (pl/get-action-spec res)
           aspec-ops (->> aspec (map first) (into #{}))
-          ok!	(executing? res)
+          ok!	(pl/executing? res)
           stop! (not ok!)]
       (and (s/valid? :local/user-opts opts)
            (s/valid? :local/install-env env)
            (s/valid? :local/install-spec spec)
            (==> (-> spec :local/source-jarfiles count zero?) stop!)
            (==> (-> spec :local/source-jarfiles count (> 1)) stop!)
-           (==> (and (-> spec :local/customize-icons?) 
+           (==> (and (-> spec :local/customize-icons?)
                      (-> spec :local/convert-exe not))
                 stop!)
            (==> ok! (contains? aspec-ops `local!/copy-resource-to-file!))
            (==> (and ok! (:local/generate-kernel-json? opts))
                 (contains? aspec-ops `local!/generate-kernel-json-file!))
            (==> ok! (->> aspec
-                         (filter (every-pred (Γ first (π = `io/copy))
-                                             (Γ (Π nth 2) str (π re-find #"jar$"))))
+                         (filter (every-pred (C first (p = `io/copy))
+                                             (C (P nth 2) str (p re-find #"jar$"))))
                          count
                          (= 1)))
            (==> (contains? (->> spec :local/installed-kernels keys (into #{})) (:local/ident spec))

@@ -1,19 +1,19 @@
 (ns clojupyter.install.conda.unlink-actions
+  "The functions in this namespace are used to remove Clojupyter from an end-user machine on which
+  it is installed using `conda install`.  Under normal circumstances it is never used by the user
+  directly, but is called by the Conda installer as part of the removal procedure.
 
-  ;; The functions in this namespace are used to remove Clojupyter from an end-user machine on which
-  ;; it is installed using `conda install`.  Under normal circumstances it is never used by the user
-  ;; directly, but is called by the Conda installer as part of the removal procedure.
+  Functions whose name begins with 's*' return a single-argument function accepting and returning
+  a state map."
+  (:require [clojupyter.install.conda.env :as env]
+            [clojupyter.install.conda.link-actions :as link!]
+            [clojupyter.install.filemap :as fm]
+            [clojupyter.install.conda.conda-specs :as csp]
+            [clojupyter.install.local-specs :as lsp]
+            [clojupyter.util-actions :as u!]
+            [clojure.spec.alpha :as s]))
 
-  ;; Functions whose name begins with 's*' return a single-argument function accepting and returning
-  ;; a state map.
-  (:require
-   [clojure.spec.alpha				:as s]
-   ,,
-   [clojupyter.install.conda.env		:as env]
-   [clojupyter.install.conda.link-actions	:as link!]
-   [clojupyter.install.conda.specs		:as csp]
-   [clojupyter.install.filemap			:as fm]
-   [clojupyter.util-actions			:as u!]))
+(def LSP-DEPEND [csp/DEPEND-DUMMY lsp/DEPEND-DUMMY])
 
 (use 'clojure.pprint)
 

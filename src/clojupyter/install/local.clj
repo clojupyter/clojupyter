@@ -1,46 +1,42 @@
 (ns clojupyter.install.local
-  ;; This namespace provides functions to install Clojupyter on the local machine.  The Clojupyter
-  ;; kernel can be installed for the current user only or available to all users on the machine.
+  (:gen-class)
+  (:require [clojupyter.cmdline.api :as cmdline]
+            [clojupyter.install.filemap :as fm]
+            [clojupyter.install.local-actions :as local!]
+            [clojupyter.install.local-specs :as lsp]
+            [clojupyter.kernel.version :as version]
+            [clojupyter.plan :as pl :refer [s*action-append s*bind-state s*log-debug s*log-error s*log-info s*when s*when-not]]
+            [clojupyter.util :as u]
+            [clojupyter.util-actions :as u!]
+            [clojure.java.io :as io]
+            [clojure.pprint :as pp]
+            [clojure.set :as set]
+            [clojure.spec.alpha :as s]
+            [clojure.spec.test.alpha :refer [instrument]]
+            [clojure.string :as str]
+            [io.simplect.compose :refer [C p P sdefn]]
+            [me.raynes.fs :as fs]))
 
-  ;; Functions whose name begins with 's*' return a single-argument function accepting and returning
-  ;; a state map.
-  (:require
-   [clojure.java.io			:as io]
-   [clojure.pprint			:as pprint	:refer :all]
-   [clojure.set				:as set]
-   [clojure.spec.alpha			:as s]
-   [clojure.spec.test.alpha				:refer [instrument]]
-   [clojure.string			:as str]
-   [io.simplect.compose					:refer [call-if redefn def- sdefn sdefn-
-                                                                >->> >>-> π Π γ Γ λ]]
-   [me.raynes.fs			:as fs]
-   ,,
-   [clojupyter.cmdline.api		:as cmdline]
-   [clojupyter.install.filemap		:as fm]
-   [clojupyter.install.local-actions	:as local!]
-   [clojupyter.install.local-specs	:as lsp]
-   [clojupyter.install.plan				:refer :all]
-   [clojupyter.kernel.version		:as version]
-   [clojupyter.util			:as u]
-   [clojupyter.util-actions		:as u!])
-  (:gen-class))
+(def LSP-DEPEND
+  "Ensures dependency due to use of `:local/...` keywords.  Do not delete."
+  lsp/DEPEND-DUMMY) 
 
 (def DEFAULT-LOGLEVELS #{:error :warn :info})
 
 (defn- pprint-table-to-string
   [v]
-  (with-out-str (pprint/print-table v)))
+  (with-out-str (pp/print-table v)))
 
 (defn- format-report
   [user-homedir matching-kernels ident-colname dir-colname]
   (->> matching-kernels
        (sort-by :kernel/ident)
-       (map (Γ (Π select-keys [:kernel/ident :kernel/dir])
-               (Π set/rename-keys {:kernel/ident ident-colname, :kernel/dir dir-colname})))
+       (map (C (P select-keys [:kernel/ident :kernel/dir])
+               (P set/rename-keys {:kernel/ident ident-colname, :kernel/dir dir-colname})))
        (u/files-as-strings user-homedir)
        pprint-table-to-string
        str/split-lines
-       (drop-while (π = ""))))
+       (drop-while (p = ""))))
 
 (defn- destination-directory
   [ident user-destdir user-loc host-kernel-dir user-kernel-dir]
@@ -90,14 +86,11 @@
                       :local/filemap			(fm/filemap (E :local/filemap) (U :local/filemap))
                       :local/file-copyspec		file-copyspec
                       :local/generate-kernel-json?	(U :local/generate-kernel-json?)
-                      :local/icon-bot			(U :local/icon-bot)
-                      :local/icon-top			(U :local/icon-top)
                       :local/ident			ident
                       :local/installed-kernels		(E :local/installed-kernels)
                       :local/logo-resource		(E :local/logo-resource)
                       :local/resource-copyspec		resource-copyspec
                       :local/resource-map		(E :local/resource-map)
-                      :local/customize-icons?		(U :local/customize-icons?)
                       :local/source-jarfiles		src-jars
                       :version/version-map		(E :version/version-map)}
                      (when convert-exe
@@ -118,15 +111,15 @@
   effects will, if invoked, install Clojupyter according to `install-spec`."
   [install-spec]
   (let [#:local{:keys [allow-deletions? allow-destdir? convert-exe destdir filemap file-copyspec
-                       icon-bot icon-top ident installed-kernels logo-resource resource-map resource-copyspec
-                       customize-icons? generate-kernel-json? source-jarfiles]} install-spec
+                       ident installed-kernels logo-resource resource-map resource-copyspec
+                       generate-kernel-json? source-jarfiles]} install-spec
         installed-idents (->> installed-kernels keys (into #{}))]
     (assert (fm/filemap? filemap))
     (letfn [(get-resource [nm] (get resource-map nm))
             (destdir-file [nm] (io/file (str destdir "/" (-> nm io/file .getName))))
             (resource-destfile [rnm] (->> rnm (get resource-copyspec) destdir-file))
             (msg [m] (assoc m :install-spec install-spec))]
-      (Γ
+      (C
        ;; CHECK PRECONDITIONS
        (s*when (-> ident count zero?)
          (s*log-error {:message (str "Error: zero length kernel identifier not permitted.")
@@ -143,22 +136,22 @@
        (case (count source-jarfiles)
          0 (s*log-error (msg {:message (str "Error: No source jarfile provided.")
                               :type :no-source-jarfile}))
-         1 s*ok
+         1 pl/s*ok
          (s*log-error (msg {:message (str "Multiple source jarfiles available: " source-jarfiles ".")
                             :type :multiple-source-jarfiles})))
 
        ;; CREATE DESTDIR
-       (s*action-append [`fs/mkdirs destdir])
+       (pl/s*action-append [`fs/mkdirs destdir])
 
        ;; COPY RESOURCES
-       (apply Γ (for [[rname destname] resource-copyspec]
+       (apply C (for [[rname destname] resource-copyspec]
                   (if-let [r (get-resource rname)]
                     (s*action-append [`local!/copy-resource-to-file! rname (destdir-file destname)])
                     (s*log-error (msg {:message (str "Error: Cannot find resource rname (" logo-resource ").")
                                        :type :missing-resource})))))
 
        ;; COPY FILES
-       (apply Γ (for [[fname destname] file-copyspec]
+       (apply C (for [[fname destname] file-copyspec]
                   (if-let [f (fm/file filemap fname)]
                     (s*action-append [`io/copy f (destdir-file destname)])
                     (s*log-error (msg {:message (str "Error: File '" fname "' not found.")
@@ -166,15 +159,7 @@
 
        ;; GENERATE KERNEL.JSON
        (s*when generate-kernel-json?
-         (s*action-append [`local!/generate-kernel-json-file! destdir ident]))
-
-       ;; CUSTOMIZE ICONS
-       (s*when customize-icons?
-         (if-let [conv (fm/file filemap convert-exe)]
-           (s*action-append [`local!/customize-icon-file! conv, {:south icon-bot, :north icon-top},
-                             (resource-destfile lsp/LOGO-ASSET)])
-           (s*log-error (msg {:message (str "Error: Imagemagick 'convert' executable not found.")
-                              :type :convert-exe-not-found}))))))))
+         (s*action-append [`local!/generate-kernel-json-file! destdir ident]))))))
 
 (defn s*report-install
   "Returns a function which, given a state, uses the cmdline api to update state with user output
@@ -183,11 +168,11 @@
   (s*bind-state S
     (let [#:local{:keys [user-homedir]} env
           #:local{:keys [destdir ident source-jarfiles]} install-spec
-          log (get-log S)
+          log (pl/get-log S)
           log-levels (or log-levels DEFAULT-LOGLEVELS)
-          success? (execute-success? S)]
+          success? (pl/execute-success? S)]
       (assert user-homedir)
-      (Γ (cmdline/set-header "Install local")
+      (C (cmdline/set-header "Install local")
          (cmdline/outputs (u/log-messages log-levels log))
          (cmdline/set-exit-code (if success? 0 1))
          (s*when success?
@@ -201,15 +186,15 @@
 (def s*report-remove
   "Uses the cmdline api to update state with user output regarding the removal result."
   (s*bind-state S
-    (let [log (get-log S)
-          success? (execute-success? S)]
-      (Γ (cmdline/set-header "Remove installs")
+    (let [log (pl/get-log S)
+          success? (pl/execute-success? S)]
+      (C (cmdline/set-header "Remove installs")
          (cmdline/outputs (u/log-messages log))
          (cmdline/set-exit-code (if success? 0 1))
          (cmdline/outputs [""
                            (str "Status: "
                             (cond
-                              (halted? S)	"Execution skipped."
+                              (pl/halted? S)	"Execution skipped."
                               success?		"Removals successfully completed."
                               :else		"Error(s) occurred during removal (log messages above)."))])))))
 
@@ -223,10 +208,10 @@
   [{:keys [skip-execute? skip-report? log-levels] :as opts} user-opts install-env]
   (let [log-levels (or log-levels #{:info :warn :error})
         spec (install-spec user-opts install-env)]
-    (Γ (cmdline/set-header "Install Clojupyter local")
-       (s*when-not skip-execute? s*set-do-execute)
+    (C (cmdline/set-header "Install Clojupyter local")
+       (s*when-not skip-execute? pl/s*set-do-execute)
        (s*generate-install-effects spec)
-       s*execute
+       pl/s*execute
        (s*when-not skip-report?
          (s*report-install install-env spec log-levels)))))
 
@@ -236,20 +221,20 @@
   [env regex-string]
   (let [{:keys [:local/installed-kernels :local/user-homedir]} env
         installed-idents (->> installed-kernels keys (into #{}))]
-    (Γ (cmdline/set-header (str "Clojupyter kernels matching the regular expression '" regex-string "'."))
+    (C (cmdline/set-header (str "Clojupyter kernels matching the regular expression '" regex-string "'."))
        (if-let [patt (u/re-pattern+ regex-string)]
          (let [matching-kernels (->> installed-kernels
                                      vals
-                                     (filter (Γ :kernel/ident str (π re-find patt))))
-               matches (filter (π re-find patt) installed-idents)
+                                     (filter (C :kernel/ident str (p re-find patt))))
+               matches (filter (p re-find patt) installed-idents)
                match? (-> matches count pos?)
                result (if match?
                         (format-report user-homedir matching-kernels "IDENT" "DIR")
                         [(str "No kernels match '" regex-string "'.")])]
-           (Γ (cmdline/outputs result)
+           (C (cmdline/outputs result)
               (cmdline/set-result {:matching-kernels matching-kernels})
               (cmdline/set-exit-code (if match? 0 1))))
-         (Γ (cmdline/output (str "Not a legal regular expression: " regex-string))
+         (C (cmdline/output (str "Not a legal regular expression: " regex-string))
             (cmdline/set-result {:bad-regex-string regex-string})
             (cmdline/set-exit-code 0))))))
 
@@ -258,24 +243,24 @@
   (if-let [regex (u/re-pattern+ regex-string)]
     (let [{:keys [:local/kernelmap]} install-env
           matchmap (->> kernelmap
-                        (filter (Γ second
+                        (filter (C second
                                    :display_name
                                    (fnil u/display-name->ident "")
-                                   (π re-find regex)))
+                                   (p re-find regex)))
                         (into {}))]
       (if (-> matchmap count pos?)
-        (apply Γ (for [[kernel-json-file kernel-json-info] matchmap]
-                   (let [kerneldir (.getParentFile kernel-json-file)]
-                     (Γ (s*log-debug {:op :remove-install
+        (apply C (for [[kernel-json-file kernel-json-info] matchmap]
+                   (let [kerneldir (.getParentFile ^java.io.File kernel-json-file)]
+                     (C (s*log-debug {:op :remove-install
                                       :kerneldir kerneldir
                                       :kernel-json kernel-json-file
                                       :info kernel-json-info})
                         (s*action-append [`fs/delete-dir kerneldir])
                         (s*log-info {:message (str "Step: Delete " kerneldir)})))))
-        (s*log-error {:message (str "No kernels matching #\"" regex-string "\" found.")
+        (s*log-error {:message (str "No kernels matching #\"" regex-string "\" found.  Note: Matching is done on _idents_.")
                       :type :no-matching-kernels-found
                       :matchmap matchmap})))
-    (Γ (s*log-error {:message (str "Not a legal regular expression: " regex-string)
+    (C (s*log-error {:message (str "Not a legal regular expression: " regex-string)
                      :type :bad-regex-string
                      :regex-string regex-string}))))
 

@@ -1,34 +1,27 @@
 (ns clojupyter.install.conda.link-actions
+  (:gen-class)
+  (:require [clojupyter.install.conda.env :as env]
+            [clojupyter.install.filemap :as fm]
+            [clojupyter.install.conda.conda-specs :as csp]
+            [clojupyter.install.local-specs :as lsp]
+            [clojupyter.kernel.version :as ver]
+            [clojupyter.util-actions :as u!]
+            [clojure.java.io :as io]
+            [clojure.set :as set]
+            [clojure.spec.alpha :as s]
+            [io.simplect.compose :refer [C def- p]]
+            [me.raynes.fs :as fs]))
 
-  ;; The functions in this namespace are used to install Clojupyter using `conda install` on an
-  ;; end-user machine.  Under normal circumstances it is never used by the user directly, but is
-  ;; called by the Conda installer as part of the installation procedure.
-
-  ;; Functions whose name begins with 's*' return a single-argument function accepting and returning
-  ;; a state map.
-  (:require
-   [clojure.java.io				:as io]
-   [clojure.set					:as set]
-   [clojure.spec.alpha				:as s]
-   [io.simplect.compose						:refer [def- γ Γ π Π λ]]
-   [me.raynes.fs				:as fs]
-   ,,
-   [clojupyter.install.conda.env		:as env]
-   [clojupyter.install.conda.specs		:as csp]
-   [clojupyter.install.filemap			:as fm]
-   [clojupyter.install.local-specs		:as lsp]
-   [clojupyter.kernel.version			:as ver]
-   [clojupyter.util-actions			:as u!])
-  (:gen-class))
+(def DEPEND [csp/DEPEND-DUMMY])
 
 (def- classpath-urls
-  (Γ #(java.lang.ClassLoader/getSystemClassLoader)
+  (C #(java.lang.ClassLoader/getSystemClassLoader)
      #(.getURLs %)
      vec))
 
 (def- classpath-clojupyter-jarfiles
-  (Γ classpath-urls
-     (π filter (Γ str (π re-find lsp/CONDA-JARNAME-RE)))
+  (C classpath-urls
+     (p filter (C str (p re-find lsp/CONDA-JARNAME-RE)))
      vec))
 
 ;;; ----------------------------------------------------------------------------------------------------
@@ -64,7 +57,7 @@
                                (-> jarfiles first io/file)))
          items (if jarfile
                  (->> jarfile fs/parent file-seq (filter fs/file?)
-                      (filter (Γ str (π re-find #"\.(png|jar)$")))
+                      (filter (C str (p re-find #"\.(png|jar)$")))
                       (into #{}))
                  #{})
          destdir (conda-clojupyter-kernel-dir prefix)
@@ -84,7 +77,7 @@
   (let [files (->> destdir
                    file-seq
                    (filter fs/file?)
-                   (map #(.getName %))
+                   (map #(.getName ^java.io.File %))
                    (into #{}))]
     (set/subset? #{lsp/KERNEL-JSON
                    (->> lsp/LOGO-ASSET io/file .getName)

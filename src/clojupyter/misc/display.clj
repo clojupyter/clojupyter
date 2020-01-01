@@ -1,25 +1,33 @@
 (ns clojupyter.misc.display
-  (:require
-   [hiccup.core					:as hiccup]
-   ,,
-   [clojupyter.kernel.state			:as state]
-   [clojupyter.protocol.mime-convertible	:as mc]
-   [clojupyter.util				:as u])
-  (:import
-   [javax.imageio ImageIO]
-   [java.awt.image BufferedImage]))
+  (:require [clojupyter.kernel.handle-event.ops :as ops]
+            [clojupyter.kernel.jup-channels :as jup]
+            [clojupyter.messages :as msgs]
+            [clojupyter.protocol.mime-convertible :as mc]
+            [clojupyter.state :as state]
+            [clojupyter.util :as u]
+            [hiccup.core :as hiccup]
+            [io.simplect.compose.action :refer [action step]]))
 
 (defn display
   "Sends `obj` for display by Jupyter. Returns `:ok`."
   [obj]
-  (state/display! (mc/to-mime obj))
+  (if-let [{:keys [jup req-message]} (state/current-context)]
+    (let [send-obj (-> obj mc/to-mime u/parse-json-str)
+          port :iopub_port
+          msgtype msgs/DISPLAY-DATA
+          message (msgs/display-data-content send-obj {} {})]
+      (-> (action (step [`jup/send!! jup port req-message msgtype message]
+                        {:message-to port, :msgtype msgtype, :message message}))
+          ops/s*append-leave-action
+          state/swap-context!))
+    (throw (Exception. "display: Evaluation context not found.")))
   :ok)
 
 ;; Html
 
 (defrecord HiccupHTML [html-data]
   mc/PMimeConvertible
-  (to-mime [_] (u/stream-to-string {:text/html (hiccup/html html-data)})))
+  (to-mime [_] (u/to-json-str {:text/html (hiccup/html html-data)})))
 
 (defn hiccup-html
   "Output `html-data` as HTML."
@@ -29,7 +37,7 @@
 (defrecord HtmlString [html]
   mc/PMimeConvertible
   (to-mime [_]
-    (u/stream-to-string
+    (u/to-json-str
      {:text/html html})))
 
 (defn html
@@ -50,7 +58,7 @@
 (defrecord Latex [latex]
   mc/PMimeConvertible
   (to-mime [_]
-    (u/stream-to-string
+    (u/to-json-str
      {:text/latex latex})))
 
 (defn latex
@@ -68,7 +76,7 @@
 (defrecord Markdown [markdown]
   mc/PMimeConvertible
   (to-mime [_]
-    (u/stream-to-string
+    (u/to-json-str
      {:text/markdown markdown})))
 
 (defn markdown
@@ -84,10 +92,11 @@
 
 (defn vega-lite
   [v]
-  (u/stream-to-string {:application/vnd.vegalite.v1+json v}))
+  (u/to-json-str {:application/vnd.vegalite.v1+json v}))
 
 (defn render-mime
   [mime-type v]
   (reify mc/PMimeConvertible
     (to-mime [_]
-      (u/stream-to-string (hash-map mime-type v)))))
+      (u/to-json-str (hash-map mime-type v)))))
+

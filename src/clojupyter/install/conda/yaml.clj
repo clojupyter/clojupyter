@@ -1,50 +1,45 @@
 (ns clojupyter.install.conda.yaml
+  (:require [clojupyter.install.conda.conda-specs :as csp]
+            [clojupyter.kernel.version :as ver]
+            [clojupyter.util :as u]
+            [clojure.spec.alpha :as s]
+            [clojure.spec.test.alpha :refer [instrument]]
+            [clojure.string :as str]
+            [clojure.walk :as walk]
+            [io.simplect.compose :refer [C def- p P sdefn]]
+            [yaml.core :as yaml]))
 
-  ;; This namespace contains functionality to generate the YAML data needed for the `meta.yaml` file
-  ;; used to control Conda builds.
-
-  (:require
-   [clojure.spec.alpha				:as s]
-   [clojure.spec.test.alpha					:refer [instrument]]
-   [clojure.string				:as str]
-   [clojure.walk				:as walk]
-   [io.simplect.compose						:refer [def- sdefn sdefn- π Π γ Γ λ]]
-   [yaml.core					:as yaml]
-   ,,
-   [clojupyter.install.conda.specs		:as csp]
-   [clojupyter.kernel.version			:as ver]
-   [clojupyter.util				:as u]
-   ))
+(def DEPEND [csp/DEPEND-DUMMY])
 
 (def- BUILD-REQS ["openjdk=8" "maven"])
 (def- RUN-REQS	(vec (concat BUILD-REQS ["notebook>=4.4.0" "ipywidgets>=7.0" "widgetsnbextension"])))
 
-(def unqualify-kws (π walk/postwalk (u/call-if keyword? (Γ name keyword))))
+(def unqualify-kws (p walk/postwalk (u/call-if keyword? (C name keyword))))
 
 (def- esc-chars
   "Escape all single quote characters (\\')."
-  (π walk/postwalk
+  (p walk/postwalk
      (u/call-if string?
-                (Γ (Π str/replace "%" "%37")
-                   (Π str/replace "'" "%39")))))
+                (C (P str/replace "%" "%37")
+                   (P str/replace "'" "%39")))))
 
 (def- unesc-chars
   "Unescape all single quote characters (\\')."
-  (π walk/postwalk
+  (p walk/postwalk
      (u/call-if string?
-        (Γ (Π str/replace "%37" "%")
-           (Π str/replace "%39" "'")))))
+        (C (P str/replace "%37" "%")
+           (P str/replace "%39" "'")))))
 
 (def escaped-yaml-string
   "Encode a value as YAML escaping certain characters in strings."
-  (Γ esc-chars
-     (Π yaml/generate-string :dumper-options {:flow-style :block})
+  (C esc-chars
+     (P yaml/generate-string :dumper-options {:flow-style :block})
      unesc-chars))
 
 (def- VERSION-REGEX #"[\w\d\.]")
 (def- sanitize-ver (u/sanitize-string VERSION-REGEX))
 
-(defn- conda-configuration 
+(defn- conda-configuration
   "Returns the EDN equivalent of the `meta.yaml` file needed to Conda-build Clojupyter."
   [version-map buildnum kernel-dir build-reqs run-reqs]
   (let [version-string (ver/version-string version-map)]

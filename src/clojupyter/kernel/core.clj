@@ -1,125 +1,181 @@
 (ns clojupyter.kernel.core
-  (:require
-   [beckon]
-   [clojure.pprint				:as pp		:refer [pprint]]
-   [clojure.stacktrace				:as stacktrace]
-   [clojure.walk				:as walk]
-   [nrepl.core					:as nrepl]
-   [taoensso.timbre				:as log]
-   [zeromq.zmq					:as zmq]
-   ,,
-   [clojupyter.kernel.cljsrv.nrepl-comm		:as nrepl-comm]
-   [clojupyter.kernel.cljsrv.nrepl-server	:as clojupyter-nrepl-server]
-   [clojupyter.kernel.init			:as init]
-   [clojupyter.kernel.jupyter			:as jup]
-   [clojupyter.kernel.middleware		:as m]
-   [clojupyter.kernel.state			:as state]
-   [clojupyter.kernel.transport			:as tp]
-   [clojupyter.kernel.transport.zmq		:as tpz]
-   [clojupyter.util				:as u]
-   [clojupyter.util-actions			:as u!]
-   )
-  (:gen-class))
+  (:gen-class)
+  (:require [clojupyter.kernel.cljsrv :as cljsrv]
+            [clojupyter.kernel.comm-atom :as ca]
+            [clojupyter.kernel.config :as config]
+            [clojupyter.kernel.handle-event-process :as hep :refer [start-handle-event-process]]
+            [clojupyter.kernel.init :as init]
+            [clojupyter.kernel.jup-channels :refer [jup? make-jup]]
+            [clojupyter.jupmsg-specs :as jsp]
+            [clojupyter.log :as log]
+            [clojupyter.messages :as msgs]
+            [clojupyter.messages-specs :as msp]
+            [clojupyter.shutdown :as shutdown]
+            [clojupyter.state :as state]
+            [clojupyter.util :as u]
+            [clojupyter.util-actions :as u!]
+            [clojupyter.zmq :as cjpzmq]
+            [clojupyter.zmq.heartbeat-process :as hb]
+            [clojure.core.async :as async :refer [<!! buffer chan]]
+            [clojure.spec.alpha :as s]
+            [clojure.spec.test.alpha :refer [instrument]]
+            [clojure.walk :as walk]
+            [io.simplect.compose :refer [def- curry c C p P >->> >>->]]
+            ))
 
-(defn- with-exception-logging*
-  ([form finally-form]
-   `(try ~form
-         (catch Exception e#
-           (do (log/error (with-out-str (stacktrace/print-stack-trace e# 20)))
-               (throw e#)))
-         (finally ~finally-form))))
+(def- address
+  (curry 2 (fn [config service]
+             (let [svc (service config)]
+               (assert svc (str "core/address: " service " not found"))
+               (str (:transport config) "://" (:ip config) ":" svc)))))
 
-(defmacro ^{:style/indent 1, :private true} with-exception-logging
-  ([form]
-   (with-exception-logging* form '(do)))
-  ([form finally-form]
-   (with-exception-logging* form finally-form)))
+(defn run-kernel
+  [jup term cljsrv]
+  (state/ensure-initial-state!)
+  (u!/with-exception-logging
+      (let [proto-ctx {:cljsrv cljsrv, :jup jup, :term term}]
+        (start-handle-event-process proto-ctx))))
 
-(defn- address
-  [config service]
-  (str (:transport config) "://" (:ip config) ":" (service config)))
+(s/fdef run-kernel
+  :args (s/cat :jup jup?, :term shutdown/terminator?, :cljsrv cljsrv/cljsrv?))
+(instrument `run-kernel)
 
-(defn- handle-message
-  [{:keys [parent-message] :as ctx}]
-  (m/default-handler ctx)
-  (when (= (jup/message-msg-type parent-message) jup/SHUTDOWN-REQUEST)
-    (state/terminate! ctx)))
+;;; ------------------------------------------------------------------------------------------------------------------------
+;;; CHANNEL TRANSDUCTION
+;;; ------------------------------------------------------------------------------------------------------------------------
 
-(defn process-event
-  ;; Not private to enable testing
-  [{:keys [transport] :as proto-ctx}]
-  (u!/with-debug-logging ["process-event"]
-    (log/debug "process-event " proto-ctx)
-    (let [parent-message	(tp/receive-req transport)
-          ctx			(tp/bind-parent-message proto-ctx parent-message)]
-      (handle-message ctx))))
+(defn extract-kernel-response-byte-arrays
+  "Returns the result of extract any byte-arrays from messages with COMM state."
+  [{:keys [rsp-content] :as kernel-rsp}]
+  (let [state-path  [:data :state]
+        bufpath-path [:data :buffer_paths]]
+    (if-let [state (get-in rsp-content state-path)]
+      (let [[state' pathmap] (msgs/leaf-paths bytes? (constantly "replaced") state)
+            paths (vec (keys pathmap))
+            buffers (mapv (p get pathmap) paths)
+            rsp-content' (-> rsp-content
+                             (assoc-in state-path state')
+                             (assoc-in bufpath-path paths))]
+        (assoc kernel-rsp :rsp-content rsp-content' :rsp-buffers buffers))
+      kernel-rsp)))
 
-(defn- handler-loop
-  [proto-ctx]
-  (with-exception-logging
-      (while (not (state/terminated?))
-        (process-event proto-ctx))))
+(defn replace-comm-atoms-with-references
+  [{:keys [rsp-content] :as kernel-rsp}]
+  (let [[repl-content _] (msgs/leaf-paths ca/comm-atom? ca/model-ref rsp-content)]
+    (assoc kernel-rsp :rsp-content repl-content)))
 
-(defn- heartbeat-loop
-  [socket]
-  (with-exception-logging
-      (while (not (state/terminated?))
-        (zmq/send socket (zmq/receive socket)))))
+(def- LOG-COUNTER
+  "Enumerates all transducer output, showing the order of events."
+  (atom 0))
 
-(defn- mksocket
-  [context addrs type nm]
-  (doto (zmq/socket context type)
-    (zmq/bind (get addrs nm))))
+(defn- logging-transducer
+  [id]
+  (fn [v]
+    (when (config/log-traffic?)
+      (log/debug (str "logxf." (swap! LOG-COUNTER inc) "(" id "):") (log/ppstr v)))
+    v))
 
-(defn- set-interrupt-handler
-  [nrepl-comm]
-  (reset! (beckon/signal-atom "INT") #{#(pp/pprint (nrepl-comm/nrepl-interrupt nrepl-comm))}))
+(defn- wrap-skip-shutdown-tokens
+  [f]
+  (fn [v]
+    (if (shutdown/is-token? v)
+      v
+      (f v))))
 
-(defn- wait-while-alive
+(defn- inbound-channel-transducer
+  [port checker]
+  (u!/wrap-report-and-absorb-exceptions
+   (msgs/transducer-error port)
+   (C (wrap-skip-shutdown-tokens (C (p msgs/frames->jupmsg checker)
+                                    (p msgs/jupmsg->kernelreq port)))
+      (logging-transducer (str "INBOUND:" port)))))
+
+(defn- outbound-channel-transducer
+  [port signer]
+  (u!/wrap-report-and-absorb-exceptions
+   (msgs/transducer-error port)
+   (C (wrap-skip-shutdown-tokens
+       (C (fn [krsp] (extract-kernel-response-byte-arrays krsp))
+          (fn [krsp] (replace-comm-atoms-with-references krsp))
+          (fn [krsp] (msgs/kernelrsp->jupmsg port signer krsp))))
+      (logging-transducer (str "OUTBOUND:" port))
+      (wrap-skip-shutdown-tokens (fn [jupmsg] (msgs/jupmsg->frames jupmsg))))))
+
+(defn- start-zmq-socket-forwarding
+  "Starts threads forwarding traffic between ZeroMQ sockets and core.async channels.  Returns a
+  2-tuple of `jup` and `term` which respectively provide access to communicating with Jupyter and
+  terminating Clojupyter."
+  [ztx config]
+  (u!/with-exception-logging
+      (let [bufsize 25 ;; leave plenty of space - we don't want blocking on termination
+            term (shutdown/make-terminator bufsize)
+            get-shutdown (partial shutdown/notify-on-shutdown term)
+            sess-key (s/assert ::msp/key (:key config))
+            [signer checker] (u/make-signer-checker sess-key)
+            in-ch (fn [port] (get-shutdown (chan (buffer bufsize)
+                                                 (map (inbound-channel-transducer port checker)))))
+            out-ch (fn [port] (get-shutdown (chan (buffer bufsize)
+                                                  (map (outbound-channel-transducer port signer)))))]
+        (letfn [(start-fwd [port addr sock-type]
+                  (cjpzmq/start ztx port addr term
+                                {:inbound-ch (in-ch port), :outbound-ch (out-ch port),
+                                 :zmq-socket-type sock-type}))]
+          (let [[ctrl-in ctrl-out]	(let [port :control_port]
+                                          (start-fwd port (address config port) :router))
+                [shell-in shell-out]	(let [port :shell_port]
+                                          (start-fwd port (address config port) :router))
+                [iopub-in iopub-out]	(let [port :iopub_port]
+                                          (start-fwd port (address config port) :pub))
+                [stdin-in stdin-out]	(let [port :stdin_port]
+                                          (start-fwd port (address config port) :dealer))
+                jup			(make-jup ctrl-in  ctrl-out
+                                                  shell-in shell-out
+                                                  iopub-in iopub-out
+                                                  stdin-in stdin-out)]
+            (hb/start-hb ztx (address config :hb_port) term)
+            [jup term])))
+      (log/debug "start-zmq-socket-fwd returning")))
+
+(defn- start-clojupyter
+  "Starts Clojupyter including threads forwarding traffic between ZMQ sockets and core.async channels."
+  [ztx config]
+  (u!/with-exception-logging
+      (do (log/info "Clojupyter config" (log/ppstr config))
+          (when-not (s/valid? ::msp/jupyter-config config)
+            (log/error "Command-line arguments do not conform to specification."))
+          (init/ensure-init-global-state!)
+          (let [[jup term] (start-zmq-socket-forwarding ztx config)
+                wait-ch	(shutdown/notify-on-shutdown term (chan 1))]
+            (with-open [cljsrv (cljsrv/make-cljsrv)]
+              (run-kernel jup term cljsrv)
+              (<!! wait-ch)
+              (log/debug "start-clojupyter: wait-signal received"))))
+      (log/debug "start-clojupyter returning")))
+
+(defn- finish-up
   []
-  (while (not (state/terminated?))
-    (Thread/sleep 1000)))
-
-(defn- make-sockets
-  [config]
-  (let [context (zmq/context 1)
-        addrs   (->> [:control_port :shell_port :stdin_port :iopub_port :hb_port]
-                     (map #(vector % (address config %)))
-                     (into {}))]
-    (map (partial apply mksocket context addrs)
-         [[:router :control_port] [:router :shell_port] [:router :stdin_port]
-          [:pub :iopub_port] [:rep :hb_port]])))
-
-(defn- run-kernel
-  [config]
-  (let [[CT SH IN IO HB]	(make-sockets config)]
-    (with-open [nrepl-server	(clojupyter-nrepl-server/start-nrepl-server)
-                nrepl-conn	(nrepl/connect :port (:port nrepl-server))]
-      (let [nrepl-comm		(nrepl-comm/make-nrepl-comm nrepl-server nrepl-conn)
-            [signer checker]	(u/make-signer-checker (:key config))
-            proto-ctx		{:nrepl-comm nrepl-comm, :signer signer, :checker checker}
-            mktrans 		#(tpz/make-zmq-transport proto-ctx % IN IO)]
-        (log/debug "run-kernel" proto-ctx)
-        (set-interrupt-handler nrepl-comm)
-        (with-exception-logging
-            (do (future (handler-loop (assoc proto-ctx :transport (mktrans SH))))
-                (future (handler-loop (assoc proto-ctx :transport (mktrans CT))))
-                (future (heartbeat-loop HB))
-                (wait-while-alive))
-          (do ;; finally
-            (doseq [socket [SH IO CT HB]]
-              (zmq/set-linger socket 0)
-              (zmq/close socket))
-            (state/end-history-session)
-            (System/exit 0)))))))
+  (state/end-history-session))
 
 (defn- parse-jupyter-arglist
   [arglist]
   (-> arglist first slurp u/parse-json-str walk/keywordize-keys))
 
 (defn -main
+  "Main entry point for Clojupyter when spawned by Jupyter.  Creates the ZeroMQ context which lasts
+  the entire life of the process."
+  ;; When developing it is useful to be able to create the ZMQ context once and for all. This is the
+  ;; key distinction between `-main` and `start-clojupyter` which assumes that the ZMQ context has
+  ;; already been created.
   [& arglist]
-  (init/init-global-state!)
-  (run-kernel (parse-jupyter-arglist arglist)))
+  (init/ensure-init-global-state!)
+  (log/debug "-main starting" (log/ppstr {:arglist arglist}))
+  (try (let [ztx (state/zmq-context)
+             config (parse-jupyter-arglist arglist)]
+         (start-clojupyter ztx config))
+       (finish-up)
+       (finally
+         (log/info "Clojupyter terminating (sysexit)")
+         (Thread/sleep 100)
+         (System/exit 0))))
 
-
+(instrument `run-kernel)

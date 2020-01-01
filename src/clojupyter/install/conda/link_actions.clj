@@ -56,7 +56,8 @@
   Clojupyter."
   ([] (conda-link-environment {}))
   ([{:keys [jarfile prefix]}]
-   (let [ident (str "clojupyter=" (ver/version-string))
+   (let [build-num (env/PKG_BUILDNUM)
+         ident (str "clojupyter=" (ver/version-string) "=" (or build-num "?"))
          prefix (or prefix (env/PREFIX))
          jarfiles (classpath-clojupyter-jarfiles)
          jarfile (or jarfile (when (-> jarfiles count (= 1))

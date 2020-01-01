@@ -1,4 +1,5 @@
-MSGFILE=$PREFIX/.messages.txt
-CJP_PKG_PATH="$CONDA_PREFIX/pkgs/$PKG_NAME-$PKG_VERSION-$PKG_BUILDNUM"
-JARFILE="$CJP_PKG_PATH/info/recipe/install-items/clojupyter-standalone.jar"
-java -cp "$JARFILE" clojupyter.cmdline conda-link --prefix="$PREFIX" --jarfile="$JARFILE" >> $MSGFILE
+CJP_KERNEL_DIR="$PREFIX/share/jupyter/kernels/conda-clojupyter"
+CJP_JARFILE="$CJP_KERNEL_DIR/clojupyter-standalone.jar"
+CJP_CMD=conda-link
+java -cp "$CJP_JARFILE" clojupyter.cmdline "$CJP_CMD" "--prefix=$PREFIX" "--jarfile=$CJP_JARFILE"
+

@@ -83,23 +83,25 @@
           src-jars (source-jarfiles (U :local/source-jarfiles), (E :local/jarfiles))
           file-copyspec (into {} (map vector src-jars (repeat lsp/DEFAULT-TARGET-JARNAME)))
           resource-copyspec {lsp/LOGO-ASSET (-> lsp/LOGO-ASSET io/file .getName)}
-          res {:local/allow-deletions?		(U :local/allow-deletions?)
-               :local/allow-destdir?		(U :local/allow-destdir?)
-               :local/convert-exe		(E :local/convert-exe)
-               :local/destdir			destdir
-               :local/filemap			(fm/filemap (E :local/filemap) (U :local/filemap))
-               :local/file-copyspec		file-copyspec
-               :local/generate-kernel-json?	(U :local/generate-kernel-json?)
-               :local/icon-bot			(U :local/icon-bot)
-               :local/icon-top			(U :local/icon-top)
-               :local/ident			ident
-               :local/installed-kernels		(E :local/installed-kernels)
-               :local/logo-resource		(E :local/logo-resource)
-               :local/resource-copyspec		resource-copyspec
-               :local/resource-map		(E :local/resource-map)
-               :local/customize-icons?		(U :local/customize-icons?)
-               :local/source-jarfiles		src-jars
-               :version/version-map		(E :version/version-map)}]
+          convert-exe (E :local/convert-exe)
+          res (merge {:local/allow-deletions?		(U :local/allow-deletions?)
+                      :local/allow-destdir?		(U :local/allow-destdir?)
+                      :local/destdir			destdir
+                      :local/filemap			(fm/filemap (E :local/filemap) (U :local/filemap))
+                      :local/file-copyspec		file-copyspec
+                      :local/generate-kernel-json?	(U :local/generate-kernel-json?)
+                      :local/icon-bot			(U :local/icon-bot)
+                      :local/icon-top			(U :local/icon-top)
+                      :local/ident			ident
+                      :local/installed-kernels		(E :local/installed-kernels)
+                      :local/logo-resource		(E :local/logo-resource)
+                      :local/resource-copyspec		resource-copyspec
+                      :local/resource-map		(E :local/resource-map)
+                      :local/customize-icons?		(U :local/customize-icons?)
+                      :local/source-jarfiles		src-jars
+                      :version/version-map		(E :version/version-map)}
+                     (when convert-exe
+                       {:local/convert-exe convert-exe}))]
       (when-not (s/valid? :local/install-spec res)
         (u!/throw-info "Bad install-spec"
           {:user-opts user-opts, :install-env install-env,

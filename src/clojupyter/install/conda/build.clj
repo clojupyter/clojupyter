@@ -139,14 +139,15 @@
 ;;; USED FROM CMDLINE
 ;;; ----------------------------------------------------------------------------------------------------
 
-(sdefn s*conda-build (s/cat :blddir :local/file
-                                    :install-env :local/install-env
-                                    :build-env :conda-build/env
-                                    :build-params :conda-build/params)
+(sdefn s*conda-build (s/cat :opts (s/keys :opt-un [::skip-execute?])
+                            :blddir :local/file
+                            :install-env :local/install-env
+                            :build-env :conda-build/env
+                            :build-params :conda-build/params)
   "Returns a function which, given a state, will calculate the actions required to perform a conda
   build, execute the actions, and finally report on the result."
-  [blddir install-env build-env build-params]
-  (Γ s*set-do-execute
+  [{:keys [skip-execute?]} blddir install-env build-env build-params]
+  (Γ (if skip-execute? s*set-dont-execute s*set-do-execute)
      (s*generate-conda-build-effects blddir install-env build-env build-params)
      s*execute))
 

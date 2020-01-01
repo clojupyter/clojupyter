@@ -139,19 +139,20 @@
         other-files #{convert-exe host-kdir user-kdir} 
         kernels (installed-clojupyter-kernels)
         kernels-map (->> kernels (map (juxt :kernel/ident identity)) (into {}))
-        res {
-             :local/convert-exe convert-exe
-             :local/default-ident ((u/sanitize-string lsp/IDENT-CHAR-REGEX) (u!/default-ident version-map))
-             :local/filemap (fm/filemap jarfiles other-files)
-             :local/host-kernel-dir host-kdir
-             :local/installed-kernels kernels-map
-             :local/jarfiles jarfiles
-             :local/logo-resource lsp/LOGO-ASSET
-             :local/resource-map (resources->resourcemap DEFAULT-RESOURCE-NAMES)
-             :local/user-homedir (user-homedir)
-             :local/user-kernel-dir user-kdir
-             :version/version-map version-map
-             }]
+        res (merge {
+                    :local/default-ident ((u/sanitize-string lsp/IDENT-CHAR-REGEX) (u!/default-ident version-map))
+                    :local/filemap (fm/filemap jarfiles other-files)
+                    :local/host-kernel-dir host-kdir
+                    :local/installed-kernels kernels-map
+                    :local/jarfiles jarfiles
+                    :local/logo-resource lsp/LOGO-ASSET
+                    :local/resource-map (resources->resourcemap DEFAULT-RESOURCE-NAMES)
+                    :local/user-homedir (user-homedir)
+                    :local/user-kernel-dir user-kdir
+                    :version/version-map version-map
+                    }
+                   (when convert-exe
+                     {:local/convert-exe convert-exe}))]
     (if (s/valid? :local/install-env res)
       res
       (u!/throw-info "Internal error: Bad install-env"

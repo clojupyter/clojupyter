@@ -56,15 +56,21 @@
   [n]
   (str "clojupyter/assets/conda-build/" n))
 
+(def- BUILD-SH	"build.sh")
 (def- POST-SH	"post-link.sh")
 (def- PRE-SH	"pre-unlink.sh")
+(def- BLD-BAT	"bld.bat")
 (def- POST-BAT	"post-link.bat")
+(def- PRE-BAT	"pre-unlink.bat")
 
 (def DEFAULT-BUILD-ENV
   {:conda-build-env/kernel-dir			"install-items"
-   :conda-build-env/resource-copyspec		{(build-asset POST-SH) POST-SH
+   :conda-build-env/resource-copyspec		{(build-asset BUILD-SH) BUILD-SH
+                                                 (build-asset POST-SH) POST-SH
                                                  (build-asset PRE-SH) PRE-SH
-                                                 (build-asset POST-BAT) POST-BAT}})
+                                                 (build-asset BLD-BAT) BLD-BAT
+                                                 (build-asset POST-BAT) POST-BAT
+                                                 (build-asset PRE-BAT) PRE-BAT}})
 
 ;;; ----------------------------------------------------------------------------------------------------
 ;;; PARAMS

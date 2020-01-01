@@ -53,9 +53,7 @@
   ([] {s*generate-link-actions {}})
   ([env-opts install-env]
    (let [#:conda-link{:keys [destdir item-filemap items ident]} install-env]
-     (Γ (s*create-destdir item-filemap destdir)
-        (s*copy-items items item-filemap destdir)
-        (s*action-append [`local!/generate-kernel-json-file! destdir ident])))))
+     (s*action-append [`local!/generate-kernel-json-file! destdir ident]))))
 
 ;;; ----------------------------------------------------------------------------------------------------
 ;;; USED FROM CMDLINE

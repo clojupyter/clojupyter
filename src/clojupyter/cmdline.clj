@@ -270,7 +270,10 @@
     :parse-fn #(when (re-find #"^\d+$" %) (edn/read-string %))]
    ["-j" "--jarfile JARFILE"
     "JAR file to use for installation."
-    :parse-fn io/file]])
+    :parse-fn io/file]
+   ["-n" "--no-actions"
+    "TEST ONLY.  If specified: Calculate only, do not perform actions."
+    :default false]])
 
 (def parse-build-conda-cmdline (π parse-cmdline BUILD-CONDA-OPTIONS))
 
@@ -279,10 +282,10 @@
   (u!/with-temp-directory! [blddir :keep-files? true]
     (let [install-env (local!/get-install-environment)
           {error-messages :error-messages
-           {:keys [buildnum jarfile]} :options
-           :as parse-result}
+           {:keys [buildnum jarfile no-actions]} :options :as parse-result}
           ,, (parse-build-conda-cmdline args)
           jarfile (u!/normalized-file jarfile)
+          opts {:skip-execute? no-actions}
           build-env (conda-build!/get-build-environment jarfile)
           build-params {:conda-build-params/buildnum buildnum,
                         :conda-build-params/filemap (fm/filemap jarfile)
@@ -294,8 +297,9 @@
               (cmdline/outputs error-messages)
               (cmdline/set-result {:bad-buildnum buildnum, :args args})
               (cmdline/set-exit-code 1))
-           (Γ (conda-build/s*conda-build blddir install-env build-env build-params)
-              conda-build/s*report-conda-build))))))
+           (Γ (conda-build/s*conda-build opts blddir install-env build-env build-params)
+              (s*when-executing
+                conda-build/s*report-conda-build)))))))
 
 ;;; ----------------------------------------------------------------------------------------------------
 ;;; CONDA LINK

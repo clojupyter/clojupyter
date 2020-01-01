@@ -54,16 +54,6 @@
      :kernel/display-name display-name
      :kernel/dir (fs/parent kernel-json)}))
 
-(defn- customize-icon-cmd
-  [convert-exe {:keys [north south] :as tags-map} destfile]
-  (let [input-file (str destfile), output-file input-file]
-    (concat [(str convert-exe) input-file  "-fill" "white"]
-            (when north
-              ["-gravity" "North" "-annotate" "+0+0" (str north)])
-            (when south
-              ["-gravity" "South" "-annotate" "+0+0" (str south)])
-            [output-file])))
-
 (defn- default-kernel-dir
   [loc ident]
   (io/file (str (kernels-dir loc) "/" ((u/sanitize-string lsp/IDENT-CHAR-REGEX) ident))))
@@ -71,8 +61,6 @@
 (defn- find-files-re
   [regex]
   (C io/file file-seq (p filter (C str (p re-find regex))) (p map fs/normalized)))
-(def- find-icon-files
-  (find-files-re #"logo-64x64\.png$"))
 (def- find-standalone-jars
   (find-files-re #"clojupyter.*-standalone\.jar$"))
 (def find-kernel-json-files
@@ -99,17 +87,6 @@
   (with-open [in (-> resource-name io/resource io/input-stream)
               out (io/output-stream file-name)]
       (io/copy in out)))
-
-(defn customize-icon-file!
-  "Action to add text to the top and/or bottom of a icon file.  Requires an Imagemagick 'convert'
-  executable to work."
-  [convert-exe tags-map iconfile]
-  (let [cmdline (customize-icon-cmd convert-exe tags-map iconfile)
-        {:keys [exit err] :as res} (apply sh/sh cmdline)]
-    (if (zero? exit)
-      :ok
-      (u!/throw-info (str "Customizing icons failed: " err)
-        (merge {:cmdline cmdline, :tags-map tags-map, :iconfile iconfile} res)))))
 
 (defn generate-kernel-json-file!
   "Action to generate the `kernel.json` needed for a Jupyter kernel to work."

@@ -1,11 +1,9 @@
 (ns clojupyter.kernel.handle-event.execute
   (:require [clojupyter.kernel.cljsrv :as cljsrv]
-            [clojupyter.kernel.handle-event.ops
-             :as
-             ops
-             :refer
-             [definterceptor s*append-enter-action s*append-leave-action]]
+            [clojupyter.kernel.handle-event.ops :as ops
+             :refer [definterceptor s*append-enter-action s*append-leave-action]]
             [clojupyter.kernel.jup-channels :refer [receive!! send!!]]
+            [clojupyter.log :as log]
             [clojupyter.messages :as msgs]
             [clojupyter.plan :as pl :refer [s*bind-state s*when s*when-not]]
             [clojupyter.state :as state]
@@ -20,14 +18,7 @@
 ;;; STATE OPS
 ;;; ------------------------------------------------------------------------------------------------------------------------
 
-(defn- s*append-pending		[v]		(pl/s*append-value :pending v))
-(def-  get-pending				(pl/get-value :pending []))
-
-(defn- s*append-stdout		[v]		(pl/s*append-value :stdout v))
-(def-  get-stdout				(pl/get-value :stdout []))
-
-(defn- s*append-stderr		[v]		(pl/s*append-value :stderr v))
-(def-  get-stderr				(pl/get-value :stderr []))
+(defn- s*append-output		[stream s]	(pl/s*append-value :output {:stream stream :string s}))
 
 (defn- s*update-interrupted	[f]		(pl/s*update-value :interrupted? f))
 (def-  s*set-interrupted!			(s*update-interrupted (constantly true)))
@@ -59,7 +50,7 @@
                                    (p set/intersection skip-tags)
                                    (p = #{}))
                                 stacktrace)
-          maxlen	(fn [k] (reduce max (map (C k count) relevant)))
+          maxlen	(fn [k] (reduce max 1 (map (C k count) relevant)))
           format-str	(str "%" (maxlen :file) "s: %5d %-" (maxlen :file) "s")]
       (vec (for [{:keys [file line name]} relevant]
              (format format-str file line name))))))
@@ -69,15 +60,15 @@
 ;;; ----------------------------------------------------------------------------------------------------
 
 (defn s*interpret-nrepl-message
-  [{:keys [ns out err ex mime-tagged-value status] :as msg}]
+  [{:keys [ns out err ex mime-tagged-value status]}]
   (C (s*when ns
        (s*set-ns ns))
      (s*when out
-       (s*append-stdout out))
+       (s*append-output "stdout" out))
+     (s*when err
+       (s*append-output "stderr" err))
      (s*when ex
        (s*update-result (P assoc :ename ex)))
-     (s*when err
-       (s*append-stderr err))
      (s*when mime-tagged-value
        (s*update-result (P assoc :result mime-tagged-value)))
      (s*when (some #{"interrupted"} status)
@@ -92,80 +83,132 @@
 ;;; EXECUTE INTERCEPTOR
 ;;; ------------------------------------------------------------------------------------------------------------------------
 
-(defn- output-actions
-  [send-step stream-name ss]
-  (doall ;; strict evaluation is necessary here
-   (for [s ss]
-     (send-step :iopub_port msgs/STREAM (msgs/stream-message-content stream-name s)))))
-
 (def- s*a-l s*append-leave-action)
 
-(definterceptor ic*execute msgs/EXECUTE-REQUEST
-  (s*bind-state {:keys [req-message jup cljsrv] :as ctx}
-    (let [code (msgs/message-code req-message)
-          jup-send (fn [sock-kw msgtype message]
-                     (send!! jup sock-kw req-message msgtype message))
-          jup-receive (fn [sock-kw]
-                        (receive!! jup sock-kw))]
-      (s*append-enter-action
-       (step #(assoc % :nrepl-eval-result (cljsrv/nrepl-eval cljsrv jup-receive jup-send code))
-             {:op :nrepl-eval :code code}))))
-  (s*bind-state {:keys [jup req-message req-port nrepl-eval-result] :as ctx}
-    (do (assert req-port "ic*execute: req-port not found")
-        (s/assert :clojupyter.jupmsg-specs/jupmsg req-message)
-        (let [{:keys [nrepl-messages
-                      trace-result]}	nrepl-eval-result
-              exe-count			(state/execute-count)
-              code 				(msgs/message-code req-message)
-              eval-interpretation		((s*interpret-nrepl-eval-results nrepl-messages) {})
-              {:keys [interrupted?
-                      stacktrace-strings
-                      result stdout
-                      stderr]}		eval-interpretation
-              {:keys [ename]}		result
-              silent?			(or (msgs/message-silent req-message) (u/code-empty? code))
-              hushed?			(u/code-hushed? code)
-              store-history?		(if silent? false (msgs/message-store-history? req-message))
-              reply				(if ename
-                                                  (msgs/execute-reply-content "error" exe-count
-                                                                              {:traceback (collect-stacktrace-strings trace-result),
-                                                                               :ename ename})
-                                                  (msgs/execute-reply-content "ok" exe-count))
-              send-step			(fn [sock-kw msgtype message]
-                                          (step (fn [S] (send!! jup sock-kw req-message msgtype message) S)
-                                                {:message-to sock-kw :msgtype msgtype :message message}))]
-          identity
-          (C (s*a-l (step identity {:op :no-op :interpretation {:interpretation eval-interpretation,
-                                                                :ename ename, :silent? silent?, :hushed? hushed?,
-                                                                :store-history? store-history?, :reply reply
-                                                                :interrupted? interrupted?}}))
-             (s*when interrupted?
-               (s*a-l (send-step :iopub_port msgs/STREAM (msgs/stream-message-content "stderr" "*Interrupted*\n"))))
-             (s*when stdout
-               (s*a-l (apply action (output-actions send-step "stdout" stdout))))
-             (s*when stderr
-               (s*a-l (apply action (output-actions send-step "stderr" stderr))))
-             (s*when-not silent?
-               (s*a-l (send-step :iopub_port msgs/EXECUTE-INPUT (msgs/execute-input-msg-content exe-count code))))
-             (s*a-l (send-step req-port msgs/EXECUTE-REPLY reply))
-             (s*when-not silent?
-               (if ename
-                 (s*a-l (send-step :iopub_port msgs/ERROR reply))
-                 (s*when-not hushed?
-                   (s*a-l (send-step :iopub_port msgs/EXECUTE-RESULT
-                                     (msgs/execute-result-content (u/parse-json-str (:result result) true) exe-count))))))
-             (s*when store-history?
-               (s*a-l (step [`state/add-history! code]
-                            {:op :add-history, :data code})))
-             (s*when-not silent?
-               (s*a-l (step [`state/inc-execute-count!]
-                            {:op :inc-execute-count}))))))))
+(defn- get-input!
+  [{:keys [jup req-message]}]
+  ;; send INPUT-REQUEST on `iopub_port`:
+  (send!! jup :stdin_port req-message msgs/INPUT-REQUEST (msgs/input-request-content "Enter value: "))
+  ;; wait for INPUT-REPLY:
+  (let [{received-message :req-message :as received} (receive!! jup :stdin_port)
+        _ (log/debug "get-input! received: " (log/ppstr {:received received, :received-message received-message}))
+        msgvalue  (msgs/message-value received-message)
+        _ (log/debug "get-intput! msgvalue: " (log/ppstr {:msgvalue msgvalue}))]
+    msgvalue))
 
-(println "execute.clj:			review incremental printing")
+(defn- handle-eval-result
+  [{:keys [jup req-port cljsrv req-message nrepl-eval-result] :as ctx} continuing?]
+  (assert req-port)
+  (assert cljsrv)
+  (assert req-message)
+  (assert nrepl-eval-result)
+  (s/assert :clojupyter.jupmsg-specs/jupmsg req-message)
+  (let [{:keys [nrepl-messages
+                need-input
+                delayed-msgseq
+                trace-result]}	nrepl-eval-result
+        _			(when need-input
+                                  (assert delayed-msgseq))
+        code 			(msgs/message-code req-message)
+        exe-count		(state/execute-count)
+        eval-interpretation	((s*interpret-nrepl-eval-results nrepl-messages) {})
+        {:keys [interrupted?
+                result output]}	eval-interpretation
+        {:keys [ename]}		result
+        silent?			(or (msgs/message-silent req-message) (u/code-empty? code))
+        hushed?			(u/code-hushed? code)
+        store-history?		(if silent? false (msgs/message-store-history? req-message))
+        halting?		(or interrupted? ename)
+        first-segment?		(not continuing?)
+        final-segment?		(or halting? (not need-input))
+        reply			(if ename
+                                  (msgs/execute-reply-content "error" exe-count
+                                                              {:traceback (collect-stacktrace-strings trace-result),
+                                                               :ename ename})
+                                  (msgs/execute-reply-content "ok" exe-count))
+        send-step		(fn [sock-kw msgtype message]
+                                  (step (fn [S] (send!! jup sock-kw req-message msgtype message) S)
+                                        {:message-to sock-kw :msgtype msgtype :message message}))]
+    (C (s*a-l (step identity
+                    {:op :no-op
+                     :interpretation {:interpretation eval-interpretation,
+                                      :ename ename, :silent? silent?, :hushed? hushed?,
+                                      :store-history? store-history?, :reply reply
+                                      :interrupted? interrupted?, :need-input need-input,
+                                      :halting? halting?, :final-segment? final-segment?,
+                                      :nrepl-messages nrepl-messages}}))
+       (s*when (and (not silent?) first-segment?)
+         (s*a-l (send-step :iopub_port msgs/EXECUTE-INPUT (msgs/execute-input-msg-content exe-count code))))
+       (s*when interrupted?
+         (s*a-l (send-step :iopub_port msgs/STREAM (msgs/stream-message-content "stderr" "*Interrupted*\n"))))
+       (s*when output
+         (s*a-l (apply action
+                       (doall ;; strict evaluation is necessary here
+                        (for [{:keys [stream string]} output]
+                          (send-step :iopub_port msgs/STREAM (msgs/stream-message-content stream string)))))))
+       (s*when (and need-input (not halting?))
+         (s*a-l (step #(assoc % :user-input (get-input! ctx))
+                      {:op :get-input})))
+       (s*when (and final-segment? (not silent?))
+         (if ename
+           (s*a-l (send-step :iopub_port msgs/ERROR reply))
+           (s*when-not hushed?
+             (s*a-l (send-step :iopub_port msgs/EXECUTE-RESULT
+                               (msgs/execute-result-content (u/parse-json-str (:result result) true) exe-count))))))
+       (s*when final-segment?
+         (if ename
+           (s*a-l (send-step req-port msgs/ERROR reply))
+           (s*a-l (send-step req-port msgs/EXECUTE-REPLY reply))))
+       (s*when (and store-history? final-segment?)
+         (s*a-l (step [`state/add-history! code]
+                      {:op :add-history, :data code})))
+       (s*when (and (not silent?) final-segment?)
+         (s*a-l (step [`state/inc-execute-count!]
+                      {:op :inc-execute-count}))))))
+
+(definterceptor ic*eval-code msgs/EXECUTE-REQUEST
+  (s*bind-state {:keys [req-message cljsrv]}
+    (do (assert req-message)
+        (assert cljsrv)
+        (let [code (msgs/message-code req-message)]
+          (s*append-enter-action
+           (step #(assoc % :nrepl-eval-result (cljsrv/nrepl-eval cljsrv code))
+                 {:op :nrepl-eval :code code})))))
+  (s*bind-state ctx
+    (handle-eval-result ctx false)))
+
+(definterceptor ic*provide-input msgs/EXECUTE-REQUEST
+  (s*bind-state {:keys [req-message cljsrv user-input delayed-msgseq] :as ctx}
+    (do (log/debug "ic*provide-input" (log/ppstr {:ctx ctx}))
+        (assert req-message)
+        (assert cljsrv)
+        (assert (string? user-input))
+        (assert (delay? delayed-msgseq))
+        (s*append-enter-action
+         (action (step [`cljsrv/nrepl-provide-input cljsrv user-input]
+                       {:op :provide-input :user-input user-input})
+                 (step #(assoc % :nrepl-eval-result (cljsrv/nrepl-continue-eval cljsrv @delayed-msgseq))
+                       {:op :continue-eval})))))
+  (s*bind-state ctx
+    (handle-eval-result ctx true)))
 
 (defn eval-request
-  ([ctx] (eval-request ctx [ic*execute]))
+  ([ctx]
+   (eval-request ctx [ic*eval-code]))
   ([ctx interceptors]
-   (let [ctx' (ops/set-enter-action ctx (action nil))]
-     (ich/execute ctx' (conj interceptors ops/action-interceptor)))))
+   (loop [{:keys [nrepl-eval-result] :as ctx'}
+          ,, (ich/execute (-> ctx
+                              (ops/set-enter-action (action nil)))
+                          (conj interceptors ops/enter-action-interceptor))]
+     (let [{:keys [need-input delayed-msgseq]} nrepl-eval-result]
+       (if need-input
+         (let [ctx'' ((ops/invoke-action ops/get-leave-action) ctx')]
+           (recur (ich/execute (-> ctx''
+                                   (update :leave-actions (fnil conj []) (ops/get-leave-action ctx''))
+                                   (dissoc :need-input)
+                                   (assoc :delayed-msgseq delayed-msgseq)
+                                   (ops/set-enter-action (action nil))
+                                   (ops/set-leave-action (action nil)))
+                               [ic*provide-input ops/enter-action-interceptor])))
+         ctx')))))
 

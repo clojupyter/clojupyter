@@ -26,7 +26,6 @@
          :local/source-jarfiles source-jarfiles
          :local/destdir (io/file (str blddir "/" kernel-dir))
          :local/filemap filemap
-         :local/icon-bot (ver/version-string-short)
          :local/ident ident
          :local/generate-kernel-json? false))
 

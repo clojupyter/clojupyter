@@ -1,6 +1,5 @@
 {:paths ["src" "resources"]
  :deps {
-	beckon				{:mvn/version "0.1.1"}
 	camel-snake-kebab		{:mvn/version "0.4.0"}
 	cheshire			{:mvn/version "5.8.1"}
 	cider/cider-nrepl		{:mvn/version "0.21.1"}
@@ -9,6 +8,7 @@
 	com.grammarly/omniconf		{:mvn/version "0.3.2"}
 	com.taoensso/timbre		{:mvn/version "4.10.0"}
 	hiccup				{:mvn/version "1.0.5"}
+        io.aviso/pretty			{:mvn/version "0.1.33"}
 	io.forward/yaml			{:mvn/version "1.0.9" :exclusions [org.flatland/ordered]}
 	io.pedestal/pedestal.interceptor {:mvn/version "0.5.7"}
 	io.simplect/compose		{:mvn/version "0.7.27"}

@@ -15,46 +15,56 @@
 
 (defn- handle-event-or-channel-error
   "Handles request, returns `false` iff event-handling should terminate."
-  [{:keys [jup] :as ctx} channel-port inbound-msg]
+  [{:keys [jup] :as ctx} channel-port port-msgtype-pred inbound-msg]
   (let [{:keys [req-message req-port error?]} inbound-msg
-        update-status! #(send!! jup :iopub_port req-message msgs/STATUS (msgs/status-message-content %))]
+        update-status! #(send!! jup :iopub_port req-message msgs/STATUS (msgs/status-message-content %))
+        msgtype (msgs/message-msg-type req-message)
+        valid? (port-msgtype-pred msgtype)]
     (assert (= channel-port req-port)
             (str "handle-request - internal error ('" channel-port "' neq '"  req-port "')"))
-    (if error?
-      (do (handle-error inbound-msg)
-          ;; do not continue after error:
-          false)
-      (do (update-status! "busy")
-          (he/handle-event! (assoc ctx :req-message req-message :req-port req-port))
-          (update-status! "idle")
-          ;; continue iff we are not handling a shutdown request:
-          (not= (msgs/message-msg-type req-message) msgs/SHUTDOWN-REQUEST)))))
+    (cond
+      error?
+      ,, (do (handle-error inbound-msg)
+             ;; do not continue after error:
+             false)
+      (not valid?)
+      ,, (throw (ex-info (str "Invalid msgtype for port " channel-port ": " msgtype)
+                  {:req-message req-message, :msgtype msgtype, :channel-port channel-port}))
+      :else
+      ,, (do (update-status! "busy")
+             (he/handle-event! (assoc ctx :req-message req-message :req-port req-port))
+             (update-status! "idle")
+             ;; continue iff we are not handling a shutdown request:
+             (not= (msgs/message-msg-type req-message) msgs/SHUTDOWN-REQUEST)))))
 
 (defn- run-dispatch-loop
-  [{:keys [jup term] :as ctx}]
+  [sock-kw port-msgtype-pred {:keys [jup term] :as ctx}]
   (let [term-ch (shutdown/notify-on-shutdown term (async/chan 1))
-        [ctrl-in _] (jup-channels jup :control_port)
-        [shell-in _] (jup-channels jup :shell_port)]
+        [in-ch _] (jup-channels jup sock-kw)]
     (loop []
-      (let [[inmsg-or-token rcv-ch] (async/alts!! [term-ch ctrl-in shell-in] :priority true)]
+      (let [[inmsg-or-token _] (async/alts!! [term-ch in-ch] :priority true)]
         (cond
           (nil? inmsg-or-token)
-          ,, (log/debug "handle-event-process received nil - terminating")
+          ,, (log/debug (str "handle-event-process received nil - terminating: " sock-kw))
           (shutdown/is-token? inmsg-or-token)
-          ,, (log/debug "handle-event-process received shutdown - terminating")
+          ,, (log/debug (str "handle-event-process received shutdown - terminating: " sock-kw))
           :else 
-          ,, (let [port (cond 
-                          (= rcv-ch ctrl-in) :control_port
-                          (= rcv-ch shell-in) :shell_port
-                          :else  (throw (Exception. "run-dispatch-loop: internal error")))]
-               (when (handle-event-or-channel-error ctx port inmsg-or-token)
-                 (recur))))))))
+          ,, (when (handle-event-or-channel-error ctx sock-kw port-msgtype-pred inmsg-or-token)
+               (recur)))))))
 
-(defn start-handle-event-process
-  [{:keys [term] :as ctx}]
+(defn start-channel-thread
+  [sock-kw valid-msgtype-pred {:keys [term] :as ctx}]
   (async/thread
     (shutdown/initiating-shutdown-on-exit [:handle-event-process term]
       (u!/with-exception-logging
-          (do (log/debug "handle-event-process starting")
-              (run-dispatch-loop ctx))
-        (log/debug "handle-event-process terminating")))))
+          (do (log/debug (str "handle-event-process starting: " sock-kw))
+              (run-dispatch-loop sock-kw valid-msgtype-pred ctx))
+        (log/debug (str "handle-event-process terminating: "  sock-kw))))))
+
+(def valid-control-port-msgtype? (p contains? #{msgs/SHUTDOWN-REQUEST msgs/INTERRUPT-REQUEST}))
+
+(defn start-handle-event-process
+  [ctx]
+  (doseq [[sock-kw pred] [[:control_port 	valid-control-port-msgtype?]
+                          [:shell_port		(complement valid-control-port-msgtype?)]]]
+    (start-channel-thread sock-kw pred ctx)))

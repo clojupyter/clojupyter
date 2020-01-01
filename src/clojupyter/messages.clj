@@ -41,8 +41,8 @@
 (def INPUT-REPLY		"input_reply")
 (def INSPECT-REPLY		"inspect_reply")
 (def INSPECT-REQUEST		"inspect_request")
-(def INTERRUPT-REPLY		"interrupt_reply")		;; not used - signals instead
-(def INTERRUPT-REQUEST		"interrupt_request")		;; not used - signals instead
+(def INTERRUPT-REPLY		"interrupt_reply")
+(def INTERRUPT-REQUEST		"interrupt_request")
 (def IS-COMPLETE-REPLY		"is_complete_reply")
 (def IS-COMPLETE-REQUEST	"is_complete_request")
 (def KERNEL-INFO-REPLY		"kernel_info_reply")
@@ -77,16 +77,26 @@
 (defn message-value		[message]	(get-in message [:content :value]))
 ,,
 (defn message-header		[message]	(get-in message [:header]))
+(defn message-date		[message]	(get-in message [:header :date]))
+(defn message-msg-id		[message]	(get-in message [:header :msg_id]))
 (defn message-msg-type		[message]	(get-in message [:header :msg_type]))
 (defn message-session		[message]	(get-in message [:header :session]))
 (defn message-username		[message]	(get-in message [:header :username]))
+(defn message-version		[message]	(get-in message [:header :version]))
 ,,
-(defn message-buffers		[message]	(let [bufs (get-in message [:buffers])] (.-buffers bufs)))
+(defn message-buffers		[message]	(.-buffers (get-in message [:buffers])))
 (defn message-delimiter		[message]	(get-in message [:delimiter]))
-(defn message-envelope		[message]	(let [pfr (get message :preframes)] (.-envelope pfr)))
+(defn message-envelope		[message]	(.-envelope (get message :preframes)))
 (defn message-metadata		[message]	(get-in message [:metadata]))
+(defn message-signature		[message]	(.-signature (get message :preframes)))
+,,
 (defn message-parent-header	[message]	(get-in message [:parent-header]))
-(defn message-signature		[message]	(let [pfr (get message :preframes)] (.-signature pfr)))
+(defn message-parent-date	[message]	(get-in message [:parent-header :date]))
+(defn message-parent-msg-id	[message]	(get-in message [:parent-header :msg_id]))
+(defn message-parent-msg-type	[message]	(get-in message [:parent-header :msg_type]))
+(defn message-parent-session	[message]	(get-in message [:parent-header :session]))
+(defn message-parent-username	[message]	(get-in message [:parent-header :username]))
+(defn message-parent-version	[message]	(get-in message [:parent-header :version]))
 
 ;;; ------------------------------------------------------------------------------------------------------------------------
 ;;; JupMsgPreframes
@@ -169,6 +179,78 @@
          (s/assert ::jsp/jupmsg))))
 
 ;;; ------------------------------------------------------------------------------------------------------------------------
+;;; BUFFER EXTRACTION AND INSERTION
+;;; ------------------------------------------------------------------------------------------------------------------------
+
+;;; Klaus Harbo 2019-12-18: The problem of extracting and re-inserting values would probably be
+;;; handled more generally, correctly and succinctly by Specter (cf.
+;;; https://github.com/redplanetlabs/specter).  Specter does, however, employ a complex syntax to
+;;; express its solutions; it does not seem worthwhile to introduce dependency and deal with the
+;;; associated learning curve to solve the buffer extraction and re-insertion problem which can be
+;;; adequately solved by the fairly straightforward code in `leaf-paths` and `insert-paths` below.
+
+(defn leaf-paths
+  "Recursively traverses `v` replacing elements for which `pred` returns a truthy value with the
+  result of applying `f` to the elements.  Returns a 2-tuple of the result of the replacements and a
+  map of paths to the replaced elements.
+
+  NOTE: The implementation does NOT work correctly for any Clojure value; it is specialised to
+  handle Jupyter messages which are losslessly serializable to JSON.  Extraction only occurs from
+  vectors and maps."
+  [pred f v]
+  (let [T (atom [])]
+    (letfn [(inner [path]
+              (fn [idx v]
+                (let [path' (conj path idx)]
+                  (cond
+                    (pred v)
+                    ,, (do (swap! T conj [(-> path' rest vec) v]) ;; :dummy removed by `rest`
+                           (f v))
+                    (vector? v)
+                    ,, (mapv (inner path') (range) v)
+                    (map? v)
+                    ,, (reduce-kv (fn [Σ k v] (assoc Σ k ((inner path') k v))) {} v)
+                    :else
+                    ,, v))))]
+      [((inner []) :dummy v)
+       (into {} @T)])))
+
+(defn insert-paths
+  "Returns the result of inserting into `jupyter-message` values from vals in `path-value-map` at the
+  point specified by their keys.  `path-value-map` must be a map from paths to values and all paths
+  must refer to insertion points in either maps or vectors.
+
+  Example:
+
+    (let [pred #(and (int? %) (odd? %))
+          replfn (constantly :replaced)
+          value {:a 1, :b [0 1 [1 2 3 {:x [1]}]]}
+          [result paths] (leaf-paths pred replfn value)]
+      [(= value (insert-paths result paths)) ;; <-- The point of `leaf-paths` and `insert-paths`
+       result paths])
+    ;; =>
+    [true 
+     {:a :replaced, :b [0 :replaced [:replaced 2 :replaced {:x [:replaced]}]]}
+     {[:a] 1, [:b 1] 1, [:b 2 0] 1, [:b 2 2] 3, [:b 2 3 :x 0] 1}]
+
+  NOTE: The implementation does NOT work correctly for any Clojure value; it is specialised to
+  handle Jupyter messages which are losslessly serializable to JSON.  Paths can only refer to
+  insertion points in vectors and maps."
+  [jupyter-message path-value-map]
+  (letfn [(insert-by-path [jupyter-message [k & ks] v]
+            (if (or (map? jupyter-message) (vector? jupyter-message))
+              (assoc jupyter-message k (if (seq ks)
+                                         (insert-by-path (get jupyter-message k) ks v)
+                                         v))
+              jupyter-message))]
+    (reduce (fn [Σ [path v]] (insert-by-path Σ path v))
+            jupyter-message path-value-map)))
+
+
+
+
+
+;;; ------------------------------------------------------------------------------------------------------------------------
 ;;; FRAMES <-> JUPMSG
 ;;; ------------------------------------------------------------------------------------------------------------------------
 
@@ -227,11 +309,14 @@
           signature	(.-signature preframes)
           _		(assert envelope)
           _		(assert signature)
-          payload-vec	(mapv u/json-str [header parent-header metadata content])]
+          payload-vec	(mapv u/json-str [header parent-header metadata content])
+          byte-buffers	(when buffers
+                          (.-buffers buffers))]
         (assert (s/valid? ::sp/byte-arrays envelope))
         (->> (concat envelope
                      [u/IDSMSG-BYTES (u/get-bytes signature)]
-                     (mapv u/get-bytes payload-vec))
+                     (mapv u/get-bytes payload-vec)
+                     byte-buffers)
              vec
              (s/assert ::msp/frames)))))
 
@@ -256,7 +341,7 @@
   ([port signer kernel-rsp]
    (kernelrsp->jupmsg port signer kernel-rsp {}))
   ([port signer
-    {:keys [rsp-content rsp-msgtype rsp-socket rsp-metadata req-message]}
+    {:keys [rsp-content rsp-msgtype rsp-socket rsp-metadata rsp-buffers req-message]}
     {:keys [messageid now] :as opts}]
    (let [messageid	(str (or messageid (u!/uuid)))
          now		(or now (u!/now))
@@ -265,11 +350,12 @@
          header		(make-jupmsg-header messageid rsp-msgtype username session-id now PROTOCOL-VERSION)
          parent-header	(message-header req-message)
          metadata	(or rsp-metadata {})
+         rsp-buffers	(or rsp-buffers [])
          envelope	(if (= rsp-socket :iopub_port)
                           [(u/get-bytes rsp-msgtype)]
                           (message-envelope req-message))
          signature	(u/get-bytes (signer [header parent-header metadata rsp-content]))]
-     (make-jupmsg envelope signature header parent-header metadata rsp-content []))))
+     (make-jupmsg envelope signature header parent-header metadata rsp-content rsp-buffers))))
 
 ;;; ------------------------------------------------------------------------------------------------------------------------
 ;;; MESSAGE CONTENT BUILDERS
@@ -286,7 +372,7 @@
   {:comm_id comm-id, :data data})
 
 (sdefn comm-info-reply-content
-  (s/cat :comm-id-target-name-map (s/map-of ::comm-id ::target-name))
+  (s/cat :comm-id-target-name-map (s/map-of ::comm-id ::target_name))
   [comm-id-target-name-map]
   {:status "ok" :comms (->> (for [[comm-id target-name] comm-id-target-name-map]
                               [comm-id {:target_name target-name}])
@@ -331,21 +417,21 @@
   {:code code, :cursor_pos cursor-pos})
 
 (sdefn display-data-content
-  (s/cat :model-id ::uuid :opts (s/? (s/keys :opt-un [::metadata ::transient? ::version-major ::version-minor])))
-  ([model-id]
-   (display-data-content model-id {}))
-  ([model-id {:keys [metadata transient? version-major version-minor]}]
+  (s/cat :model-id ::uuid :opts (s/? (s/keys :opt-un [::metadata ::transient ::version-major ::version-minor])))
+  ([model-ref]
+   (display-data-content model-ref {}))
+  ([model-ref {:keys [metadata transient version-major version-minor]}]
    (let [version-major (or version-major WIDGET-PROTOCOL-VERSION-MAJOR)
-         version-minor (or version-minor WIDGET-PROTOCOL-VERSION-MINOR)]
+         version-minor (or version-minor WIDGET-PROTOCOL-VERSION-MINOR)
+         metadata (or metadata {})
+         transient (or transient {})]
      (merge {:data {:application/vnd.jupyter.widget-view+json
-                    {:model_id model-id
+                    {:model_id model-ref
                      :version_major version-major
                      :version_minor version-minor}
-                    :text/plain (str "display_data: " model-id)}}
-            (when metadata
-              {:metadata metadata})
-            (when transient?
-              {:transient (boolean transient?)})))))
+                    :text/plain (str "display_data: " model-ref)}
+             :metadata metadata
+             :transient transient}))))
 
 (sdefn error-message-content
   (s/cat :exe-count ::msp/execution_count)
@@ -363,7 +449,7 @@
   ([status execution-count {:keys [ename evalue traceback] :as opts}]
    (let [ename (or ename "Error name not available.")
          evalue (or evalue "")
-         traceback (or traceback ["Traceback not available."])]
+         traceback (or traceback ["(no stacktrace)"])]
      (merge {:status status, :execution_count execution-count}
             (case status
               "ok"	{:user_expressions {}}
@@ -448,15 +534,13 @@
    (merge {:code code, :cursor_pos cursor-pos}
           (when details? {:detail_level 1}))))
 
-(defn- interrupt-reply-content
-  "Not used - signals are used by Jupyter to communicate interrupts."
+(defn interrupt-reply-content
   []
-  (throw (Exception. "Interrupt reply messages are not used by Clojupyter.")))
+  {})
 
-(defn- interrupt-request-content
-  "Not used - signals are used by Jupyter to communicate interrupts."
+(defn interrupt-request-content
   []
-  (throw (Exception. "Interrupt request messages are not used by Clojupyter.")))
+  {})
 
 (sdefn is-complete-reply-content
   (s/cat :status ::status)
@@ -493,6 +577,25 @@
   []
   {})
 
+(declare update-comm-msg)
+(sdefn output-set-msgid-content
+  (s/cat :comm-id ::comm-id :msgid string?)
+  [comm-id msgid]
+  (let [state {:msg_id msgid}]
+    (comm-msg-content comm-id state)))
+
+(sdefn output-update-content
+  (s/cat :comm-id ::comm-id
+         :target-name ::target_name
+         :stream-name #{"stdout" "stderr"}
+         :strings (s/coll-of string? :kind vector?))
+  [comm-id method target-name stream-name strings]
+  (let [state {:outputs (vec (for [s strings]
+                               {:name stream-name,
+                                :text s,
+                                :output_type "stream"}))}]
+    (update-comm-msg comm-id method target-name state)))
+
 (sdefn shutdown-reply-content
   (s/cat :restart? boolean?)
   [restart?]
@@ -528,3 +631,5 @@
   (s/cat :data ::data, :metadata ::metadata, :transient ::transient)
   [data metadata tsient]
   {:data data, :metadata metadata, :transient tsient})
+
+

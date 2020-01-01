@@ -50,11 +50,8 @@
                                    ;; term signal arrived
                                    (terminate-with #(do (fmtdbg (str "Received term signal (" sign ") - terminating"))
                                                         (Thread/sleep 10))))))
-                           (cond
-                             (state/halt?)
-                             ,, (fmtdbg "Halting")
-                             @continue?
-                             ,, (recur))))))
+                           (when @continue?
+                             (recur))))))
                    (finally
                      (fmtdbg "Terminating")
                      (when term-signal-ch

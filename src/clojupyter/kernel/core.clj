@@ -1,7 +1,7 @@
 (ns clojupyter.kernel.core
   (:gen-class)
-  (:require beckon
-            [clojupyter.kernel.cljsrv :as cljsrv]
+  (:require [clojupyter.kernel.cljsrv :as cljsrv]
+            [clojupyter.kernel.comm-atom :as ca]
             [clojupyter.kernel.config :as config]
             [clojupyter.kernel.handle-event-process :as hep :refer [start-handle-event-process]]
             [clojupyter.kernel.init :as init]
@@ -29,23 +29,40 @@
                (assert svc (str "core/address: " service " not found"))
                (str (:transport config) "://" (:ip config) ":" svc)))))
 
-(defn- set-interrupt-handler
-  [cljsrv]
-  (reset! (beckon/signal-atom "INT")
-          [#(log/debug "interrupt received")
-           #(cljsrv/nrepl-interrupt cljsrv)]))
-
 (defn run-kernel
   [jup term cljsrv]
   (state/ensure-initial-state!)
   (u!/with-exception-logging
       (let [proto-ctx {:cljsrv cljsrv, :jup jup, :term term}]
-        (set-interrupt-handler cljsrv)
         (start-handle-event-process proto-ctx))))
 
 (s/fdef run-kernel
   :args (s/cat :jup jup?, :term shutdown/terminator?, :cljsrv cljsrv/cljsrv?))
 (instrument `run-kernel)
+
+;;; ------------------------------------------------------------------------------------------------------------------------
+;;; CHANNEL TRANSDUCTION
+;;; ------------------------------------------------------------------------------------------------------------------------
+
+(defn extract-kernel-response-byte-arrays
+  "Returns the result of extract any byte-arrays from messages with COMM state."
+  [{:keys [rsp-content] :as kernel-rsp}]
+  (let [state-path  [:data :state]
+        bufpath-path [:data :buffer_paths]]
+    (if-let [state (get-in rsp-content state-path)]
+      (let [[state' pathmap] (msgs/leaf-paths bytes? (constantly "replaced") state)
+            paths (vec (keys pathmap))
+            buffers (mapv (p get pathmap) paths)
+            rsp-content' (-> rsp-content
+                             (assoc-in state-path state')
+                             (assoc-in bufpath-path paths))]
+        (assoc kernel-rsp :rsp-content rsp-content' :rsp-buffers buffers))
+      kernel-rsp)))
+
+(defn replace-comm-atoms-with-references
+  [{:keys [rsp-content] :as kernel-rsp}]
+  (let [[repl-content _] (msgs/leaf-paths ca/comm-atom? ca/model-ref rsp-content)]
+    (assoc kernel-rsp :rsp-content repl-content)))
 
 (def- LOG-COUNTER
   "Enumerates all transducer output, showing the order of events."
@@ -77,9 +94,12 @@
   [port signer]
   (u!/wrap-report-and-absorb-exceptions
    (msgs/transducer-error port)
-   (C (wrap-skip-shutdown-tokens (p msgs/kernelrsp->jupmsg port signer))
+   (C (wrap-skip-shutdown-tokens
+       (C (fn [krsp] (extract-kernel-response-byte-arrays krsp))
+          (fn [krsp] (replace-comm-atoms-with-references krsp))
+          (fn [krsp] (msgs/kernelrsp->jupmsg port signer krsp))))
       (logging-transducer (str "OUTBOUND:" port))
-      (wrap-skip-shutdown-tokens msgs/jupmsg->frames))))
+      (wrap-skip-shutdown-tokens (fn [jupmsg] (msgs/jupmsg->frames jupmsg))))))
 
 (defn- start-zmq-socket-forwarding
   "Starts threads forwarding traffic between ZeroMQ sockets and core.async channels.  Returns a

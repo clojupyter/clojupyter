@@ -86,14 +86,11 @@
                       :local/filemap			(fm/filemap (E :local/filemap) (U :local/filemap))
                       :local/file-copyspec		file-copyspec
                       :local/generate-kernel-json?	(U :local/generate-kernel-json?)
-                      :local/icon-bot			(U :local/icon-bot)
-                      :local/icon-top			(U :local/icon-top)
                       :local/ident			ident
                       :local/installed-kernels		(E :local/installed-kernels)
                       :local/logo-resource		(E :local/logo-resource)
                       :local/resource-copyspec		resource-copyspec
                       :local/resource-map		(E :local/resource-map)
-                      :local/customize-icons?		(U :local/customize-icons?)
                       :local/source-jarfiles		src-jars
                       :version/version-map		(E :version/version-map)}
                      (when convert-exe
@@ -114,8 +111,8 @@
   effects will, if invoked, install Clojupyter according to `install-spec`."
   [install-spec]
   (let [#:local{:keys [allow-deletions? allow-destdir? convert-exe destdir filemap file-copyspec
-                       icon-bot icon-top ident installed-kernels logo-resource resource-map resource-copyspec
-                       customize-icons? generate-kernel-json? source-jarfiles]} install-spec
+                       ident installed-kernels logo-resource resource-map resource-copyspec
+                       generate-kernel-json? source-jarfiles]} install-spec
         installed-idents (->> installed-kernels keys (into #{}))]
     (assert (fm/filemap? filemap))
     (letfn [(get-resource [nm] (get resource-map nm))
@@ -162,15 +159,7 @@
 
        ;; GENERATE KERNEL.JSON
        (s*when generate-kernel-json?
-         (s*action-append [`local!/generate-kernel-json-file! destdir ident]))
-
-       ;; CUSTOMIZE ICONS
-       (s*when customize-icons?
-         (if-let [conv (fm/file filemap convert-exe)]
-           (s*action-append [`local!/customize-icon-file! conv, {:south icon-bot, :north icon-top},
-                             (resource-destfile lsp/LOGO-ASSET)])
-           (s*log-error (msg {:message (str "Error: Imagemagick 'convert' executable not found.")
-                              :type :convert-exe-not-found}))))))))
+         (s*action-append [`local!/generate-kernel-json-file! destdir ident]))))))
 
 (defn s*report-install
   "Returns a function which, given a state, uses the cmdline api to update state with user output

@@ -4,6 +4,7 @@
             [clojupyter.kernel.handle-event.execute :as execute]
             [clojupyter.kernel.handle-event.history :as history]
             [clojupyter.kernel.handle-event.inspect :as inspect]
+            [clojupyter.kernel.handle-event.interrupt :as interrupt]
             [clojupyter.kernel.handle-event.kernel-info :as kernel-info]
             [clojupyter.kernel.handle-event.ops :refer [call-interceptor]]
             [clojupyter.kernel.handle-event.shutdown :as shutdown]
@@ -63,7 +64,7 @@
 (defmethod calc msgs/INSPECT-REPLY		[_ ctx]	(impossible ctx))
 (defmethod calc msgs/INSPECT-REQUEST		[_ ctx]	(call-interceptor ctx [inspect/ic*inspect]))
 (defmethod calc msgs/INTERRUPT-REPLY		[_ ctx]	(impossible ctx))
-(defmethod calc msgs/INTERRUPT-REQUEST		[_ ctx]	(impossible ctx))
+(defmethod calc msgs/INTERRUPT-REQUEST		[_ ctx]	(call-interceptor ctx [interrupt/ic*interrupt]))
 (defmethod calc msgs/IS-COMPLETE-REPLY		[_ ctx]	(impossible ctx))
 (defmethod calc msgs/IS-COMPLETE-REQUEST 	[_ ctx]	(call-interceptor ctx [complete/ic*is-complete]))
 (defmethod calc msgs/KERNEL-INFO-REPLY		[_ ctx]	(impossible ctx))

@@ -117,3 +117,20 @@
  "Message metadata accessors appear to work"
  (:pass? (tc/quick-check QC-ITERS-LOW prop--message-metadata-accessors-appear-to-work))
  => true)
+
+;;; ------------------------------------------------------------------------------------------------------------------------
+;;; EXTRACTING AND INSERTING BYTE-ARRAYS (BUFFERS)
+;;; ------------------------------------------------------------------------------------------------------------------------
+
+(def prop--values-can-be-extracted-as-paths-and-reinserted-correctly
+  (prop/for-all [msg mg/g-jupmsg-any]
+    (let [msg (-> msg (dissoc :preframes :buffers))
+          [res paths] (msgs/leaf-paths (every-pred (complement map?) (complement vector?)) (constantly :replaced) msg)]
+      (and (-> paths count pos?)
+           (not= res msg)
+           (= msg (msgs/insert-paths res paths))))))
+
+(fact
+ "Values can be extracted from messages as paths and reinserted correctly"
+ (:pass? (tc/quick-check QC-ITERS prop--values-can-be-extracted-as-paths-and-reinserted-correctly))
+ => true)

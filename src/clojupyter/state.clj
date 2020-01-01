@@ -60,26 +60,6 @@
   (:zmq-context @STATE))
 
 ;;; ------------------------------------------------------------------------------------------------------------------------
-;;; HALTING
-;;; ------------------------------------------------------------------------------------------------------------------------
-
-(defn halt?
-  []
-  (boolean (:halt? @STATE)))
-
-(defn- set-halt!
-  [v]
-  (let [v (boolean v)]
-    (swap! STATE (P assoc :halt? v))
-    v))
-
-(def halt! #(set-halt! true))
-
-(def unhalt! #(set-halt! false))
-
-(println "state.clj:			do we use halt? el al?")
-
-;;; ------------------------------------------------------------------------------------------------------------------------
 ;;; COMMS
 ;;; ------------------------------------------------------------------------------------------------------------------------
 
@@ -142,15 +122,6 @@
     (do (swap! STATE (P update :cur-ctx rest))
         ctx)
     (throw (ex-info "pop-context! - empty stack" {:STATE @STATE}))))
-
-(defn swap-context!
-  "Replace top of context stack with the result of applying `f` to it."
-  [f]
-  (swap! STATE (P update :cur-ctx
-                  (fn [[cur & ctxs]]
-                    (cons (f cur) ctxs)))))
-
-(println "state.clj:			eliminate `swap-context!`?")
 
 (defmacro with-current-context
   [[ctx] & body]

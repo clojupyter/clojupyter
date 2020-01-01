@@ -1,7 +1,7 @@
 (ns clojupyter.kernel.handle-event.comm-msg
   (:require
    [clojupyter.kernel.comm-global-state :as comm-global-state]
-   [clojupyter.kernel.comm-atom :as comm-atom]
+   [clojupyter.kernel.comm-atom :as ca]
    [clojupyter.kernel.handle-event.ops :refer [definterceptor s*set-response]]
    [clojupyter.kernel.jup-channels :as jup]
    [clojupyter.log :as log]
@@ -95,10 +95,10 @@
     (assert (= method msgs/COMM-MSG-REQUEST-STATE))
     (if present?
       (let [msgtype msgs/COMM-MSG
-            comm (comm-global-state/comm-atom-get S comm-id)
-            target-name (comm-atom/target comm)
-            msg-metadata comm-atom/MESSAGE-METADATA
-            content (msgs/update-comm-msg comm-id msgs/COMM-MSG-UPDATE target-name @comm)
+            comm-atom (comm-global-state/comm-atom-get S comm-id)
+            target-name (ca/target comm-atom)
+            msg-metadata ca/MESSAGE-METADATA
+            content (msgs/update-comm-msg comm-id msgs/COMM-MSG-UPDATE target-name @comm-atom)
             A (action (step [`jup/send!! jup IOPUB req-message msgtype msg-metadata content]
                             (jupmsg-spec IOPUB msgtype msg-metadata content)))]
         (return ctx A S))
@@ -111,9 +111,8 @@
   (let [{{:keys [comm_id] {:keys [method state]} :data} :content} req-message]
     (assert comm_id)
     (assert state)
-    (assert (= method msgs/COMM-MSG-UPDATE))
-    (if-let [comm (comm-global-state/comm-atom-get S comm_id)]
-      (let [A (action (side-effect #(comm-atom/state-update! comm state)
+    (if-let [comm-atom (comm-global-state/comm-atom-get S comm_id)]
+      (let [A (action (side-effect #(ca/state-update! comm-atom state)
                                    {:op :update-agent :comm-id comm_id :new-state state}))]
         (return ctx A S))
       (handle-comm-msg-unknown ctx S comm_id))))
@@ -147,10 +146,10 @@
             (return ctx S))
         (let [msgtype msgs/COMM-OPEN
               content (msgs/comm-open-content comm_id data {:target_module target_module :target_name target_name})
-              comm (comm-atom/create jup req-message target_name comm_id state)
+              comm-atom (ca/create jup req-message target_name comm_id state)
               A (action (step [`jup/send!! jup IOPUB req-message msgtype content]
                               (jupmsg-spec IOPUB msgtype content)))
-              S' (comm-global-state/comm-atom-add S comm_id comm)]
+              S' (comm-global-state/comm-atom-add S comm_id comm-atom)]
           (return ctx A S S'))))))
 
 (defmethod calc* msgs/COMM-CLOSE
@@ -179,7 +178,7 @@
   (assert (and req-message req-port jup ctx))
   (let [msgtype msgs/COMM-INFO-REPLY
         content (msgs/comm-info-reply-content (->> (for [comm-id (comm-global-state/known-comm-ids S)]
-                                                     [comm-id (comm-atom/target (comm-global-state/comm-atom-get S comm-id))])
+                                                     [comm-id (ca/target (comm-global-state/comm-atom-get S comm-id))])
                                                    (into {})))
         A (action (step [`jup/send!! jup req-port req-message msgtype content]
                         (jupmsg-spec req-port msgtype content)))]

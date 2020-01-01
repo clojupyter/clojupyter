@@ -34,8 +34,6 @@
 (s/def :local/file-copyspec			(s/map-of :local/file string?))		;; file to name relative to destdir
 (s/def :local/filemap				fm/filemap?)
 (s/def :local/host-kernel-dir			:local/file)
-(s/def :local/icon-bot				string?)
-(s/def :local/icon-top				string?)
 (s/def :local/ident				(s/and string? (p re-find IDENT-REGEX)))
 (s/def :local/default-ident			:local/ident)
 (s/def :local/installed-kernel-info		(s/keys :req [:kernel/ident :kernel/display-name :kernel/ident]))
@@ -45,7 +43,6 @@
 (s/def :local/logo-resource			string?)
 (s/def :local/resource-copyspec			(s/map-of string? string?))	;; resource name to name relative to destdir
 (s/def :local/resource-map			(s/map-of string? (s/nilable :local/resource)))
-(s/def :local/customize-icons?			boolean?)
 (s/def :local/generate-kernel-json?		boolean?)
 (s/def :local/source-jarfiles			(s/coll-of :local/file))
 (s/def :local/target-jarname			string?)
@@ -68,11 +65,8 @@
 (s/def :local/user-opts				(s/keys :req [
                                                               :local/allow-deletions?
                                                               :local/allow-destdir?
-                                                              :local/customize-icons?
                                                               :local/filemap
                                                               :local/generate-kernel-json?
-                                                              :local/icon-bot
-                                                              :local/icon-top
                                                               :local/loc
                                                               :local/source-jarfiles
                                                               :local/target-jarname
@@ -84,12 +78,9 @@
 (s/def :local/install-spec			(s/keys :req [
                                                               :local/allow-deletions?
                                                               :local/allow-destdir?
-                                                              :local/customize-icons?
                                                               :local/destdir
                                                               :local/filemap
                                                               :local/file-copyspec
-                                                              :local/icon-bot
-                                                              :local/icon-top
                                                               :local/ident
                                                               :local/installed-kernels
                                                               :local/generate-kernel-json?
@@ -103,9 +94,6 @@
 (def DEFAULT-USER-OPTS
   {:local/allow-deletions?		false
    :local/allow-destdir?		false
-   :local/customize-icons?		false
-   :local/icon-bot			""
-   :local/icon-top			""
    :local/filemap			(fm/filemap)
    :local/loc				:loc/user
    :local/generate-kernel-json?		true

@@ -174,53 +174,30 @@
 ;;; LOCAL INSTALL
 ;;; ----------------------------------------------------------------------------------------------------
 
-(def- TOPMIN 1)
-(def- TOPMAX 8)
-(def- topbot-validate (C count #(<= TOPMIN % TOPMAX)))
-
-(defn- topbot-help
-  [s topmin topmax]
-  (str "Text at the " s " of icon (<= " topmin " length " topmax ")."))
-
 (def- INSTALL-OPTIONS
   [["-h" "--host"
     "Install at host-level, shared among all users."
     :default false]
-   [nil "--icon-top ICON-TOP-STRING"
-    (topbot-help "top" TOPMIN TOPMAX)
-    :validate [topbot-validate]]
-   [nil "--icon-bot ICON-BOTTOM-STRING"
-    (topbot-help "bottom" TOPMIN TOPMAX)
-    :validate [topbot-validate]]
    ["-i" "--ident KERNEL-IDENT"
     (str "Kernel identifier as shown in Jupyter, a string matching the regex #\"" lsp/IDENT-REGEX "\".")
     :validate [(p re-find lsp/IDENT-REGEX)]]
    ["-j" "--jarfile JARFILE"
     "JAR file to use for installation, must be a '.jar' file."
     :validate [(C str (p re-find #".jar$"))]
-    :parse-fn io/file]
-   [nil "--skip-icon-tags"
-    "If specified does not add icon tags."
-    :default false]])
+    :parse-fn io/file]])
 
 (s/def ::host			boolean?)
-(s/def ::icon-bot		string?)
-(s/def ::icon-top		string?)
 (s/def ::ident			string?)
 (s/def ::jarfile		string?)
 (s/def ::loc			#{:user :host})
-(s/def ::skip-icon-tags		boolean?)
-(s/def ::options		(s/keys :req-un [::host ::skip-icon-tags]
-                                        :opt-un [::icon-bot ::icon-top ::ident]))
+(s/def ::options		(s/keys :req-un [::host]
+                                        :opt-un [::ident]))
 (s/def ::parse-result		(s/keys :req-un [::options]))
 
 (def- KEYMAP
-  {:icon-bot		:local/icon-bot
-   :icon-top		:local/icon-top
-   :host		:local/loc
+  {:host		:local/loc
    :ident		:local/ident
-   :jarfile		:local/source-jarfile
-   :skip-icon-tags	:local/customize-icons?})
+   :jarfile		:local/source-jarfile})
 
 (def- HOSTMAP {true  :loc/host, false :loc/user})
 
@@ -230,7 +207,6 @@
         user-opts (-> (merge lsp/DEFAULT-USER-OPTS
                              (set/rename-keys parse-opts KEYMAP)
                              {:local/loc (get HOSTMAP host)})
-                      (update :local/customize-icons? #(not %))
                       (assoc :local/filemap (fm/filemap jarfiles)
                              :local/source-jarfiles jarfiles)
                       (dissoc :local/source-jarfile))]
@@ -591,13 +567,6 @@
                         user.  See platform documentation for details on the location of host-wide and
                         user-specific Jupyter kernel directories.
 
-    --icon-top:         Add specified text to the top of the Clojupyter icon shown in Jupyter.  Length
-                        must be between 1 and 8 characters.
-
-    --icon-bot:         Add specified text to the bottom of the Clojupyter icon shown in Jupyter.
-                        Length must be between 1 and 8 characters.  For generic Clojupyter kernels,
-                        the Clojupyter version number is often shown at the bottom of the icon.
-
     -i, --ident:        String to be used as identifier for the kernel.
 
     -j, --jarfile:      Filename of the jarfile, which must be a standalone jar containing Clojupyter,
@@ -605,9 +574,6 @@
                         the current directory or one of its subdirectories, provided a single such
                         file is found.  If zero or multiple standalone jarfiles are found an error is
                         raised.
-
-    --skip-icon-tags:   Do not add text to icons. Applies even when values are provided using
-                        `--icon-top` and `--icon-bot` are provided.
 
   EXAMPLE USE:
 
@@ -743,13 +709,10 @@
   directly from the REPL, returns a data structure containing a vector of strings which will be sent
   to standard output, whereas the cmdline command itself actually sends the strings to stdout.
 
-  PROCESSES
+  PROCESS
 
   1. The `conda-build` command spawns a `conda` process to perform the actual build in a temporary
      directory.
-
-  2. If icon tags are to customised an additional process from the Imagemgick package is spawned to
-     make the changes to the icon bitmaps.
 
   See PREREQUISITES for details.
 
@@ -758,11 +721,9 @@
   Note that execution time for conda builds is considerable (often >60s) and that no output is
   produced until the process is complete - patience is required.
 
-  PREREQUISITES:
+  PREREQUISITE:
 
     1. Conda installed and available on the path (executable: `conda`/`conda.exe`).
-    2. If icon tags are needed: Imagemagick 'convert' installed and available on the path
-       (executable: `convert`/`convert.exe`).
 
   COMMAND ARGUMENTS:
 

@@ -117,17 +117,12 @@
 ;;; LOCAL INSTALL - USER OPTS
 ;;; ----------------------------------------------------------------------------------------------------
 
-(def g-icon-text
-  (gen/one-of [(shg/g-constant "") (shg/g-alphanum 1 8)]))
-
 (def g-jarfile
   (gen/fmap #(io/file (str % "/" lsp/DEFAULT-TARGET-JARNAME)) shg/g-path))
 
 (def g-local-install-user-opts
   (gen/let [deletions? gen/boolean
             destdir? gen/boolean
-            bot g-icon-text
-            top g-icon-text
             destdir (shg/g-nilable shg/g-path)
             gen-json? gen/boolean
             loc (gen/elements [:loc/user :loc/host])
@@ -136,11 +131,8 @@
             filemap (shg/g-filemap (set/union jarfiles #{destdir}))]
     (let [res (merge {:local/allow-deletions? deletions?
                       :local/allow-destdir? destdir?
-                      :local/customize-icons? cust?
                       :local/filemap filemap
                       :local/generate-kernel-json? gen-json?
-                      :local/icon-bot bot
-                      :local/icon-top top
                       :local/loc loc
                       :local/source-jarfiles jarfiles
                       :local/target-jarname lsp/DEFAULT-TARGET-JARNAME}
@@ -227,8 +219,6 @@
                       (u/file-ancestor-of (:local/user-kernel-dir env) (:local/destdir spec)))))
        (u/submap? (fm/get-map (:local/filemap opts)) (fm/get-map (:local/filemap spec)))
        (u/submap? (fm/get-map (:local/filemap env)) (fm/get-map (:local/filemap spec)))
-       (= (:local/icon-bot opts) (:local/icon-bot spec))
-       (= (:local/icon-top opts) (:local/icon-top spec))
        (string? (:local/ident spec))
        (if (:local/ident opts)
          (= (:local/ident opts) (:local/ident spec))
@@ -265,9 +255,6 @@
            (s/valid? :local/install-spec spec)
            (==> (-> spec :local/source-jarfiles count zero?) stop!)
            (==> (-> spec :local/source-jarfiles count (> 1)) stop!)
-           (==> (and (-> spec :local/customize-icons?)
-                     (-> spec :local/convert-exe not))
-                stop!)
            (==> ok! (contains? aspec-ops `local!/copy-resource-to-file!))
            (==> (and ok! (:local/generate-kernel-json? opts))
                 (contains? aspec-ops `local!/generate-kernel-json-file!))

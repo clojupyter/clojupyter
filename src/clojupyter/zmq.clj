@@ -29,25 +29,23 @@
              (let [data-sock (doto (zutil/zsocket ztx :pair) (.connect data-socket-addr))]
                (try (fmtdbg "Starting")
                     (loop []
-                      (if (state/halt?)
-                        (fmtdbg "Halting")
-                        (let [[data rcv-chan] (alts!! [term-ch fwd-chan] :priority true)]
-                          (cond
-                            (shutdown/is-token? data)
-                            ,, (fmtdbg "Shutdown message received")
-                            (= rcv-chan term-ch)
-                            ,, (fmtdbg "Term signal received")
-                            (nil? data)
-                            ,, (fmtdbg "Outbound channel closed")
-                            (and (= rcv-chan fwd-chan) data)
-                            ,, (if (zutil/send-frames data-sock data)
-                                 (recur)
-                                 (do (fmterr "Could not send all frames - terminated.")
-                                     (terminate!)))
-                            :else
-                            (let [errstr (fmtmsg "Internal error occurred")]
-                              (log/error errstr)
-                              (throw (ex-info errstr {:data data})))))))
+                      (let [[data rcv-chan] (alts!! [term-ch fwd-chan] :priority true)]
+                        (cond
+                          (shutdown/is-token? data)
+                          ,, (fmtdbg "Shutdown message received")
+                          (= rcv-chan term-ch)
+                          ,, (fmtdbg "Term signal received")
+                          (nil? data)
+                          ,, (fmtdbg "Outbound channel closed")
+                          (and (= rcv-chan fwd-chan) data)
+                          ,, (if (zutil/send-frames data-sock data)
+                               (recur)
+                               (do (fmterr "Could not send all frames - terminated.")
+                                   (terminate!)))
+                          :else
+                          (let [errstr (fmtmsg "Internal error occurred")]
+                            (log/error errstr)
+                            (throw (ex-info errstr {:data data}))))))
                     (finally
                       (terminate!)
                       (fmtdbg "Terminating"))))))))))
@@ -121,11 +119,8 @@
                                  (when (.pollerr poller dpoll)
                                    (fmterr "Error polling outbount ZeroMQ socket - terminating")
                                    (terminate!)))))
-                         (cond
-                           (state/halt?)
-                           ,, (fmtinf "Halting")
-                           @continue?
-                           ,, (recur)))))
+                         (when @continue?
+                           (recur)))))
                    (catch Exception e
                      (fmterr (str "Exception occurred: " e " (not rethrowing)")))
                    (finally

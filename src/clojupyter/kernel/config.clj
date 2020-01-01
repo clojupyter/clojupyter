@@ -1,7 +1,8 @@
 (ns clojupyter.kernel.config
   (:require [clojure.java.io :as io]
             [clojure.string :as str]
-            [omniconf.core :as cfg]))
+            [omniconf.core :as cfg]
+            [io.simplect.compose :refer [def- c C p P]]))
 
 (cfg/define
   {:log-level			{:description	"Default log level as defined by com.taoensso/timbre."
@@ -23,8 +24,9 @@
 (defn- osname [] (-> (System/getProperty "os.name") str/lower-case str/trim))
 (defn- os? [idstr] (fn [] (not (neg? (.indexOf ^String (osname) ^String idstr)))))
 
-(def ^:private mac? (os? "mac"))
-(def ^:private linux? (os? "linux"))
+(def- mac?	(os? "mac"))
+(def- linux?	(os? "linux"))
+(def- windows?	(os? "windows"))
 
 (defn- user-homedir
   []
@@ -37,8 +39,10 @@
 ;;; DATA DIRECTORY
 ;;; ----------------------------------------------------------------------------------------------------
 
-(def ^:private CLOJUPYTER-DATADIR	"clojupyter")
-(def ^:private XDG_DATA_HOME		"XDG_DATA_HOME")
+(def- CLOJUPYTER-DATADIR	"clojupyter")
+(def- XDG_CONFIG_HOME		"XDG_CONFIG_HOME")
+(def- XDG_DATA_HOME		"XDG_DATA_HOME")
+(def- LOCALAPPDATA		"LOCALAPPDATA")
 
 (defn- default-datahome-relative
   []
@@ -55,6 +59,7 @@
   []
   (io/file
    (or (System/getenv XDG_DATA_HOME)
+       (System/getenv LOCALAPPDATA)
        (default-datahome))))
 
 (defn clojupyter-datahome
@@ -90,7 +95,8 @@
 (defn- config-dir
   []
   (io/file
-   (or (System/getenv "XDG_CONFIG_HOME")
+   (or (System/getenv XDG_CONFIG_HOME)
+       (System/getenv LOCALAPPDATA)
        (default-config-dir))))
 
 (defn config-file

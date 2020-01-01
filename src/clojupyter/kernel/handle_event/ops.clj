@@ -1,10 +1,12 @@
 (ns clojupyter.kernel.handle-event.ops
   (:require [clojupyter.kernel.jup-channels :refer [send!!]]
+            [clojupyter.log :as log]
             [clojupyter.messages :as msgs]
+            [io.aviso.exception	:as aviso-ex]
             [io.pedestal.interceptor :as ic]
             [io.pedestal.interceptor.chain :as ich]
             [io.simplect.compose :refer [p P]]
-            [io.simplect.compose.action :as a :refer [action step]]))
+            [io.simplect.compose.action :as a :refer [action failure step]]))
 
 (use 'clojure.pprint)
 
@@ -55,20 +57,33 @@
                   :enter (p call-if-msgtype ~enter ~msgtype)
                   :leave (p call-if-msgtype ~leave ~msgtype)})))))
 
-(def action-interceptor
+(defn invoke-action
+  [get-action-fn]
+  (fn [ctx]
+    (let [action (get-action-fn ctx)
+          evaluated-action (action)]
+      (if (a/success? evaluated-action)
+        (-> (set-enter-action ctx evaluated-action)
+            (merge (a/output evaluated-action)))
+        (let [fl (failure evaluated-action)
+              trace (when fl (binding [aviso-ex/*fonts* nil] (aviso-ex/format-exception fl)))
+              logdata {:evaluated-action evaluated-action}] 
+          (log/error "Action failed:" (log/ppstr logdata)
+                     \newline "  Stacktrace:" \newline trace)
+          (throw (ex-info (str "Action failed: " evaluated-action) logdata)))))))
+
+(def enter-action-interceptor
   (ic/interceptor
-   {:name ::action-interceptor
-    :enter (fn [ctx]
-             (let [action (get-enter-action ctx)
-                   action-result (action)]
-               (if (a/success? action-result)
-                 (-> (set-enter-action ctx action-result)
-                     (merge (a/output action-result)))
-                 (throw (ex-info (str "Action failed: " action-result)
-                          {:action action, :action-result action-result})))))}))
+   {:name ::enter-action-interceptor
+    :enter (invoke-action get-enter-action)}))
+
+(def leave-action-interceptor
+  (ic/interceptor
+   {:name ::leave-action-interceptor
+    :leave (invoke-action get-leave-action)}))
 
 (defn call-interceptor
   ([input interceptors]
-   (call-interceptor input (conj interceptors action-interceptor) action-interceptor))
+   (call-interceptor input interceptors enter-action-interceptor))
   ([input interceptors response-interceptor]
    (ich/execute input (conj interceptors response-interceptor))))

@@ -137,7 +137,8 @@
   [dest-jar kernel-id-string]
   {:argv ["java" "-cp" (str dest-jar) "clojupyter.kernel.core" "{connection_file}"]
    :display_name (kernel-full-identifier kernel-id-string)
-   :language "clojure"})
+   :language "clojure"
+   :interrupt_mode "message"})
 
 (defmacro ^{:style/indent :defn} define-simple-record-print
   [name format-fn]

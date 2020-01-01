@@ -312,6 +312,3 @@
             metadata (R {})
             buffers (R [])]
     (R (msgs/make-jupmsg envelope signature hdr phdr metadata content buffers ))))
-
-
-(println "messages_generators.clj:	use metadata to indicate msgtype")

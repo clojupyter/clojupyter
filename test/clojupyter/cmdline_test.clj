@@ -22,23 +22,6 @@
 (def g-local-install-host-flag
   (gen/elements [nil "-h" "--host"]))
 
-(def g-local-install-icon-bot-flag
-   (gen/elements [nil "--icon-bot"]))
-
-(def g-local-install-icon-top-flag
-  (gen/elements [nil "--icon-top"]))
-
-(def g-local-install-icon-value
-  (gen/frequency [[5 (shg/g-alphanum 1 8)]
-                  [5 (shg/g-name 1 8)]
-                  [1 (shg/g-constant "")]
-                  [1 gen/string]]))
-
-(def g-local-install-icon-value
-  (gen/frequency [[9 (shg/g-alphanum 1 8)]
-                  [1 (shg/g-constant "")]
-                  [1 gen/string]]))
-
 (def g-local-install-ident-flag
   (gen/elements [nil "-i" "--ident"]))
 
@@ -58,9 +41,6 @@
                                  [1 shg/g-path]])]
     (R (str path "/" nm))))
 
-(def g-local-install-skip-icon-tags-flag
-  (gen/elements [nil "--skip-icon-tags"]))
-
 (def g-random-flag
   (gen/frequency [[9 shg/g-nil]
                   [1 shg/g-flag-double]
@@ -68,36 +48,29 @@
 
 (def g-local-install-cmdline
   (gen/let [host-flag g-local-install-host-flag
-            [botval bot] (shg/g-combine-flag-and-val g-local-install-icon-bot-flag
-                                                    g-local-install-icon-value)
-            [topval top] (shg/g-combine-flag-and-val g-local-install-icon-top-flag
-                                                    g-local-install-icon-value)
             [identval ident] (shg/g-combine-flag-and-val g-local-install-ident-flag
-                                                        g-local-install-ident-value)
+                                                         g-local-install-ident-value)
             [jarval jar] (shg/g-combine-flag-and-val g-local-install-jarfile-flag
-                                                    g-local-install-jarfile-value)
+                                                     g-local-install-jarfile-value)
             random-flag g-random-flag
             host (R (if host-flag [host-flag] []))
             random (R (if random-flag [random-flag] []))]
-    {:cmdline (->> [bot host ident jar random top]
+    {:cmdline (->> [host ident jar random]
                    shuffle
                    (apply concat)
                    vec)
-     :host-flag host-flag, :host host, :bot bot, :botval botval :top top, :topval topval,
+     :host-flag host-flag, :host host, 
      :ident ident, :identval identval, :jar jar, :jarval jarval, :random-flag random-flag, :random random}))
 
 (def prop--local-install-cmdline
-  (prop/for-all [{:keys [random-flag host-flag cmdline top topval bot botval
-                         ident identval jar jarval]} g-local-install-cmdline]
+  (prop/for-all [{:keys [random-flag host-flag cmdline ident identval jar jarval]} g-local-install-cmdline]
     (let [{:keys [options errors] :as res}
           ,,(cmdline/parse-install-local-cmdline cmdline)
-          {:keys [host icon-bot icon-top jarfile skip-icon-tags]} options
+          {:keys [host jarfile]} options
           ok? (not errors)
           opts (when ok? (cmdline/build-user-opts res))]
       (pprint {:errors errors, :options options})
       (==> random-flag errors)
-      (==> (and ok? (-> bot count pos?)) (= botval icon-bot))
-      (==> (and ok? (-> top count pos?)) (= topval icon-top))
       (==> (and ok? (-> ident count pos?)) (= identval ident))
       (==> (and ok? (-> jar count pos?)) (= jarval (str jarfile)))
       (==> ok? (s/valid? :local/user-opts opts)))))

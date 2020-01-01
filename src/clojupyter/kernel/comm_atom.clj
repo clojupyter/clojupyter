@@ -24,6 +24,7 @@
 (defprotocol comm-atom-proto
   (target [comm-atom] "The Jupyter target name to which the COMM-ATOM belongs.")
   (comm-id [comm-atom] "The Jupyter protocol ID of the COMM-ATOM.")
+  (model-ref [comm-atom] "The COMM-ATOM's Jupyter Model reference identifier (a string).")
   (origin-message [comm-atom] "The message that caused the COMM-ATOM to be created.")
   (state-set! [comm-atom comm-state]
     "Sets the value `comm-atom` to be `comm-state` by updating the global state and sending COMM `update`
@@ -47,6 +48,8 @@
     target-name_)
   (comm-id [_]
     cid_)
+  (model-ref [_]
+    (str "IPY_MODEL_" cid_))
   (origin-message [_]
     reqmsg_)
   (state-set! [comm-atom comm-state]
@@ -99,65 +102,9 @@
   (deref [_]
     @comm-state_)
 
-  clojure.lang.ILookup
-  (valAt [_ k]
-    (get @comm-state_ k))
-  (valAt [_ k default]
-    (get @comm-state_ k default))
-
-  clojure.lang.IPersistentMap
-  (containsKey [_ k]
-    (boolean (get @comm-state_ k)))
-  (empty [comm-atom]
-    (state-set! comm-atom {}))
-  (equiv [comm-atom v]
-    (and (comm-atom? v)
-         (= (count comm-atom) (count v))
-         (= (comm-id comm-atom) (= comm-id v))
-         (= (target comm-atom) (target v))
-         (= @comm-atom @v)))
-  (without [comm-atom k]
-    (state-set! comm-atom (dissoc @comm-state_ k)))
-
-  clojure.lang.ITransientAssociative2
-  (assoc [comm-atom k v]
-    (state-set! comm-atom (assoc @comm-state_ k v)))
-  (entryAt [_ k]
-    (reify clojure.lang.IMapEntry
-      (key [_] k)
-      (val [_] (get @comm-state_ k))))
-
-  clojure.lang.IReduce
-  (reduce [comm-atom f]
-    (state-set! comm-atom (reduce f {} @comm-atom)))
-
-  clojure.lang.IReduceInit
-  (reduce [comm-atom f init]
-    (state-set! comm-atom (reduce f init @comm-atom)))
-
-  clojure.lang.IPersistentCollection ;; extends Seqable
-  (count [_]
-    (count @comm-state_))
-  (cons [comm-atom o]
-    (cond
-      (map? o)
-      ,, (state-update! comm-atom o)
-      (and (vector? o) (= (count o) 2))
-      ,, (state-update! comm-atom {(first o) (second o)})
-      :else
-      ,, (throw (UnsupportedOperationException.
-                 (str "Clojupyter: 'cons' operation not supported for " o " values.")))))
-
-  clojure.lang.Seqable
-  (seq [_]
-    (seq @comm-state_))
-
-  java.util.Collection
-  (iterator [_]
-    (.iterator ^java.lang.Iterable @comm-state_)))
-
-(println "comm_atom.clj:		perhaps `sync?` tag controlling sending of messages?")
-(println "comm_atom.clj:		perhaps `sync?` tag controlling which properties are sent/not sent?")
+  clojure.lang.IFn
+  (invoke [comm-state f]
+    (f @comm-state)))
 
 (defn- jupfld
   [^CommAtom comm-atom]

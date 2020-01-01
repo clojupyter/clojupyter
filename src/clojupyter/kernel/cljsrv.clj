@@ -11,19 +11,34 @@
    [clojupyter.util-actions		:as u!]
    [clojupyter.util :as u]))
 
+;;; ------------------------------------------------------------------------------------------------------------------------
+;;; NREPL-SERVER PROTOCOL
+;;; ------------------------------------------------------------------------------------------------------------------------
+
 (defprotocol nrepl-server-proto
-  (nrepl-complete [self code])
-  (nrepl-doc [self sym])
-  (nrepl-eval [self jup-receive jup-send code])
-  (nrepl-get-input [self jup-receive jup-send])
-  (nrepl-interrupt [self])
-  (nrepl-server-addr [self])
-  (nrepl-trace [self]))
+  (nrepl-complete [cljsrv code])
+  (nrepl-doc [cljsrv sym])
+  (nrepl-eval [cljsrv code]
+    "Evaluates `code` and returns a result map containing the generated NREPL messages under key
+  `:nrepl-messages` and a stacktrace under key `:stacktrace` iff an error occurred during
+  evaluation. If Clojure needs input from `stdin` the key `:need-input` is associated with `true` in
+  which case `provide-input` must be used to provide the input obtained from the user. `nrepl-eval`
+  cannot be called again until the needed input has been provided.")
+  (nrepl-continue-eval [cljsrv msgseq]
+    "Continues evaluating previously submitted `nrepl-eval` which has been suspended due to need for
+    input.  `msgseq` must be a yet-to-be realized seq returned from `nrepl/message` from the
+    continuing evaluation proceeds.  Return value is identical to that of `nrepl-eval`.")
+  (nrepl-interrupt [cljsrv])
+  (nrepl-provide-input [cljsrv input-string]
+    "Sends `input-string` to Clojure to satisfy requested need from `stdin`.  Returns `input-string`.")
+  (nrepl-server-addr [cljsrv])
+  (nrepl-trace [cljsrv]))
 
-(def clojupyter-nrepl-middleware
-  `[mw/mime-values])
+;;; ------------------------------------------------------------------------------------------------------------------------
+;;; COLJUPYTER NREPL HANDLER
+;;; ------------------------------------------------------------------------------------------------------------------------
 
-(defn clojupyter-nrepl-handler
+(defn- clojupyter-nrepl-handler
   []
   ;; dynamically load to allow cider-jack-in to work
   ;; see https://github.com/clojure-emacs/cider-nrepl/issues/447
@@ -31,138 +46,136 @@
   (apply nrepl.server/default-handler
          (map resolve
               (concat (var-get (ns-resolve 'cider.nrepl 'cider-middleware))
-                      clojupyter-nrepl-middleware))))
-
-(defonce ^:dynamic ^:private *NREPL-SERVER-ADDR* nil)
-
-(defn start-nrepl-server
-  []
-  (let [srv (nrepl.server/start-server :handler (clojupyter-nrepl-handler))
-        sock-addr (.getLocalSocketAddress ^java.net.ServerSocket (:server-socket srv))]
-    (log/info (str "Started nREPL server on " sock-addr "."))
-    (alter-var-root #'*NREPL-SERVER-ADDR* (constantly sock-addr))
-    srv))
+                      `[mw/mime-values]))))
 
 ;;; ------------------------------------------------------------------------------------------------------------------------
-;;; NREPL-SERVER
+;;; MESSAGE PREDICATES
 ;;; ------------------------------------------------------------------------------------------------------------------------
 
 (defn final-message?
   [m]
-  (some #{"interrupted" "done" "error"} (:status m)))
+  (boolean (some #{"interrupted" "done" "error"} (:status m))))
 
 (defn need-input-message?
   [m]
-  (and (map? m) (contains? (into #{} (:status m)) "need-input")))
+  (contains? (into #{} (:status m)) "need-input"))
 
 (defn exception-message?
   [m]
-  (and (map? m) (find m :ex)))
+  (boolean (and (map? m) (find m :ex))))
 
-(defn- nrepl-server-addr*
-  []
-  (str *NREPL-SERVER-ADDR*))
+;;; ------------------------------------------------------------------------------------------------------------------------
+;;; CLJSRV
+;;; ------------------------------------------------------------------------------------------------------------------------
 
-(defn- nrepl-trace*
-  [{:keys [nrepl-client]}]
-  (-> nrepl-client
-      (nrepl/message {:op :stacktrace})
-      nrepl/combine-responses
-      doall))
+(defn- fmt
+  [cljsrv]
+  (str "#NREPL[tcp:/" (nrepl-server-addr cljsrv) "]"))
 
-(defn- nrepl-interrupt*
-  [{:keys [nrepl-client]}]
-  (-> nrepl-client
-      (nrepl/message {:op :interrupt})
-      nrepl/combine-responses
-      doall))
+(defn messages-result
+  "Build eval result by reducing the lazy sequence `msgs`.  Care must be taken to avoid reading past
+  the final message from the NREPL server as the read will then block indefinitely.  Message reading
+  stops either when we get to the final message of the repl (`:status` one of \"done\", \"error\" or
+  \"interrupted\") or the NREPL server indicates it needs input from the user (`:status` equals
+  \"need-input\")."
+  [get-stacktrace-fn pending-input? msg-seq]
+  (loop [ms msg-seq, msgs [], result {:need-input false}, iter 10]
+    (if (seq ms)
+      (let [msg (first ms)
+            msgs' (conj msgs msg)]
+        (cond
+          (final-message? msg)
+          ,, (assoc result :nrepl-messages msgs')
+          (need-input-message? msg)
+          ;; use `delay` to prevent accidental inspection or printing blocking on nrepl message stream:
+          ,, (do
+               (reset! pending-input? true)
+               (assoc result :need-input true :delayed-msgseq (delay (next ms)) :nrepl-messages msgs))
+          (exception-message? msg)
+          ,, (recur (rest ms) msgs' (assoc result :trace-result (get-stacktrace-fn)) (dec iter))
+          :else
+          ,, (recur (rest ms) msgs' result (dec iter))))
+      (throw (ex-info (str "messages-result - internal error: we should not get to end of nrepl stream without 'done' msg")
+               {:msgs msgs, :result result})))))
 
-(defn- nrepl-complete*
-  [{:keys [nrepl-client]} code]
-  (->> (nrepl/message nrepl-client {:op :complete, :symbol code})
-       nrepl/combine-responses
-       :completions
-       (mapv :candidate)))
-
-(defn- nrepl-doc*
-  [{:keys [nrepl-client]} sym]
-  (let [code (format "(clojure.core/with-out-str (clojure.repl/doc %s))" sym)]
-    (apply str (-> nrepl-client
-                   (nrepl/message {"op" "eval", "code" code})
-                   nrepl/response-values))))
-
-(defn- nrepl-get-input*
-  [jup-receive jup-send]
-  (jup-send :stdin_port msgs/INPUT-REQUEST (msgs/input-request-content "Enter value: "))
-  (msgs/message-value (:req-message (jup-receive :stdin_port))))
-
-
-(defn- stdin-message-content
-  [s]
-  {:op "stdin" :stdin (str s \newline)})
-
-(defn- eval-reducer
-  "Returns a reducing function for processing nrepl-messages by reacting to `need-input` responses
-  from the nrepl-server by calling `get-input` which must be a zero-argument function returning a
-  string entered by the user in response to the input request.  `client` must an nrepl-client with a
-  session and sufficiently long timeout."
-  [client get-input]
-  (fn [[state Σ] msg]
-    (let [Σ' (conj Σ msg)]
-      (cond
-        (final-message? msg)		(reduced [state Σ'])
-        (exception-message? msg)	[(assoc state ::need-stacktrace? true) Σ']
-        (need-input-message? msg)	(do (->> (get-input) stdin-message-content (nrepl/message client))
-                                            ;; we drop `need-input` messages as they are handled here:
-                                            [state Σ])
-        :else				[state Σ']))))
-
-(defn- nrepl-eval*
-  [{:keys [nrepl-client] :as self} jup-receive jup-send code]
-  (let [get-input #(nrepl-get-input self jup-receive jup-send)
-        msgs (nrepl/message nrepl-client {:id (u!/uuid), :op :eval, :code code})
-        init-state {}, init-Σ []
-        [state Σ] (reduce (eval-reducer nrepl-client get-input) [init-state init-Σ] msgs)]
-    (merge {:nrepl-messages Σ}
-           (when (find state ::need-stacktrace?)
-             {:trace-result (nrepl-trace self)}))))
-
-(def- FMT "#ClojureServer")
-
-(defrecord ClojureServer [nrepl-server nrepl-transport nrepl-base-client nrepl-client]
+(defrecord CljSrv [nrepl-server_ nrepl-client_ nrepl-sockaddr_ pending-input?_]
   nrepl-server-proto
-  (nrepl-complete [self code]
-    (nrepl-complete* self code))
-  (nrepl-doc [self sym]
-    (nrepl-doc* self sym))
-  (nrepl-eval [self jup-receive jup-send code]
-    (nrepl-eval* self jup-receive jup-send code))
-  (nrepl-get-input [self jup-receive jup-send]
-    (nrepl-get-input* jup-receive jup-send))
-  (nrepl-interrupt [self]
-    (nrepl-interrupt* self))
-  (nrepl-server-addr [self]
-    (nrepl-server-addr*))
-  (nrepl-trace [self]
-    (nrepl-trace* self))
+
+  (nrepl-complete
+    [_ code]
+    (->> (nrepl/message nrepl-client_ {:op "complete" :symbol code})
+         nrepl/combine-responses
+         :completions
+         (mapv :candidate)))
+
+  (nrepl-continue-eval
+    [cljsrv msgseq]
+    (assert (not @pending-input?_))
+    (messages-result #(nrepl-trace cljsrv) pending-input?_ msgseq))
+
+  (nrepl-doc
+    [_ sym]
+    (let [code (format "(clojure.core/with-out-str (clojure.repl/doc %s))" sym)]
+      (apply str (-> nrepl-client_
+                     (nrepl/message {:op "eval", :code code})
+                     nrepl/response-values))))
+
+  (nrepl-eval
+    [cljsrv code]
+    (->> {:id (u!/uuid), :op "eval", :code code}
+         (nrepl/message nrepl-client_)
+         (nrepl-continue-eval cljsrv)))
+
+  (nrepl-provide-input
+    [cljsrv input-string]
+    (assert @pending-input?_)
+    (nrepl/message nrepl-client_ {:op "stdin" :stdin (str input-string \newline)})
+    (reset! pending-input?_ false)
+    input-string)
+
+  (nrepl-interrupt
+    [_]
+    (-> nrepl-client_
+        (nrepl/message {:op :interrupt})
+        nrepl/combine-responses
+        doall))
+
+  (nrepl-server-addr
+    [_]
+    nrepl-sockaddr_)
+
+  (nrepl-trace
+    [{:keys [nrepl-client_]}]
+    (-> nrepl-client_
+        (nrepl/message {:op :stacktrace})
+        nrepl/combine-responses
+        doall))
+
   Object
-  (toString [_] FMT)
+  (toString
+    [this]
+    (fmt this))
+
   java.io.Closeable
-  (close [_]
-    (nrepl.server/stop-server nrepl-server)))
+  (close
+    [_]
+    (nrepl.server/stop-server nrepl-server_)))
 
 (defn cljsrv?
   [v]
-  (instance? ClojureServer v))
+  (instance? CljSrv v))
 
-(u!/set-var-private! #'->ClojureServer)
+(u!/set-var-private! #'->CljSrv)
 
-(u/define-simple-record-print ClojureServer (constantly FMT))
+(u/define-simple-record-print CljSrv fmt)
 
-(defn make-cljsrv ^ClojureServer
+(defn make-cljsrv ^CljSrv
   []
-  (let [nrepl-server		(start-nrepl-server)
+  (let [nrepl-server		(nrepl.server/start-server :handler (clojupyter-nrepl-handler))
         nrepl-transport		(nrepl/connect :port (:port nrepl-server))
         nrepl-base-client	(nrepl/client nrepl-transport Integer/MAX_VALUE)
-        nrepl-client		(nrepl/client-session nrepl-base-client)]
-    (->ClojureServer nrepl-server nrepl-transport nrepl-base-client nrepl-client)))
+        nrepl-client		(nrepl/client-session nrepl-base-client)
+        nrepl-sockaddr		(.getLocalSocketAddress ^java.net.ServerSocket (:server-socket nrepl-server))
+        cljsrv 			(->CljSrv nrepl-server nrepl-client nrepl-sockaddr (atom false))]
+    (log/info (str "Started NREPL server: tcp:/" nrepl-sockaddr "."))
+    cljsrv))

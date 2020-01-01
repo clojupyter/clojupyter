@@ -2,13 +2,21 @@
 
 ## v0.2.4 (work-in-progress)
 
+* Add support for data dir (history file) on Windows
+* Add support for configuration files on Windows
+* Add Docker files for building Clojupyter in `./docker`.
+* Switch to message-based interrupts including support for interrupts on Windows, eliminate dependency on `beckon`
+  * Switch to 2 event-handling threads, one for `:control_port` and one for `:shell_port` with only
+    interrupts and shutdown messages being handled on `:control_port`
+  * Add handling of `INTERRUPT_REQUEST` messages
+* Remove icon customization options `--icon-top`, `--icon-top`, and `--customize-icons`
 * Add IPYWIDGET definitions (preliminary - most things don't work yet)
 * Add `comm_atom` representing the state of COMM objects synchronized with the Jupyter COMM model
-  manager.
+  manager
 * Implement support for `COMM` messages, necessary for interactive widget support
 * Use `tools.deps` and `lein-tools-deps`, update `project.clj` and `.travis.yml` accordingly
 * Change multithreading model from 2 independent (and mutually ignoring) threads to threads handling
-  ZeroMQ and a kernel threads.
+  ZeroMQ and a kernel threads
 * ZeroMQ communication reimplemented and moved to clojupyter.zmq*, including
   * Elimination of potential race condition on ZeroMQ sockets, necessary to support multithreading
   * Move to jeromq `ZContext`-based implementation using `ZMQ$Socket`

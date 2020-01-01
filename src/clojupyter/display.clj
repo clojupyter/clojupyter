@@ -1,8 +1,6 @@
 (ns clojupyter.display
-  (:require
-   [io.simplect.compose						:refer [redefn]]
-   ,,
-   [clojupyter.misc.display			:as dis]))
+  (:require [clojupyter.misc.display :as dis]
+            [io.simplect.compose :refer [redefn]]))
 
 (redefn display		dis/display)
 (redefn hiccup-html	dis/hiccup-html)

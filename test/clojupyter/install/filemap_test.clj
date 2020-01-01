@@ -1,18 +1,17 @@
 (ns clojupyter.install.filemap-test
-  (:require
-   [clojure.test.check				:as tc]
-   [clojure.test.check.generators		:as gen			:refer [sample generate]]
-   [clojure.test.check.properties		:as prop]
-   [io.simplect.compose							:refer [def- γ Γ π Π]]
-   [midje.sweet					:as midje		:refer [fact facts =>]]
-   ,,
-   [clojupyter.install.filemap						:refer :all]
-   [clojupyter.test-shared						:refer :all]))
+  (:require [clojupyter.install.filemap :as fm :refer [filemap get-map]]
+            [clojupyter.test-shared :as ts]
+            [clojupyter.test-shared-generators :as shg :refer [R]]
+            [clojure.test.check :as tc]
+            [clojure.test.check.generators :as gen]
+            [clojure.test.check.properties :as prop]
+            [io.simplect.compose :refer [def-]]
+            [midje.sweet :as midje :refer [=> fact]]))
 
 (def- QC-ITERS 500)
 
 (def g-filemap-key
-  g-path)
+  shg/g-path)
 
 (def g-filemap-value
   (gen/elements [nil :filetype/directory :filetype/file :filetype/other]))

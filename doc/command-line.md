@@ -224,15 +224,6 @@ support environment management, including creation, creation and switching betwe
 coexisting environment, you can effectively have multiple conda-installed Clojupyter kernels, but
 only one in each distinct conda environment.
 
-#### Icon tags
-
-The `install` command allows you to customize the icon shown in the Jupyter interface to represent
-the kernel.  This is convenient when you are working in a environment containing multiple instances
-of Clojupyter, e.g. if you have built several kernels with different forms of customisation.
-
-See the `install` command documentation for details on how to customize icon tags (options
-`--icon-top`, `--icon-bot`, and `--skip-icon-tags`).
-
 #### Default install
 
 If you use `install` without any options you get a default install: Identifier based on the version

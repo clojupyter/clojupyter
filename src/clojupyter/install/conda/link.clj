@@ -1,24 +1,17 @@
 (ns clojupyter.install.conda.link
+  (:require [clojupyter.cmdline.api :as cmdline]
+            [clojupyter.install.conda.link-actions :as link!]
+            [clojupyter.install.conda.conda-specs :as csp]
+            [clojupyter.install.filemap :as fm]
+            [clojupyter.install.local-actions :as local!]
+            [clojupyter.install.local-specs :as lsp]
+            [clojupyter.install.log :as log]
+            [clojupyter.plan :as pl]
+            [clojure.java.io :as io]
+            [clojure.set :as set]
+            [io.simplect.compose :refer [C p]]))
 
-  ;; The functions in this namespace are used to install Clojupyter using `conda install` on an
-  ;; end-user machine.  Under normal circumstances it is never used by the user directly, but is
-  ;; called by the Conda installer as part of the installation procedure.
-
-  ;; Functions whose name begins with 's*' return a single-argument function accepting and returning
-  ;; a state map.
-  (:require
-   [clojure.java.io					:as io]
-   [clojure.set						:as set]
-   [io.simplect.compose							:refer [def- sdefn sdefn- γ Γ π Π]]
-   ,,
-   [clojupyter.cmdline.api				:as cmdline]
-   [clojupyter.install.conda.link-actions		:as link!]
-   [clojupyter.install.conda.specs			:as csp]
-   [clojupyter.install.filemap				:as fm]
-   [clojupyter.install.local-actions			:as local!]
-   [clojupyter.install.local-specs			:as lsp]
-   [clojupyter.install.log				:as log]
-   [clojupyter.install.plan						:refer :all]))
+(def DEPEND [csp/DEPEND-DUMMY])
 
 (defn- s*create-destdir
   "Returns a function which, given a state, updates the state with actions to create the Conda
@@ -26,25 +19,25 @@
   [item-filemap destdir]
   (case (fm/exists item-filemap destdir)
     :filetype/file	
-    ,, (s*log-error {:message (str "Destination directory is a file: " destdir)
+    ,, (pl/s*log-error {:message (str "Destination directory is a file: " destdir)
                      :type :destdir-is-a-file})
     :filetype/directory
-    ,, (s*log-warn {:message (str "Destination directory already exists: " destdir)
+    ,, (pl/s*log-warn {:message (str "Destination directory already exists: " destdir)
                     :type :destdir-exists})
     nil
-    ,, (s*action-append [`link!/conda-ensure-dir! destdir])
-    (s*log-error {:message "s*generate-link-actions: internal error"
+    ,, (pl/s*action-append [`link!/conda-ensure-dir! destdir])
+    (pl/s*log-error {:message "s*generate-link-actions: internal error"
                   :type :internal-error})))
 
 (defn- s*copy-items
   "Returns a function which, given a state, updates the state with actions to copy files into the
   kernel directory."
   [items item-filemap destdir]
-  (apply Γ (for [item items]
+  (apply C (for [item items]
              (if (fm/file item-filemap item)
-               (let [destfile (->> item .getName (str destdir "/") io/file)]
-                 (s*action-append [`io/copy item destfile]))
-               (s*log-error {:message (str "Install item not found:" item)
+               (let [destfile (->> ^java.io.File item .getName (str destdir "/") io/file)]
+                 (pl/s*action-append [`io/copy item destfile]))
+               (pl/s*log-error {:message (str "Install item not found:" item)
                              :type :install-item-not-found
                              :item item, :item-filemap item-filemap})))))
 
@@ -53,7 +46,7 @@
   ([] {s*generate-link-actions {}})
   ([env-opts install-env]
    (let [#:conda-link{:keys [destdir item-filemap items ident]} install-env]
-     (s*action-append [`local!/generate-kernel-json-file! destdir ident]))))
+     (pl/s*action-append [`local!/generate-kernel-json-file! destdir ident]))))
 
 ;;; ----------------------------------------------------------------------------------------------------
 ;;; USED FROM CMDLINE
@@ -64,28 +57,28 @@
   about the attempt to install Clojupyter under Conda.  NOTE: This function is called by the conda
   install procedure, in almost no cases will it be called by a user directly."
   [destdir destdir-filemap]
-  (s*bind-state S
-    (let [log (get-log S)
+  (pl/s*bind-state S
+    (let [log (pl/get-log S)
           filenames (->> (fm/names destdir-filemap)
-                         (map (π fm/file destdir-filemap))
+                         (map (p fm/file destdir-filemap))
                          (remove nil?)
-                         (map #(.getName %))
+                         (map #(.getName ^java.io.File %))
                          (into #{}))
           expected #{"kernel.json"
                      (->> lsp/LOGO-ASSET io/file .getName)
                      lsp/DEFAULT-TARGET-JARNAME}
           ok? (set/subset? expected filenames)
           missing (set/difference expected filenames)
-          fmt (Γ (π map (π str  "  - ")) sort)]
-      (Γ (if ok?
-           (Γ (cmdline/output (str "Successfully installed Clojupyter into " destdir "."))
+          fmt (C (p map (p str  "  - ")) sort)]
+      (C (if ok?
+           (C (cmdline/output (str "Successfully installed Clojupyter into " destdir "."))
               (cmdline/set-result {:destdir destdir})
               (cmdline/set-exit-code 0))
-           (Γ (cmdline/output (str "Clojupyter installation into " destdir " failed."))
+           (C (cmdline/output (str "Clojupyter installation into " destdir " failed."))
               (log/s*report-log log)
               (cmdline/output "")
               (if (-> filenames count pos?)
-                (Γ (cmdline/outputs [(str "Found the following files in " destdir ":")])
+                (C (cmdline/outputs [(str "Found the following files in " destdir ":")])
                    (cmdline/outputs (fmt filenames)))
                 (cmdline/outputs ["" "No files found in installation directory."]))
               (cmdline/outputs ["" "Expected but not found:" ""])
@@ -102,9 +95,9 @@
   in almost no cases will it be called by a user directly."
   [{:keys [skip-execute?] :as opts} install-env]
   (let [#:conda-install{:keys [destdir]} install-env]
-    (Γ (s*log-debug {:conda-link/env-opts opts
+    (C (pl/s*log-debug {:conda-link/env-opts opts
                      :conda-link/install-env install-env})
-       (s*when-not skip-execute?
-         s*set-do-execute)
+       (pl/s*when-not skip-execute?
+         pl/s*set-do-execute)
        (s*generate-link-actions opts install-env)
-       s*execute)))
+       pl/s*execute)))

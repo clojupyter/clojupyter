@@ -1,18 +1,18 @@
 (ns clojupyter.util
-  (:require
-   [cheshire.core				:as cheshire]
-   [clojure.java.io				:as io]
-   [clojure.pprint				:as pp]
-   [clojure.set					:as set]
-   [clojure.spec.alpha				:as s]
-   [clojure.string				:as str]
-   [clojure.walk				:as walk]
-   [io.simplect.compose						:refer [def- redefn π Π γ Γ λ]]
-   [pandect.algo.sha256						:refer [sha256-hmac]]
-   [zprint.core					:as zp]
-   ,,
-   [clojupyter.kernel.spec			:as sp]
-   ))
+  (:require [cheshire.core :as cheshire]
+            [clojure.core.async :as async]
+            [clojure.java.io :as io]
+            [clojure.pprint :as pp]
+            [clojure.set :as set]
+            [clojure.spec.alpha :as s]
+            [clojure.string :as str]
+            [clojure.walk :as walk]
+            [io.simplect.compose :refer [C def- p redefn]]
+            [pandect.algo.sha256 :refer [sha256-hmac]]
+            [zprint.core :as zp]
+            [clojupyter.log :as log]))
+
+(def- CHARSET "UTF8")
 
 (defn- call-if*
   "Takes a single argument.  If applying `pred` to the argument yields a truthy value returns the
@@ -20,30 +20,74 @@
   [pred f]
   #(if (pred %) (f %) %))
 
+(def- json-str* cheshire/generate-string)
+
 (defn- re-pattern+*
   [regex-string]
   (try (re-pattern (str regex-string)) (catch Throwable _ nil)))
 
-(defn tildeize-filename*
+(defn- tildeize-filename*
   [user-homedir v]
   (if (instance? java.io.File v)
     (str/replace (str v) (str user-homedir) "~")
     v))
 
+(defn- bytes->string*
+  [bytes]
+  (String. bytes "UTF-8"))
+
+(defn- string->bytes*
+  [v]
+  (cond
+    (= (type v) (Class/forName "[B"))
+    ,, v
+    (string? v)
+    ,, (.getBytes ^String v CHARSET)
+    :else
+    ,, (.getBytes (json-str* v) CHARSET)))
+
 ;;; ----------------------------------------------------------------------------------------------------
 ;;; EXTERNAL
 ;;; ----------------------------------------------------------------------------------------------------
 
-(def asset-resource-path
-  (π str "clojupyter/assets/"))
+(def IDSMSG "<IDS|MSG>")
+(def IDSMSG-BYTES (string->bytes* IDSMSG))
+(def SEGMENT-ORDER [:envelope :delimiter :signature :header :parent-header :metadata :content])
 
-(def as-sorted-map (Γ (π apply concat) (π apply sorted-map)))
+(def asset-resource-path
+  (p str "clojupyter/assets/"))
+
+(def as-sorted-map (C (p apply concat) (p apply sorted-map)))
+
+(redefn bytes->string bytes->string*)
 
 (redefn call-if call-if*)
 
-(defn ctx?
-  [v]
-  (s/valid? ::sp/ctx v))
+(defn code-empty?
+  [s]
+  (-> s str str/trim count zero?))
+
+(defn code-hushed?
+  [s]
+  (-> s str str/trimr (str/ends-with? ";")))
+
+(def delimiter-frame?
+  "Accepts a single argument which must be a byte-array, returns `true` the array represents the
+  Jupyter 'delimiter' frame (consisting of the bytes of the text '<IDS|MSG>' encoded as UTF-8);
+  otherwise returns `false`."
+  (let [delim ^bytes IDSMSG-BYTES
+        n-delim (count delim)]
+    (fn [^bytes other-byte-array]
+      (if (= n-delim (count other-byte-array))
+        (loop [idx 0]
+          (cond
+            (= idx n-delim)
+            ,, true
+            (= (aget delim idx) (aget other-byte-array idx))
+            ,, (recur (inc idx))
+            :else
+            ,, false))
+        false))))
 
 (defn display-name->ident
   [s]
@@ -57,17 +101,17 @@
 
 (defn files-as-strings
   [user-homedir coll]
-  (walk/postwalk (Γ (call-if (π instance? java.net.URL) str)
-                    (π tildeize-filename* user-homedir))
+  (walk/postwalk (C (call-if (p instance? java.net.URL) str)
+                    (p tildeize-filename* user-homedir))
                  (if (seq? coll) (vec coll) coll)))
 
 (def file-ancestors
   "Given a file object returns a set containing the file itself and the transitive union of its
   parents.  Note: The ancestry is derived exclusively by traversing the *file values*, i.e. does not
   matter whether or not the files thus traversed exist in an underlying file system."
-  (Γ (π iterate #(.getParentFile %))
-     (π take-while (complement nil?))
-     (π into #{})))
+  (C (p iterate #(.getParentFile ^java.io.File %))
+     (p take-while (complement nil?))
+     (p into #{})))
 
 (defn file-ancestor-of
   [ancestor f]
@@ -78,12 +122,12 @@
   (contains? (file-ancestors f) ancestor))
 
 (def file-input-stream
-  (Γ io/file io/input-stream))
+  (C io/file io/input-stream))
 
 (def file-output-stream
-  (Γ io/file io/output-stream))
+  (C io/file io/output-stream))
 
-(redefn json-str cheshire/generate-string)
+(redefn json-str json-str*)
 
 (defn kernel-full-identifier
   [ident]
@@ -93,27 +137,42 @@
   [dest-jar kernel-id-string]
   {:argv ["java" "-cp" (str dest-jar) "clojupyter.kernel.core" "{connection_file}"]
    :display_name (kernel-full-identifier kernel-id-string)
-   :language "clojure"})
+   :language "clojure"
+   :interrupt_mode "message"})
+
+(defmacro ^{:style/indent :defn} define-simple-record-print
+  [name format-fn]
+  (if (symbol? name)
+    (let [fmtfn (gensym "fn-")]
+      `(let [~fmtfn ~format-fn]
+         (defmethod print-method ~name
+           [rec# w#]
+           (.write w# (~fmtfn rec#)))
+         (defmethod pp/simple-dispatch ~name
+           [rec#]
+           (print (~fmtfn rec#)))))
+    (throw (Exception. (str "define-simple-record-print: invalid form")))))
 
 (defn log-messages
   ([log] (log-messages #{:info :warn :error} log))
   ([log-levels log]
    (->> log
-        (filter (Γ :log/level (π contains? log-levels)))
+        (filter (C :log/level (p contains? log-levels)))
         (filter :message)
         (mapv :message))))
 
 (defn make-signer-checker
   [key]
-  (let [mkchecker (fn [signer]
-                    (fn [{:keys [signature header parent-header metadata content]}]
-                      (let [our-signature (signer header parent-header metadata content)]
-                        (= our-signature signature))))
+  (let [mkchecker (fn mkchecker [signer]
+                    (fn [{:keys [header parent-header metadata content preframes]}]
+                      (let [payload-vec [header parent-header metadata content]
+                            signature (.-signature preframes)
+                            check-signature (signer payload-vec)]
+                        (= check-signature (bytes->string* signature)))))
         signer	(if (empty? key)
                   (constantly "")
-                  (fn [header parent metadata content]
-                    (let [res (apply str (map json-str [header parent metadata content]))]
-                      (sha256-hmac res key))))]
+                  (fn signer [payload-vec]
+                    (sha256-hmac (apply str (map json-str* payload-vec)) key)))]
     [signer (mkchecker signer)]))
 
 (redefn parse-json-str cheshire/parse-string)
@@ -132,10 +191,10 @@
 (redefn re-pattern+ re-pattern+*)
 
 (def reformat-form
-  (Γ read-string zp/zprint-str pr-str println))
+  (C read-string zp/zprint-str pr-str println))
 
 (def resource-path
-  (π str "clojupyter/"))
+  (p str "clojupyter/"))
 
 (defn safe-byte-array-to-string
   [array]
@@ -144,15 +203,16 @@
 (defn sanitize-string
   "Given a string, returns the string with all characters not matching `regex` removed."
   [regex]
-  (Γ str
-     (π filter (Γ str (π re-find regex)))
-     (π apply str)
+  (C str
+     (p filter (C str (p re-find regex)))
+     (p apply str)
      str/lower-case))
 
-(defn stream-to-string
-  [map]
+(defn to-json-str
+  "Returns JSON representation (string) of `v`."
+  [v]
   (let [repr (java.io.StringWriter.)]
-    (cheshire/generate-stream map repr)
+    (cheshire/generate-stream v repr)
     (str repr)))
 
 (defn submap?
@@ -164,10 +224,4 @@
 
 (def truthy? (complement falsey?))
 
-(defn >bytes
-  [v]
-  (cond
-    (= (type v) (Class/forName "[B"))	v
-    (string? v)	(.getBytes v)
-    :else	(.getBytes (json-str v))))
-
+(redefn get-bytes string->bytes*)

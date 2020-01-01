@@ -1,13 +1,8 @@
 (ns clojupyter.misc.display
-  (:require
-   [hiccup.core					:as hiccup]
-   ,,
-   [clojupyter.kernel.state			:as state]
-   [clojupyter.protocol.mime-convertible	:as mc]
-   [clojupyter.util				:as u])
-  (:import
-   [javax.imageio ImageIO]
-   [java.awt.image BufferedImage]))
+  (:require [clojupyter.protocol.mime-convertible :as mc]
+            [clojupyter.state :as state]
+            [clojupyter.util :as u]
+            [hiccup.core :as hiccup]))
 
 (defn display
   "Sends `obj` for display by Jupyter. Returns `:ok`."
@@ -19,7 +14,7 @@
 
 (defrecord HiccupHTML [html-data]
   mc/PMimeConvertible
-  (to-mime [_] (u/stream-to-string {:text/html (hiccup/html html-data)})))
+  (to-mime [_] (u/to-json-str {:text/html (hiccup/html html-data)})))
 
 (defn hiccup-html
   "Output `html-data` as HTML."
@@ -29,7 +24,7 @@
 (defrecord HtmlString [html]
   mc/PMimeConvertible
   (to-mime [_]
-    (u/stream-to-string
+    (u/to-json-str
      {:text/html html})))
 
 (defn html
@@ -50,7 +45,7 @@
 (defrecord Latex [latex]
   mc/PMimeConvertible
   (to-mime [_]
-    (u/stream-to-string
+    (u/to-json-str
      {:text/latex latex})))
 
 (defn latex
@@ -68,7 +63,7 @@
 (defrecord Markdown [markdown]
   mc/PMimeConvertible
   (to-mime [_]
-    (u/stream-to-string
+    (u/to-json-str
      {:text/markdown markdown})))
 
 (defn markdown
@@ -84,10 +79,10 @@
 
 (defn vega-lite
   [v]
-  (u/stream-to-string {:application/vnd.vegalite.v1+json v}))
+  (u/to-json-str {:application/vnd.vegalite.v1+json v}))
 
 (defn render-mime
   [mime-type v]
   (reify mc/PMimeConvertible
     (to-mime [_]
-      (u/stream-to-string (hash-map mime-type v)))))
+      (u/to-json-str (hash-map mime-type v)))))

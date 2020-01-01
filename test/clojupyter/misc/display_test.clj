@@ -5,6 +5,7 @@
    ,,
    [clojupyter.misc.display			:as display]
    [clojupyter.misc.mime-convertible]
+   [clojupyter.test-shared			:as ts]
    [clojupyter.protocol.mime-convertible	:as mc]
    ))
 

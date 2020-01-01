@@ -1,10 +1,9 @@
 (ns clojupyter.kernel.version
-  (:require
-   [clojure.edn					:as edn]
-   [clojure.java.io				:as io]
-   [clojure.spec.alpha				:as s]
-   [io.simplect.compose						:refer [def- γ Γ π Π λ μ ρ]])
-  (:gen-class))
+  (:gen-class)
+  (:require [clojure.edn :as edn]
+            [clojure.java.io :as io]
+            [clojure.spec.alpha :as s]
+            [io.simplect.compose :refer [C def- p]]))
 
 (s/def :version/major			int?)
 (s/def :version/minor			int?)
@@ -19,9 +18,9 @@
 
 (def- VERSION-FILENAME "clojupyter/assets/version.edn")
 
-(def- read-digits (Γ (π str "10r") edn/read-string))
+(def- read-digits (C (p str "10r") edn/read-string))
 
-(def- lein-v-version-data (Γ #(io/resource VERSION-FILENAME)
+(def- lein-v-version-data (C #(io/resource VERSION-FILENAME)
                              slurp
                              edn/read-string))
 
@@ -35,7 +34,7 @@
 (defn version
   "Returns version information as a map with the keys `:version/major`,
   `:version/minor`, `:version/incremental`, and `:version/qualifier`, where the former 3 are
-  integers and the latter is a string.  Analoguous to `*clojure-version*`." 
+  integers and the latter is a string.  Analoguous to `*clojure-version*`."
   ([] (version (lein-v-version-data)))
   ([{:keys [version raw-version]}]
    (when (string? version)

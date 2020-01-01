@@ -1,11 +1,7 @@
 (ns clojupyter.install.log
-  ;; Functions whose name begins with 's*' return a single-argument function accepting and returning
-  ;; a state map.
-  (:require
-   [io.simplect.compose						:refer [def- γ Γ π Π]]
-   ,,
-   [clojupyter.cmdline.api			:as cmdline]
-   [clojupyter.util				:as u]))
+  (:require [clojupyter.cmdline.api :as cmdline]
+            [clojupyter.util :as u]
+            [io.simplect.compose :refer [C p]]))
 
 (defn s*report-log
   "Returns a function which, given a state, updates the state with user information about messages in
@@ -13,9 +9,9 @@
   ([log] (s*report-log #{:info :warn :error} log))
   ([levels log]
    (let [msgs (u/log-messages levels log)]
-     (Γ (if (-> msgs count pos?)
-          (Γ (cmdline/outputs [(str "Log messages (" (count msgs) "):") ""])
-             (cmdline/outputs (mapv (π str "  ") msgs)))
+     (C (if (-> msgs count pos?)
+          (C (cmdline/outputs [(str "Log messages (" (count msgs) "):") ""])
+             (cmdline/outputs (mapv (p str "  ") msgs)))
           (cmdline/output "Nothing found in the log."))
         (cmdline/output "")))))
 

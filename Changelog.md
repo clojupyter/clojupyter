@@ -2,6 +2,10 @@
 
 ## v0.2.4 (work-in-progress)
 
+* Fix issue #105: "Windows: Can't interrupt the kernel when stuck in an infinite loop"
+* Fix issue #104: "Clojupyter Jupyter kernelspec is not installed in non-base conda environment"
+* Fix issue #103: "Syntax error on `make install` (Imagemagick needed to install Clojupyter)" (functionalty removed)
+* Fix issue #94: "Specifying dependencies in Clojupyter with deps.edn"
 * Use Clojure icon
 * Add support for data dir (history file) on Windows
 * Add support for configuration files on Windows
@@ -12,7 +16,6 @@
     interrupts and shutdown messages being handled on `:control_port`
   * Add handling of `INTERRUPT_REQUEST` messages
 * Remove icon customization options `--icon-top`, `--icon-top`, and `--customize-icons`
-* Add IPYWIDGET definitions (preliminary - most things don't work yet)
 * Add `comm_atom` representing the state of COMM objects synchronized with the Jupyter COMM model
   manager
 * Simplify `cljsrv.clj`

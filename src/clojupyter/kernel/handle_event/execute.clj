@@ -126,6 +126,8 @@
                                                               {:traceback (collect-stacktrace-strings trace-result),
                                                                :ename ename})
                                   (msgs/execute-reply-content "ok" exe-count))
+        nrepl-ctx		(state/current-context)
+        nrepl-leave-action	(:leave-action nrepl-ctx)
         send-step		(fn [sock-kw msgtype message]
                                   (step (fn [S] (send!! jup sock-kw req-message msgtype message) S)
                                         {:message-to sock-kw :msgtype msgtype :message message}))]
@@ -139,6 +141,8 @@
                                       :nrepl-messages nrepl-messages}}))
        (s*when (and (not silent?) first-segment?)
          (s*a-l (send-step :iopub_port msgs/EXECUTE-INPUT (msgs/execute-input-msg-content exe-count code))))
+       (s*when nrepl-leave-action
+         (s*a-l nrepl-leave-action))
        (s*when interrupted?
          (s*a-l (send-step :iopub_port msgs/STREAM (msgs/stream-message-content "stderr" "*Interrupted*\n"))))
        (s*when output

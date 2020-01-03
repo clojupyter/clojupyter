@@ -1,13 +1,26 @@
 (ns clojupyter.misc.display
-  (:require [clojupyter.protocol.mime-convertible :as mc]
+  (:require [clojupyter.kernel.handle-event.ops :as ops]
+            [clojupyter.kernel.jup-channels :as jup]
+            [clojupyter.messages :as msgs]
+            [clojupyter.protocol.mime-convertible :as mc]
             [clojupyter.state :as state]
             [clojupyter.util :as u]
-            [hiccup.core :as hiccup]))
+            [hiccup.core :as hiccup]
+            [io.simplect.compose.action :refer [action step]]))
 
 (defn display
   "Sends `obj` for display by Jupyter. Returns `:ok`."
   [obj]
-  (state/display! (mc/to-mime obj))
+  (if-let [{:keys [jup req-message]} (state/current-context)]
+    (let [send-obj (-> obj mc/to-mime u/parse-json-str)
+          port :iopub_port
+          msgtype msgs/DISPLAY-DATA
+          message (msgs/display-data-content send-obj {} {})]
+      (-> (action (step [`jup/send!! jup port req-message msgtype message]
+                        {:message-to port, :msgtype msgtype, :message message}))
+          ops/s*append-leave-action
+          state/swap-context!))
+    (throw (Exception. "display: Evaluation context not found.")))
   :ok)
 
 ;; Html
@@ -86,3 +99,4 @@
   (reify mc/PMimeConvertible
     (to-mime [_]
       (u/to-json-str (hash-map mime-type v)))))
+

@@ -100,4 +100,27 @@
                   (mapv (C :rsp-content :text))))))))
  => true)
 
-
+(fact
+ "Calling `display` yields `display_message` on `:iopub_port"
+ (log/with-level :error
+   (let [[ctrl-in ctrl-out shell-in shell-out io-in io-out stdin-in stdin-out]
+         ,, (repeatedly 8 #(async/chan 25))
+         jup (jup/make-jup ctrl-in ctrl-out shell-in shell-out io-in io-out stdin-in stdin-out)]
+     (init/ensure-init-global-state!)
+     (with-open [srv (srv/make-cljsrv)]
+       (let [code (code (clojupyter.display/display 123))
+             msg ((ts/s*message-header msgs/EXECUTE-REQUEST)
+                  (merge (ts/default-execute-request-content) {:code code}))
+             port :shell_port
+             ctx {:req-message msg, :req-port port, :cljsrv srv, :jup jup}
+             {:keys [leave-action]} (clojupyter.state/with-current-context [ctx]
+                                      (execute/eval-request ctx))
+             specs (a/step-specs leave-action)
+             interpr-spec (first specs)
+             display-specs (->> specs (filter (C :msgtype (p = msgs/DISPLAY-DATA))) )
+             display-spec (first display-specs)]
+         (and (= "ok" (-> interpr-spec :interpretation :reply :status))
+              (= 1 (count display-specs))
+              (= {"text/plain" "123"} (-> display-spec :message :data))
+              (= :iopub_port (:message-to display-spec)))))))
+ => true)

@@ -113,6 +113,10 @@
   []
   (first (:cur-ctx @STATE)))
 
+(defn swap-context!
+  [f]
+  (swap! STATE update :cur-ctx (fn [ctx-list] (cons (f (first ctx-list)) (rest ctx-list)))))
+
 (defn pop-context!
   "Pops top of context stack and returns it.  Throws Exception if stack is empty.
 
@@ -128,42 +132,6 @@
   `(try (push-context! ~ctx)
         ~@body
         (finally (pop-context!))))
-
-;;; ------------------------------------------------------------------------------------------------------------------------
-;;; DISPLAY QUEUE
-;;; ------------------------------------------------------------------------------------------------------------------------
-
-(defn display!
-  "Adds `obj` to the end of the display queue for to be output to the
-  Jupyter `stdout` stream.
-
-  Calling `display!` before kernel has been initialized generates an
-  exception.
-
-  Returns `:ok`."
-  [obj]
-  (assert @STATE "Clojupyter internal error: Global state not initialized.")
-  (swap! STATE #(assoc % :display-queue conj (mc/to-mime obj)))
-  :ok)
-
-(defn- clear-display-queue!
-  "Sets display queue to be empty."
-  []
-  (swap! STATE #(assoc % :display-queue EMPTY-QUEUE)))
-
-(defn display-queue
-  "Returns the current display queue."
-  []
-  (:display-queue @STATE))
-
-(defn get-and-clear-display-queue!
-  "Returns display queue after clearing it."
-  []
-  (let [q (display-queue)]
-    (clear-display-queue!)
-    q))
-
-(println "state.clj:			display-queue needs review")
 
 ;;; ------------------------------------------------------------------------------------------------------------------------
 ;;; HISTORY

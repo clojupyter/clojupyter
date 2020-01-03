@@ -14,8 +14,7 @@
             [io.simplect.compose :refer [C def- fmap p P sdefn >->> >>->]]))
 
 (def PROTOCOL-VERSION "5.2")
-(def WIDGET-PROTOCOL-VERSION-MAJOR 2)
-(def WIDGET-PROTOCOL-VERSION-MINOR 0)
+
 
 ;;; ------------------------------------------------------------------------------------------------------------------------
 ;;; JUPYTER MESSAGE TYPES
@@ -417,21 +416,9 @@
   {:code code, :cursor_pos cursor-pos})
 
 (sdefn display-data-content
-  (s/cat :model-id ::uuid :opts (s/? (s/keys :opt-un [::metadata ::transient ::version-major ::version-minor])))
-  ([model-ref]
-   (display-data-content model-ref {}))
-  ([model-ref {:keys [metadata transient version-major version-minor]}]
-   (let [version-major (or version-major WIDGET-PROTOCOL-VERSION-MAJOR)
-         version-minor (or version-minor WIDGET-PROTOCOL-VERSION-MINOR)
-         metadata (or metadata {})
-         transient (or transient {})]
-     (merge {:data {:application/vnd.jupyter.widget-view+json
-                    {:model_id model-ref
-                     :version_major version-major
-                     :version_minor version-minor}
-                    :text/plain (str "display_data: " model-ref)}
-             :metadata metadata
-             :transient transient}))))
+  (s/cat :data map?, :metadata map?, :transient map?)
+  [data metadata transients-map]
+  {:data data, :metadata metadata, :transient transients-map})
 
 (sdefn error-message-content
   (s/cat :exe-count ::msp/execution_count)

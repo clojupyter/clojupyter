@@ -14,7 +14,7 @@
               :transport (reify Transport
                            (recv [this] (.recv transport))
                            (recv [this timeout] (.recv transport timeout))
-                           (send [this {:keys [printed-value value] :as resp}]
+                           (send [this resp]
                              (.send transport
                                     (if-let [[_ v] (find resp :value)]
                                       (assoc resp :mime-tagged-value (mc/to-mime v))

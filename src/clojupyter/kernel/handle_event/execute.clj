@@ -96,6 +96,10 @@
         _ (log/debug "get-intput! msgvalue: " (log/ppstr {:msgvalue msgvalue}))]
     msgvalue))
 
+(defn- silent-eval?
+  [{:keys [req-message]}]
+  (or (msgs/message-silent req-message) (-> req-message msgs/message-code u/code-empty?)))
+
 (defn- handle-eval-result
   [{:keys [jup req-port cljsrv req-message nrepl-eval-result] :as ctx} continuing?]
   (assert req-port)
@@ -115,7 +119,7 @@
         {:keys [interrupted?
                 result output]}	eval-interpretation
         {:keys [ename]}		result
-        silent?			(or (msgs/message-silent req-message) (u/code-empty? code))
+        silent?			(silent-eval? ctx)
         hushed?			(u/code-hushed? code)
         store-history?		(if silent? false (msgs/message-store-history? req-message))
         halting?		(or interrupted? ename)
@@ -139,8 +143,6 @@
                                       :interrupted? interrupted?, :need-input need-input,
                                       :halting? halting?, :final-segment? final-segment?,
                                       :nrepl-messages nrepl-messages}}))
-       (s*when (and (not silent?) first-segment?)
-         (s*a-l (send-step :iopub_port msgs/EXECUTE-INPUT (msgs/execute-input-msg-content exe-count code))))
        (s*when nrepl-leave-action
          (s*a-l nrepl-leave-action))
        (s*when interrupted?
@@ -171,13 +173,21 @@
                       {:op :inc-execute-count}))))))
 
 (definterceptor ic*eval-code msgs/EXECUTE-REQUEST
-  (s*bind-state {:keys [req-message cljsrv]}
+  (s*bind-state {:keys [jup req-message cljsrv] :as ctx}
     (do (assert req-message)
         (assert cljsrv)
-        (let [code (msgs/message-code req-message)]
-          (s*append-enter-action
-           (step #(assoc % :nrepl-eval-result (cljsrv/nrepl-eval cljsrv code))
-                 {:op :nrepl-eval :code code})))))
+        (let [silent? (silent-eval? ctx)
+              exe-count (state/execute-count)
+              code (msgs/message-code req-message)
+              send-step (fn [sock-kw msgtype message]
+                          (step [`send!! jup sock-kw req-message msgtype message]
+                                {:message-to sock-kw :msgtype msgtype :message message}))]
+          (C (s*when-not silent?
+               (-> (send-step :iopub_port msgs/EXECUTE-INPUT (msgs/execute-input-msg-content exe-count code))
+                   s*append-enter-action))
+             (-> (step #(assoc % :nrepl-eval-result (cljsrv/nrepl-eval cljsrv code))
+                       {:op :nrepl-eval :code code})
+                 s*append-enter-action)))))
   (s*bind-state ctx
     (handle-eval-result ctx false)))
 

@@ -1,4 +1,7 @@
 (ns clojupyter.kernel.cljsrv
+  "Interface to NREPL server mainly enabling Clojupyter to evaluate Clojure code entered into Jupyter
+  code cells, but supporting code completion, access to documentation strings, and interrupting
+  currently running evaluations."
   (:require
    [clojure.pprint			:as pp]
    [io.simplect.compose					:refer [def-]]

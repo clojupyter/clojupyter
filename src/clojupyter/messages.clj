@@ -228,7 +228,7 @@
       [(= value (insert-paths result paths)) ;; <-- The point of `leaf-paths` and `insert-paths`
        result paths])
     ;; =>
-    [true 
+    [true
      {:a :replaced, :b [0 :replaced [:replaced 2 :replaced {:x [:replaced]}]]}
      {[:a] 1, [:b 1] 1, [:b 2 0] 1, [:b 2 2] 3, [:b 2 3 :x 0] 1}]
 
@@ -244,10 +244,6 @@
               jupyter-message))]
     (reduce (fn [Σ [path v]] (insert-by-path Σ path v))
             jupyter-message path-value-map)))
-
-
-
-
 
 ;;; ------------------------------------------------------------------------------------------------------------------------
 ;;; FRAMES <-> JUPMSG
@@ -268,7 +264,7 @@
 (let [env-delim (vec (take 2 u/SEGMENT-ORDER))
       body-keys (vec (drop 2 u/SEGMENT-ORDER))
       _ (assert (= env-delim [:envelope :delimiter]))
-      _ (assert (= body-keys [:signature :header :parent-header :metadata :content] ))]
+      _ (assert (= body-keys [:signature :header :parent-header :metadata :content]))]
 
   (defn frames->jupmsg
     "Returns a map representing a Jupyter message.  `frames` must be a sequential collection of
@@ -399,7 +395,7 @@
    (comm-open-content comm-id data {}))
   ([comm-id data opts]
    ;; `comm-open` and `comm` have identical content structure:
-   (comm-msg-content comm-id data opts))) 
+   (comm-msg-content comm-id data opts)))
 
 (sdefn complete-reply-content
   (s/cat :matches ::matches, :start ::cursor-start, :end ::cursor-end)

@@ -1,4 +1,6 @@
 (ns clojupyter.shutdown
+  "Implements Clojupter for shutting down: All threads monitor a special channel to which a shutdown
+  token is sent when Clojupyter is to terminate."
   (:require [clojupyter.log :as log]
             [clojupyter.util :as u]
             [clojupyter.util-actions :as u!]

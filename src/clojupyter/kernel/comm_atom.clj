@@ -1,4 +1,7 @@
 (ns clojupyter.kernel.comm-atom
+  "Implements support for Jupyter COMM objects which is the mechanism for synchronizing state between
+  Jupyter clients (Notebook, Lab, others) and kernels such as Clojupyter.  COMM objects serve as the
+  basis for interactive controls such as ipywidgets."
   (:require
    [clojupyter.log :as log]
    [clojupyter.kernel.comm-global-state :as comm-global-state]
@@ -22,14 +25,19 @@
 ;;; ------------------------------------------------------------------------------------------------------------------------
 
 (defprotocol comm-atom-proto
-  (target [comm-atom] "The Jupyter target name to which the COMM-ATOM belongs.")
-  (comm-id [comm-atom] "The Jupyter protocol ID of the COMM-ATOM.")
-  (model-ref [comm-atom] "The COMM-ATOM's Jupyter Model reference identifier (a string).")
-  (origin-message [comm-atom] "The message that caused the COMM-ATOM to be created.")
+  (target [comm-atom]
+    "The Jupyter target name to which the COMM-ATOM belongs.")
+  (comm-id [comm-atom]
+    "The Jupyter protocol ID of the COMM-ATOM.")
+  (model-ref [comm-atom]
+    "The COMM-ATOM's Jupyter Model reference identifier (a string).")
+  (origin-message [comm-atom]
+    "The message that caused the COMM-ATOM to be created.")
   (state-set! [comm-atom comm-state]
     "Sets the value `comm-atom` to be `comm-state` by updating the global state and sending COMM `update`
   message.  `comm-state` must be a map serializable to JSON.  Returns `comm-atom`.")
-  (state-update! [comm-atom comm-state] "Merges `comm-state` into current value of `comm-atom`.")
+  (state-update! [comm-atom comm-state]
+    "Merges `comm-state` into current value of `comm-atom`.")
   (watch [comm-atom key fn]
     "Add watch to `comm-atom` which will subsequently be called when the value of `comm-atom` is
     updated.  The observer `fn` fn must be a fn of 4 args: a key, the reference, its old-state, its

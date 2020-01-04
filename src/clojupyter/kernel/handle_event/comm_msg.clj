@@ -210,7 +210,8 @@
 (def comm-msg? comm-msg?*)
 
 (defn handle-message
-  "Returns `Action-State` 2-tuple (first element is Action, second is State)."
+  "Handles `req-message` and returns `Action-State` 2-tuple (first element is Action, second is
+  State)."
   [state {:keys [req-message] :as ctx}]
   (let [msgtype (msgs/message-msg-type req-message)]
     (calc msgtype state ctx )))

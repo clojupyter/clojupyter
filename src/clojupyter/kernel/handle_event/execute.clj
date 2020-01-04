@@ -91,9 +91,7 @@
   (send!! jup :stdin_port req-message msgs/INPUT-REQUEST (msgs/input-request-content "Enter value: "))
   ;; wait for INPUT-REPLY:
   (let [{received-message :req-message :as received} (receive!! jup :stdin_port)
-        _ (log/debug "get-input! received: " (log/ppstr {:received received, :received-message received-message}))
-        msgvalue  (msgs/message-value received-message)
-        _ (log/debug "get-intput! msgvalue: " (log/ppstr {:msgvalue msgvalue}))]
+        msgvalue  (msgs/message-value received-message)]
     msgvalue))
 
 (defn- silent-eval?
@@ -106,7 +104,6 @@
   (assert cljsrv)
   (assert req-message)
   (assert nrepl-eval-result)
-  (s/assert :clojupyter.jupmsg-specs/jupmsg req-message)
   (let [{:keys [nrepl-messages
                 need-input
                 delayed-msgseq

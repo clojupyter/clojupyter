@@ -23,7 +23,7 @@
   (.addShutdownHook (Runtime/getRuntime) (Thread. shutdown-hook)))
 
 (defn ensure-init-global-state!
-  "Initializes global state. May only be called once."
+  "Initializes global state."
   []
   (if @INITIALIZED?
     false

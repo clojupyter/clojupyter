@@ -1,4 +1,8 @@
 (ns clojupyter.kernel.jup-channels
+  "Defines the interface for communicating with the Clojupyter kernel which, to ensure close alignment
+  with Jupyter's architecture, is based on `core.async` channels (mimicking the ZeroMQ channels used
+  for communication between the Jupyter client (Notebook, Lab, others) and backend (kernels such as
+  Clojupyter)."
   (:require [clojure.core.async :as async]
             [clojure.pprint :as pp]))
 

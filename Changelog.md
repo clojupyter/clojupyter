@@ -1,6 +1,6 @@
 # Changelog
 
-## v0.2.4 (work-in-progress)
+## v0.3.0 (in beta release)
 
 * Fix issue #105: "Windows: Can't interrupt the kernel when stuck in an infinite loop"
 * Fix issue #104: "Clojupyter Jupyter kernelspec is not installed in non-base conda environment"

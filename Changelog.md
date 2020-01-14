@@ -1,12 +1,11 @@
 # Changelog
 
-## v0.2.4 (work-in-progress)
+## v0.3.0 (in beta release)
 
 * Fix issue #105: "Windows: Can't interrupt the kernel when stuck in an infinite loop"
 * Fix issue #104: "Clojupyter Jupyter kernelspec is not installed in non-base conda environment"
 * Fix issue #103: "Syntax error on `make install` (Imagemagick needed to install Clojupyter)" (functionalty removed)
 * Fix issue #94: "Specifying dependencies in Clojupyter with deps.edn"
-* Use Clojure icon
 * Add support for data dir (history file) on Windows
 * Add support for configuration files on Windows
 * Add Docker files for building Clojupyter in `./docker`.
@@ -34,9 +33,10 @@
 * Specification of all Jupyter protocol messages using `clojure.spec`
 * Test coverage significantly expanded including generators for all Jupyter protocol messages
 * nrepl communication reimplemented incresing use of pure functions
-* Switch from Greek to Latin letters when using io.simplect.compose
+* Use Latin function names in io.simplect.compose
+* Use Clojure icon
 * Various dependencies updated
-* Stop using functions and macros from `io.simplect.compose` with Greek characters
+
 
 ## 2019-11-26
 * Merged hotfix for [Issue #104: Clojupyter Jupyter kernelspec is not installed in non-base conda

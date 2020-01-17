@@ -2,6 +2,7 @@
   (:require
    [clojupyter.misc.mime-convertible]
    [clojupyter.protocol.mime-convertible			:refer [to-mime]]
+   [clojupyter.test-shared			:as ts]
    [midje.sweet							:refer [fact]]
    [clojure.java.io				:as io])
   (:import [javax.imageio ImageIO]

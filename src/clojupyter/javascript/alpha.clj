@@ -9,16 +9,12 @@
 
   Alpha version - breakage may happen.  Please report issues or
   missing features."
-  (:require
-   [clojupyter.misc.display			:as display]
-   [clojure.data.json				:as json]
-   [clojure.spec.alpha				:as s]
-   [clojure.string				:as str]
-   [clojure.spec.test.alpha					:refer [instrument]]
-   ,,
-   [clojupyter.util				:as u]
-   [clojupyter.util-actions			:as u!]
-   ))
+  (:require [clojupyter.misc.display :as display]
+            [clojupyter.util-actions :as u!]
+            [clojure.data.json :as json]
+            [clojure.spec.alpha :as s]
+            [clojure.spec.test.alpha :refer [instrument]]
+            [clojure.string :as str]))
 
 ;;; ----------------------------------------------------------------------------------------------------
 ;;; REQUIREJS - ASYNCHRONUOUS MODULE DEFINITIONS (AMDs)
@@ -67,7 +63,7 @@
    requirejs.config({\"paths\":{\"hicharts\":\"https:\\/\\/code.highcharts.com\\/highcharts\"},
    \"shim\":{\"hicharts\":{\"exports\":\"Highcharts\"}}})
    nil
-   c.j.alpha> 
+   c.j.alpha>
 
   (Printed line above broken for readability.)
 
@@ -87,7 +83,7 @@
                    (format \"function(hc){hc.chart('%s',%s)}\" nodeid (json/write-str data)))))
   require([\"hicharts\"],function(hc){hc.chart('G__34952',{\"a\":1})});
   nil
-  c.j.alpha> 
+  c.j.alpha>
 
   where the function's formal parameter `hc` is bound to the exported
   symbol `Highcharts` from the Highchart library which is referenced

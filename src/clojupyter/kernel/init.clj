@@ -1,27 +1,43 @@
 (ns clojupyter.kernel.init
-  (:require
-   [clojure.pprint						:refer [pprint]]
-   [taoensso.timbre				:as log]
-   ,,
-   [clojupyter]
-   [clojupyter.kernel.state			:as state]
-   [clojupyter.kernel.middleware.log-traffic	:as log-traffic]
-   [clojupyter.kernel.config			:as cfg]
-   [clojupyter.kernel.stacktrace		:as stacktrace]
-   [clojupyter.kernel.version			:as version]))
+  (:require clojupyter
+            [clojupyter.kernel.config :as cfg]
+            [clojupyter.kernel.stacktrace :as stacktrace]
+            [clojupyter.kernel.version :as version]
+            [clojupyter.log :as log]
+            [clojupyter.state :as state]
+            [clojupyter.util-actions :as u!]))
 
-(defn init-global-state!
-  "Initializes global state. May only be called once."
+(def INITIALIZED? (atom false))
+
+(defn- shutdown-hook
   []
-  (cfg/init!)
-  (log/set-level! (cfg/log-level))
-  (let [ver (version/version)]
-    (alter-var-root #'clojupyter/*version* (constantly ver))
-    (println (str "Clojupyter: Version " (version/version-string-long ver) ".")))
-  (when-let [config-file (cfg/config-file)]
-    (println (str "Clojupyter: Configuration read from " config-file "."))
-    (println (str "Clojupyter configuration: "))
-    (pprint (cfg/configuration)))
-  (state/set-initial-state!)
-  (stacktrace/init!)
-  (log-traffic/init!))
+  (try (u!/with-exception-logging
+           (.close (state/zmq-context))
+         (log/info "Shutdown-hook terminating."))
+       (finally
+         (Thread/sleep 10)
+         (shutdown-agents))))
+
+(defn- setup-shutdown-hook
+  []
+  (.addShutdownHook (Runtime/getRuntime) (Thread. shutdown-hook)))
+
+(defn ensure-init-global-state!
+  "Initializes global state."
+  []
+  (if @INITIALIZED?
+    false
+    (do (cfg/init!)
+        (log/init!)
+        (let [ver (version/version)]
+          (alter-var-root #'clojupyter/*version* (constantly ver))
+          (log/info (str "Clojupyter version " (version/version-string-long ver) ".")))
+        (when-let [config-file (cfg/config-file)]
+          (log/info (str "Configuration read from " config-file "."))
+          (log/info (str "Configuration: ") (cfg/configuration)))
+        (state/ensure-initial-state!)
+        (stacktrace/init!)
+        (setup-shutdown-hook)
+        (reset! INITIALIZED? true))))
+
+

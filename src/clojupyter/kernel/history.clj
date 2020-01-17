@@ -1,12 +1,8 @@
 (ns clojupyter.kernel.history
-  (:require
-   [clojure.java.jdbc			:as sql]
-   [clojure.java.io			:as io]
-   ,,
-   [clojupyter.kernel.config		:as cfg]
-   [clojupyter.util-actions		:as u!]))
-
-
+  (:require [clojupyter.kernel.config :as cfg]
+            [clojupyter.util-actions :as u!]
+            [clojure.java.io :as io]
+            [clojure.java.jdbc :as sql]))
 
 (def ^:private JUPYTER-HISTORY-FILE "jupyter-history")
 

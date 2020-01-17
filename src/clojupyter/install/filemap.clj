@@ -1,10 +1,8 @@
 (ns clojupyter.install.filemap
-  (:require
-   [clojure.java.io				:as io]
-   [clojure.pprint				:as pp]
-   [io.simplect.compose						:refer [def- γ Γ π Π >>-> >->>]]
-   ,,
-   [clojupyter.util-actions			:as u!]))
+  (:require [clojupyter.util-actions :as u!]
+            [clojure.java.io :as io]
+            [clojure.pprint :as pp]
+            [io.simplect.compose :refer [p P]]))
 
 (use 'clojure.pprint)
 
@@ -13,11 +11,12 @@
 (defn- fstype
   [v]
   (when (instance? java.io.File v)
-    (cond
-      (not (.exists v)) nil
-      (.isFile v)	:filetype/file
-      (.isDirectory v)	:filetype/directory
-      :else		:filetype/other)))
+    (let [v ^java.io.File v]
+      (cond
+        (not (.exists v))	nil
+        (.isFile v)		:filetype/file
+        (.isDirectory v)	:filetype/directory
+        :else			:filetype/other))))
 
 (defprotocol filemap-proto
   (dir		[_ nm])
@@ -47,7 +46,7 @@
                                  (when (filemap? v)
                                    (= _m (get-map v))))))
 
-(alter-meta! #'->FileMap (Π assoc :private true))
+(alter-meta! #'->FileMap (P assoc :private true))
 
 (defmethod print-method FileMap
   [^FileMap fm ^java.io.Writer w]
@@ -59,7 +58,7 @@
        (pp/pprint-logical-block (pp/write (get-map fm)))))
     (.write w (str fm))))
 
-(def filemap? (π instance? FileMap))
+(def filemap? (p instance? FileMap))
 
 (defn- coerce-to-map
   [v]

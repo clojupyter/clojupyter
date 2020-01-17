@@ -1,15 +1,17 @@
 (ns clojupyter.kernel.version-test
-  (:require
-   [clojure.string				:as str]
-   [clojure.test.check				:as tc]
-   [clojure.test.check.generators		:as gen 	:refer [sample]]
-   [clojure.test.check.properties		:as prop]
-   [io.simplect.compose						:refer [def- γ Γ π Π >>-> >->>]]
-   [midje.sweet							:refer [fact facts =>]]
-   ,,
-   [clojupyter.kernel.version			:as ver]
-   ,,
-   [clojupyter.test-shared					:refer :all]))
+  (:require [clojupyter.kernel.version :as ver]
+            [clojupyter.test-shared :as ts]
+            [clojupyter.test-shared-generators
+             :as
+             shg
+             :refer
+             [==> g-hex-string R]]
+            [clojure.string :as str]
+            [clojure.test.check :as tc]
+            [clojure.test.check.generators :as gen]
+            [clojure.test.check.properties :as prop]
+            [io.simplect.compose :refer [C def- p]]
+            [midje.sweet :refer [=> fact facts]]))
 
 (use 'clojure.pprint)
 
@@ -72,21 +74,21 @@
 ;;; TEST.CHECK TESTS
 ;;; ----------------------------------------------------------------------------------------------------
 
-(def g-ver-component 
+(def g-ver-component
   (gen/fmap #(Math/abs %) gen/small-integer))
 
 (def g-qualifier
-  (g-nilable
-   (gen/frequency [[5 (g-constant "SNAPSHOT")]
+  (shg/g-nilable
+   (gen/frequency [[5 (shg/g-constant "SNAPSHOT")]
                    [3 (gen/elements ["ALPHA1" "ALPHA2" "BETA1" "BETA2" "RC1" "RC2"])]
-                   [1 (gen/fmap (Γ (π apply str) str/upper-case)
+                   [1 (gen/fmap (C (p apply str) str/upper-case)
                                 (gen/vector gen/char-alphanumeric 3 8))]])))
 
 (def g-lein-v
-  (g-nilable
+  (shg/g-nilable
    (gen/fmap (fn [[hexvec qual]] (str hexvec qual))
              (gen/tuple (g-hex-string 4 4)
-                        (g-nilable (g-constant "-DIRTY"))))))
+                        (shg/g-nilable (shg/g-constant "-DIRTY"))))))
 
 (def g-version
   (gen/let [qual g-qualifier
@@ -107,7 +109,8 @@
            (==> lein-v (and (string? lein-v)
                             (re-find #"^[\dabcdef]+(-DIRTY)?$" lein-v)))))))
 
-(fact "version-basic"
-  (fact (:pass? (tc/quick-check QC-ITERS prop--version-basic))
-    => true))
+(facts
+ "version-basic"
+ (fact (:pass? (tc/quick-check QC-ITERS prop--version-basic))
+       => true))
 

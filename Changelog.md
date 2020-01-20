@@ -8,7 +8,7 @@
 * Fix issue #94: "Specifying dependencies in Clojupyter with deps.edn"
 * Add support for data dir (history file) on Windows
 * Add support for configuration files on Windows
-* Add Docker files for building Clojupyter in `./docker`.
+* Add Docker files for building Clojupyter in `./docker` (for reference).
 * Switch to message-based interrupts including support for interrupts on Windows, eliminate
   dependency on `beckon`
   * Switch to 2 event-handling threads, one for `:control_port` and one for `:shell_port` with only

@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.3.1
+
+* Add explicit dependency on `jupyterlab` and `qtconsole` to conda install
+
 ## v0.3.0
 
 * Fix issue #105: "Windows: Can't interrupt the kernel when stuck in an infinite loop"
@@ -8,7 +12,7 @@
 * Fix issue #94: "Specifying dependencies in Clojupyter with deps.edn"
 * Add support for data dir (history file) on Windows
 * Add support for configuration files on Windows
-* Add Docker files for building Clojupyter in `./docker`.
+* Add Docker files for building Clojupyter in `./docker` (for reference).
 * Switch to message-based interrupts including support for interrupts on Windows, eliminate
   dependency on `beckon`
   * Switch to 2 event-handling threads, one for `:control_port` and one for `:shell_port` with only

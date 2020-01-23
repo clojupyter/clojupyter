@@ -11,8 +11,9 @@
 
 (def DEPEND [csp/DEPEND-DUMMY])
 
-(def- BUILD-REQS ["openjdk=8" "maven"])
-(def- RUN-REQS	(vec (concat BUILD-REQS ["notebook>=4.4.0" "ipywidgets>=7.0" "widgetsnbextension"])))
+(def- JUP-DEPS ["ipywidgets" "jupyterlab" "notebook" "qtconsole" "widgetsnbextension"])
+(def- BUILD-DEPS ["openjdk=8" "maven"])
+(def- RUN-DEPS	(vec (concat BUILD-DEPS JUP-DEPS)))
 
 (def unqualify-kws (p walk/postwalk (u/call-if keyword? (C name keyword))))
 
@@ -54,16 +55,16 @@
                                  :conda-config-requirements/run run-reqs}
      :conda-config/source	{:conda-config-source/folder kernel-dir}}))
 
-(sdefn yaml-string (s/cat :opts (s/? (s/keys :opt-un [::build-reqs ::run-reqs]))
+(sdefn yaml-string (s/cat :opts (s/? (s/keys :opt-un [::build-deps ::run-deps]))
                           :ver :version/version-map
                           :build-num :conda-config-build/number
                           :kernel-dir :conda-config-source/folder)
   "Returns the string to be written to the `meta.yaml` needed to Conda-build Clojupyter."
   ([version-map build-num kernel-dir] (yaml-string {} version-map build-num kernel-dir))
-  ([{:keys [build-reqs run-reqs]} version-map build-num kernel-dir]
-   (let [build-reqs (or build-reqs BUILD-REQS)
-         run-reqs (or run-reqs RUN-REQS)]
-     (->> (conda-configuration version-map build-num kernel-dir build-reqs run-reqs)
+  ([{:keys [build-deps run-deps]} version-map build-num kernel-dir]
+   (let [build-deps (or build-deps BUILD-DEPS)
+         run-deps (or run-deps RUN-DEPS)]
+     (->> (conda-configuration version-map build-num kernel-dir build-deps run-deps)
           unqualify-kws
           escaped-yaml-string))))
 

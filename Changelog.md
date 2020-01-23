@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.3.1
+
+* Add explicit dependency on `jupyterlab` and `qtconsole` to conda install
+
 ## v0.3.0
 
 * Fix issue #105: "Windows: Can't interrupt the kernel when stuck in an infinite loop"

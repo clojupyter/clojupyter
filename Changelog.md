@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.3.2
+
+* Reintroduce AOT compilation of `clojupyter.cmdline` (unintentionally dropped in transition to
+  `tools.deps` build tool chain), in  `project.clj`
+
 ## v0.3.1
 
 * Add explicit dependency on `jupyterlab` and `qtconsole` to conda install

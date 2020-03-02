@@ -1,4 +1,4 @@
-(defproject clojupyter "0.3.2-SNAPSHOT"
+(defproject clojupyter "0.3.2"
   :description			"A Jupyter kernel for Clojure"
   :license			{:name "MIT"}
   :url				"https://github.com/clojupyter/clojupyter"
@@ -10,6 +10,9 @@
   :profiles			{:dev		{:dependencies 	[[midje "1.9.6" :exclusions [org.clojure/clojure]]]
 				                 :plugins	[[lein-midje "3.2.1"] [com.roomkey/lein-v "7.0.0"]]}
 		                 :uberjar	{:aot :all}}
+
+  :main				clojupyter.kernel.core
+  :aot				[clojupyter.cmdline]
 
   ;; Use tools-deps for dependencies:
   :plugins			[[lein-tools-deps "0.4.5"]]

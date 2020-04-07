@@ -362,7 +362,7 @@
 | value                 | string                               | ''                          | String value                                                                                                 |
 ")
 
-(defipywidget ;; controller-axis 
+(defipywidget ;; controller-axis
 "
 | Attribute             | Type                       | Default                     | Help                                      |
 | _dom_classes          | array of string            | []                          | CSS classes applied to widget DOM element |
@@ -376,7 +376,7 @@
 | value                 | number (float)             | 0.0                         | The value of the axis.                    |
 ")
 
-(defipywidget ;; controller 
+(defipywidget ;; controller
 "
 | Attribute             | Type                                | Default                     | Help                                                  |
 | _dom_classes          | array of string                     | []                          | CSS classes applied to widget DOM element             |
@@ -396,7 +396,7 @@
 | timestamp             | number (float)                      | 0.0                         | The last time the data from this gamepad was updated. |
 ")
 
-(defipywidget ;; dom-widget 
+(defipywidget ;; dom-widget
 "
 | Attribute             | Type                       | Default                     | Help                                      |
 | _dom_classes          | array of string            | []                          | CSS classes applied to widget DOM element |
@@ -410,7 +410,7 @@
 | value                 | Bytes                      | b''                         | The media data as a byte string.          |
 ")
 
-(defipywidget ;; date-picket 
+(defipywidget ;; date-picker
 "
 | Attribute             | Type                                 | Default                     | Help                                                   |
 | _dom_classes          | array of string                      | []                          | CSS classes applied to widget DOM element              |
@@ -428,7 +428,7 @@
 | value                 | null or Date                         | null                        |                                                        |
 ")
 
-(defipywidget ;; description-style 
+(defipywidget ;; description-style
 "
 | Attribute             | Type   | Default                     | Help                                                 |
 | _model_module         | string | '@jupyter-widgets/controls' |                                                      |
@@ -440,7 +440,7 @@
 | description_width     | string | ''                          | Width of the description to the side of the control. |
 ")
 
-(defipywidget ;; directional-link 
+(defipywidget ;; directional-link
 "
 | Attribute             | Type           | Default                     | Help                                   |
 | _model_module         | string         | '@jupyter-widgets/controls' |                                        |
@@ -453,7 +453,7 @@
 | target                | array          | []                          | The target (widget, 'trait_name') pair |
 ")
 
-(defipywidget ;; dropdown 
+(defipywidget ;; dropdown
 "
 | Attribute             | Type                                 | Default                     | Help                                                   |
 | _dom_classes          | array of string                      | []                          | CSS classes applied to widget DOM element              |
@@ -472,7 +472,7 @@
 | style                 | reference to DescriptionStyle widget | reference to new instance   | Styling customizations                                 |
 ")
 
-(defipywidget ;; file-upload 
+(defipywidget ;; file-upload
 "
 | Attribute             | Type                                                                  | Default                     | Help                                                   |
 | _counter              | number (integer)                                                      | 0                           |                                                        |
@@ -497,7 +497,7 @@
 | style                 | reference to ButtonStyle widget                                       | reference to new instance   |                                                        |
 ")
 
-(defipywidget ;; float-log-slider 
+(defipywidget ;; float-log-slider
 "
 | Attribute             | Type                                     | Default                     | Help                                                              |
 | _dom_classes          | array of string                          | []                          | CSS classes applied to widget DOM element                         |
@@ -544,7 +544,7 @@
 | value                 | number (float)                                                     | 0.0                         | Float value                                            |
 ")
 
-(defipywidget ;; float-range-slider 
+(defipywidget ;; float-range-slider
 "
 | Attribute             | Type                                     | Default                     | Help                                                              |
 | _dom_classes          | array of string                          | []                          | CSS classes applied to widget DOM element                         |
@@ -569,7 +569,7 @@
 | value                 | array                                    | [0.0, 1.0]                  | Tuple of (lower, upper) bounds                                    |
 ")
 
-(defipywidget ;; float-slider 
+(defipywidget ;; float-slider
 "
 | Attribute             | Type                                     | Default                     | Help                                                              |
 | _dom_classes          | array of string                          | []                          | CSS classes applied to widget DOM element                         |
@@ -594,7 +594,7 @@
 | value                 | number (float)                           | 0.0                         | Float value                                                       |
 ")
 
-(defipywidget ;; float-text 
+(defipywidget ;; float-text
 "
 | Attribute             | Type                                 | Default                     | Help                                                                                                         |
 | _dom_classes          | array of string                      | []                          | CSS classes applied to widget DOM element                                                                    |
@@ -614,7 +614,7 @@
 | value                 | number (float)                       | 0.0                         | Float value                                                                                                  |
 ")
 
-(defipywidget ;; grid-box 
+(defipywidget ;; grid-box
 "
 | Attribute             | Type                                                       | Default                     | Help                                      |
 | _dom_classes          | array of string                                            | []                          | CSS classes applied to widget DOM element |
@@ -629,7 +629,7 @@
 | layout                | reference to Layout widget                                 | reference to new instance   |                                           |
 ")
 
-(defipywidget ;; h-box 
+(defipywidget ;; h-box
 "
 | Attribute             | Type                                                       | Default                     | Help                                      |
 | _dom_classes          | array of string                                            | []                          | CSS classes applied to widget DOM element |
@@ -644,7 +644,7 @@
 | layout                | reference to Layout widget                                 | reference to new instance   |                                           |
 ")
 
-(defipywidget ;; html-math 
+(defipywidget ;; html-math
 "
 | Attribute             | Type                                 | Default                     | Help                                                    |
 | _dom_classes          | array of string                      | []                          | CSS classes applied to widget DOM element               |
@@ -662,7 +662,7 @@
 | value                 | string                               | ''                          | String value                                            |
 ")
 
-(defipywidget ;; html 
+(defipywidget ;; html
 "
 | Attribute             | Type                                 | Default                     | Help                                                    |
 | _dom_classes          | array of string                      | []                          | CSS classes applied to widget DOM element               |
@@ -680,7 +680,7 @@
 | value                 | string                               | ''                          | String value                                            |
 ")
 
-(defipywidget ;; image 
+(defipywidget ;; image
 "
 | Attribute             | Type                       | Default                     | Help                                                                     |
 | _dom_classes          | array of string            | []                          | CSS classes applied to widget DOM element                                |
@@ -697,7 +697,7 @@
 | width                 | string                     | ''                          | Width of the image in pixels. Use layout.width for styling the widget.   |
 ")
 
-(defipywidget ;; int-progress 
+(defipywidget ;; int-progress
 "
 | Attribute             | Type                                                       | Default                     | Help                                                   |
 | _dom_classes          | array of string                                            | []                          | CSS classes applied to widget DOM element              |
@@ -718,7 +718,7 @@
 | value                 | number (integer)                                           | 0                           | Int value                                              |
 ")
 
-(defipywidget ;; int-range-slider 
+(defipywidget ;; int-range-slider
 "
 | Attribute             | Type                                     | Default                     | Help                                                              |
 | _dom_classes          | array of string                          | []                          | CSS classes applied to widget DOM element                         |
@@ -768,7 +768,7 @@
 | value                 | number (integer)                         | 0                           | Int value                                                         |
 ")
 
-(defipywidget ;; int-text 
+(defipywidget ;; int-text
 "
 | Attribute             | Type                                 | Default                     | Help                                                                                                         |
 | _dom_classes          | array of string                      | []                          | CSS classes applied to widget DOM element                                                                    |
@@ -788,7 +788,7 @@
 | value                 | number (integer)                     | 0                           | Int value                                                                                                    |
 ")
 
-(defipywidget ;; label 
+(defipywidget ;; label
 "
 | Attribute             | Type                                 | Default                     | Help                                                    |
 | _dom_classes          | array of string                      | []                          | CSS classes applied to widget DOM element               |
@@ -806,7 +806,7 @@
 | value                 | string                               | ''                          | String value                                            |
 ")
 
-(defipywidget ;; link 
+(defipywidget ;; link
 "
 | Attribute             | Type           | Default                     | Help                                   |
 | _model_module         | string         | '@jupyter-widgets/controls' |                                        |
@@ -819,7 +819,7 @@
 | target                | array          | []                          | The target (widget, 'trait_name') pair |
 ")
 
-(defipywidget ;; password 
+(defipywidget ;; password
 "
 | Attribute             | Type                                 | Default                     | Help                                                                                                         |
 | _dom_classes          | array of string                      | []                          | CSS classes applied to widget DOM element                                                                    |
@@ -839,7 +839,7 @@
 | value                 | string                               | ''                          | String value                                                                                                 |
 ")
 
-(defipywidget ;; play 
+(defipywidget ;; play
 "
 | Attribute             | Type                                 | Default                     | Help                                                   |
 | _dom_classes          | array of string                      | []                          | CSS classes applied to widget DOM element              |
@@ -864,7 +864,7 @@
 | value                 | number (integer)                     | 0                           | Int value                                              |
 ")
 
-(defipywidget ;; progress-style 
+(defipywidget ;; progress-style
 "
 | Attribute             | Type           | Default                     | Help                                                 |
 | _model_module         | string         | '@jupyter-widgets/controls' |                                                      |
@@ -877,7 +877,7 @@
 | description_width     | string         | ''                          | Width of the description to the side of the control. |
 ")
 
-(defipywidget ;; radio-buttons 
+(defipywidget ;; radio-buttons
 "
 | Attribute             | Type                                 | Default                     | Help                                                   |
 | _dom_classes          | array of string                      | []                          | CSS classes applied to widget DOM element              |
@@ -896,7 +896,7 @@
 | style                 | reference to DescriptionStyle widget | reference to new instance   | Styling customizations                                 |
 ")
 
-(defipywidget ;; select 
+(defipywidget ;; select
 "
 | Attribute             | Type                                 | Default                     | Help                                                   |
 | _dom_classes          | array of string                      | []                          | CSS classes applied to widget DOM element              |
@@ -916,7 +916,7 @@
 | style                 | reference to DescriptionStyle widget | reference to new instance   | Styling customizations                                 |
 ")
 
-(defipywidget ;; select-multiple 
+(defipywidget ;; select-multiple
 "
 | Attribute             | Type                                 | Default                     | Help                                                   |
 | _dom_classes          | array of string                      | []                          | CSS classes applied to widget DOM element              |
@@ -936,7 +936,7 @@
 | style                 | reference to DescriptionStyle widget | reference to new instance   | Styling customizations                                 |
 ")
 
-(defipywidget ;; selection-range-slider 
+(defipywidget ;; selection-range-slider
 "
 | Attribute             | Type                                     | Default                     | Help                                                              |
 | _dom_classes          | array of string                          | []                          | CSS classes applied to widget DOM element                         |
@@ -958,7 +958,7 @@
 | style                 | reference to DescriptionStyle widget     | reference to new instance   | Styling customizations                                            |
 ")
 
-(defipywidget ;; selection-slider 
+(defipywidget ;; selection-slider
 "
 | Attribute             | Type                                     | Default                     | Help                                                              |
 | _dom_classes          | array of string                          | []                          | CSS classes applied to widget DOM element                         |
@@ -980,7 +980,7 @@
 | style                 | reference to DescriptionStyle widget     | reference to new instance   | Styling customizations                                            |
 ")
 
-(defipywidget ;; slider-style 
+(defipywidget ;; slider-style
 "
 | Attribute             | Type           | Default                     | Help                                                 |
 | _model_module         | string         | '@jupyter-widgets/controls' |                                                      |
@@ -993,7 +993,7 @@
 | handle_color          | null or string | null                        | Color of the slider handle.                          |
 ")
 
-(defipywidget ;; tab 
+(defipywidget ;; tab
 "
 | Attribute             | Type                                                       | Default                     | Help                                                                                                                              |
 | _dom_classes          | array of string                                            | []                          | CSS classes applied to widget DOM element                                                                                         |
@@ -1010,7 +1010,7 @@
 | selected_index        | null or number (integer)                                   | 0                           | The index of the selected page. This is either an integer selecting a particular sub-widget, or None to have no widgets selected. |
 ")
 
-(defipywidget ;; text 
+(defipywidget ;; text
 "
 | Attribute             | Type                                 | Default                     | Help                                                                                                         |
 | _dom_classes          | array of string                      | []                          | CSS classes applied to widget DOM element                                                                    |
@@ -1030,7 +1030,7 @@
 | value                 | string                               | ''                          | String value                                                                                                 |
 ")
 
-(defipywidget ;; textarea 
+(defipywidget ;; textarea
 "
 | Attribute             | Type                                 | Default                     | Help                                                                                                         |
 | _dom_classes          | array of string                      | []                          | CSS classes applied to widget DOM element                                                                    |
@@ -1051,7 +1051,7 @@
 | value                 | string                               | ''                          | String value                                                                                                 |
 ")
 
-(defipywidget ;; toggle-button 
+(defipywidget ;; toggle-button
 "
 | Attribute             | Type                                                                  | Default                     | Help                                                   |
 | _dom_classes          | array of string                                                       | []                          | CSS classes applied to widget DOM element              |
@@ -1072,7 +1072,7 @@
 | value                 | boolean                                                               | false                       | Bool value                                             |
 ")
 
-(defipywidget ;; toggle-buttons 
+(defipywidget ;; toggle-buttons
 "
 | Attribute             | Type                                                                          | Default                     | Help                                                                    |
 | _dom_classes          | array of string                                                               | []                          | CSS classes applied to widget DOM element                               |
@@ -1094,7 +1094,7 @@
 | tooltips              | array of string                                                               | []                          | Tooltips for each button.                                               |
 ")
 
-(defipywidget ;; v-box 
+(defipywidget ;; v-box
 "
 | Attribute             | Type                                                       | Default                     | Help                                      |
 | _dom_classes          | array of string                                            | []                          | CSS classes applied to widget DOM element |
@@ -1109,7 +1109,7 @@
 | layout                | reference to Layout widget                                 | reference to new instance   |                                           |
 ")
 
-(defipywidget ;; valid 
+(defipywidget ;; valid
 "
 | Attribute             | Type                                 | Default                     | Help                                                   |
 | _dom_classes          | array of string                      | []                          | CSS classes applied to widget DOM element              |
@@ -1128,7 +1128,7 @@
 | value                 | boolean                              | false                       | Bool value                                             |
 ")
 
-(defipywidget ;; video 
+(defipywidget ;; video
 "
 | Attribute             | Type                       | Default                     | Help                                                                                |
 | _dom_classes          | array of string            | []                          | CSS classes applied to widget DOM element                                           |
@@ -1148,7 +1148,7 @@
 | width                 | string                     | ''                          | Width of the video in pixels.                                                       |
 ")
 
-(defipywidget ;; output 
+(defipywidget ;; output
 "
 | Attribute             | Type                       | Default                   | Help                                          |
 | _dom_classes          | array of string            | []                        | CSS classes applied to widget DOM element     |

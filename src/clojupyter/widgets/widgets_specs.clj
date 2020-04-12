@@ -96,23 +96,23 @@
 (s/def ::bounded-float-text (s/merge ::base-widget (s/keys :req-un [::_dom_classes ::continuous_update ::description ::description_tooltip
                                                                     ::disabled ::layout :float/max :float/min :float-nil/step ::style :float/value])))
 (s/def ::bounded-int-text (s/merge ::base-widget (s/keys :req-un [::_dom_classes ::continuous_update ::description ::description_tooltip
-                                                                  :disabled ::layout :int/max :int/min :int/step ::style :int/value])))
+                                                                  ::disabled ::layout :int/max :int/min :int/step ::style :int/value])))
 (s/def ::box (s/merge ::base-widget (s/keys :req-un [::_dom_classes ::box_style ::children ::layout])))
 (s/def ::button (s/merge ::base-widget (s/keys :req-un [::_dom_classes ::button_style ::description ::disabled ::icon ::layout ::style ::tooltip])))
 (s/def ::button-style (s/merge ::base-widget (s/keys :req-un [::button_color ::font_weight])))
 (s/def ::check-box (s/merge ::base-widget (s/keys :req-un [::_dom_classes ::description ::description_tooltip ::disabled ::indent ::layout ::style
-                                                           ::bool/value])))
+                                                           :bool/value])))
 (s/def ::color-picker (s/merge ::base-widget (s/keys :req-un [::_dom_classes ::concise ::description ::description_tooltip ::disabled ::layout ::syle
-                                                              ::str/value])))
+                                                              :str/value])))
 (s/def ::combobox (s/merge ::base-widget (s/keys :req-un [::_dom_classes ::continuous_update ::description ::description_tooltip ::disabled ::ensure_option
                                                           ::layout ::placeholder ::style ::value])))
 (s/def ::controller-axis (s/merge ::base-widget (s/keys :req-un [::_dom_classes ::layout ::value])))
 (s/def ::controller (s/merge ::base-widget (s/keys :req-un [::_dom_classes ::axes ::buttons ::connected :int/index ::layout ::name ::timestamp])))
 (s/def ::dom-widget (s/merge ::base-widget (s/keys :req-un [::_dom_classes ::layout ::value])))
-(s/def ::date-picker (s/merge ::base-widget (s/keys :req-un [::_dom_classes ::description ::description_tooltip ::disabled ::layout ::style ::date-nil/value])))
+(s/def ::date-picker (s/merge ::base-widget (s/keys :req-un [::_dom_classes ::description ::description_tooltip ::disabled ::layout ::style :date-nil/value])))
 (s/def ::description-style (s/merge ::base-widget (s/keys :req-un [::description_width])))
 (s/def ::directional-link (s/merge ::base-widget (s/keys :req-un [::source ::target])))
-(s/def ::dropdown (s/merge ::base-widget (s/keys :req-un [::_dom_classes ::description ::description_tooltip ::disabled ::int-nil/index ::layout ::style])))
+(s/def ::dropdown (s/merge ::base-widget (s/keys :req-un [::_dom_classes ::description ::description_tooltip ::disabled :int-nil/index ::layout ::style])))
 (s/def ::file-upload (s/merge ::base-widget (s/keys :req-un [::_counter ::_dom_classes ::accept ::button_style ::data ::description ::description_tooltip
                                                              ::disabled ::error ::icon ::layout ::metadata ::multiple ::style])))
 (s/def ::float-log-slider (s/merge ::base-widget (s/keys :req-un [::_dom_classes ::base ::continous_update ::description ::description_tooltip ::disabled
@@ -160,9 +160,9 @@
 (s/def ::textarea (s/merge ::base-widget (s/keys :req-un [::_dom_classes ::continuous_update ::description ::description_tooltip ::disabled ::layout ::placeholder :int-nil/rows
                                                           ::style :str/value])))
 (s/def ::toggle-button (s/merge ::base-widget (s/keys :req-un [::_dom_classes ::button_style ::description ::description_tooltip ::disabled ::icon ::layout ::style ::tooltip :bool/value])))
-(s/def ::toggle-buttons (s/merge ::base-widget (s/keys :req-un [::_dom_classes ::_options_labels ::button_style ::description ::description_tooltip ::disabled ::icons ::int-nil/index
+(s/def ::toggle-buttons (s/merge ::base-widget (s/keys :req-un [::_dom_classes ::_options_labels ::button_style ::description ::description_tooltip ::disabled ::icons :int-nil/index
                                                                 ::layout ::style ::tooltips])))
 (s/def ::v-box (s/merge ::base-widget (s/keys :req-un [::_dom_classes ::box_style ::children ::layout])))
 (s/def ::valid (s/merge ::base-widget (s/keys :req-un [::_dom_classes ::description ::description_tooltip ::disabled ::layout ::readout ::style :bool/value])))
-(s/def ::video (s/merge ::base-widget (s/key :req-un [::_dom_classes ::autoplay ::controls ::format ::height ::layout ::loop :bytes/value ::width])))
+(s/def ::video (s/merge ::base-widget (s/keys :req-un [::_dom_classes ::autoplay ::controls ::format ::height ::layout ::loop :bytes/value ::width])))
 (s/def ::output (s/merge ::base-widget (s/keys :req-un [::_dom_classes ::layout ::msg_id ::outputs])))

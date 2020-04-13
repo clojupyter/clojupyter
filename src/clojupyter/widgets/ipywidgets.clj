@@ -31,6 +31,13 @@
 
 (def- REPLACEMENTS {"b''" (byte-array 0)})
 
+(def- PREDICATES {"bool" boolean?
+                  "int" integer?
+                  "float" float?
+                  "string" string?
+                  "bytes" bytes?
+                  "Date" nil}) ;; Date is not yet implemented.
+
 (defn- def-widget
   [{attrs "attributes"}]
   (reduce merge
@@ -47,12 +54,12 @@
   (fn constructor
     ([] (constructor {}))
     ([state-map]
-      (let [{jup :jup req-msg :req-message} (state/current-context)]
-        (constructor jup req-msg WIDGET-TARGET (u!/uuid) state-map)))
+     (let [{jup :jup req-msg :req-message} (state/current-context)]
+       (constructor jup req-msg WIDGET-TARGET (u!/uuid) state-map)))
     ([jup req-msg target comm-id]
-      (constructor jup req-msg target comm-id {}))
+     (constructor jup req-msg target comm-id {}))
     ([jup req-msg target comm-id state-map]
-      (ca/create-and-insert jup req-msg target comm-id (merge (def-widget spec) state-map)))))
+     (ca/create-and-insert jup req-msg target comm-id (merge (def-widget spec) state-map)))))
 
 (defn- widget-name
   [spec]
@@ -62,7 +69,71 @@
                  (= "Model" (subs name (- (count name) 5) (count name)))))
     (csk/->kebab-case-symbol (subs name 0 (- (count name) 5)))))
 
+(defn- spec-widget!
+  [{attrs "attributes" :as spec}]
+  (let [n (widget-name spec)
+        k-ns (str (ns-name *ns*) \= n)
+        q-keys (->> attrs
+                    (map #(% "name"))
+                    (map (partial keyword k-ns))
+                    vec)]
+
+    (eval `(s/def ~(keyword (str (ns-name *ns*)) (str n)) (s/keys :req-un ~q-keys)))
+
+    ;; Iterate the attributes and define spec for every k/v pair of widget.
+    (doall
+      (for [{type "type" nilable? "allow_none" items "items" widget "widget" k-name "name" enum "enum"} attrs]
+        (let [full-k (keyword k-ns k-name)]
+          (cond
+
+            (seq enum)
+            (eval `(s/def ~full-k ~(if nilable?
+                                     (s/nilable (set enum))
+                                     (set enum))))
+
+            (or (not= "array" type)
+                (not= "reference" type)
+                (not (nil? type)))
+            (eval `(s/def ~full-k ~(if nilable?
+                                     (s/nilable (PREDICATES type))
+                                     (PREDICATES type))))
+
+            (= "reference" type)
+            (eval `(s/def ~full-k (s/nilable (keyword (str (ns-name *ns*)) (str ~n)))))
+
+            (= "array" type)
+            (let [array-item-type (get items "type")]
+              (case array-item-type
+                "object" nil ;; Not yet implemented
+
+                "reference" (eval `(s/def ~full-k ~(case (get items "widget")
+                                                     "Axis" ::controller-axis
+                                                     "Button" ::controller-button
+                                                     "Widget" nil ;; Not yet implemented. TODO: Add a predicate for any widget
+                                                     nil))) ;; TODO: Add logging if unknown type of reference
+
+                ;; When type is array and the items map is missing, the spec is ambigous:
+                ;; it can be a pair of ints, a pair of floats, or a pair of widget/trait_name
+                nil (cond
+                      (= n 'float-range-slider)
+                      (eval `(s/def ~full-k ~(s/and (s/coll-of float? :kind vector? :count 2)
+                                                    (partial apply <=)))) ;; TODO: Check to see if tuple is strictly sorted
+
+                      (or (= n 'selection-range-slider)
+                          (= n 'int-range-slider))
+                      (eval `(s/def ~full-k ~(s/and (s/coll-of int? :kind vector? :count 2)
+                                                    (partial apply <=)))) ;; TODO: Check to see if tuple is strictly sorted
+
+                      :else
+                      nil) ;; pair of [widget, trait_name]. TODO: Implement
+
+                (eval `(s/def ~full-k ~(if nilable?
+                                         (s/nilable (s/coll-of (PREDICATES array-item-type) :kind vector?))
+                                         (s/coll-of (PREDICATES array-item-type) :kind vector?))))))))))
+    nil))
+
 (doall (for [spec SPECS]
          (let [w-name (widget-name spec)
                w-cons (make-widget spec)]
-           (eval `(def ~w-name ~w-cons)))))
+           (eval `(def ~w-name ~w-cons))
+           (spec-widget! spec))))

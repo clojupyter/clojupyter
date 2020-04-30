@@ -45,7 +45,9 @@
     update notification), cf. `add-watch` for details.  Returns `comm-atom`.")
   (unwatch [comm-atom key]
     "Remove watch added with key `key` from `comm-atom`.  Returns `comm-atom`.")
-  (validate [comm-atom fn]))
+  (validate [comm-atom fn]
+    "Add validator function `fn` to `comm-atom` which will be called when the `comm-atom` is created or changed.
+    The validator fn is a single argument (the `comm-atom` updated state) predicate"))
 
 (declare agentfld comm-atom? send-comm-msg! send-comm-open! simple-fmt update-agent!)
 

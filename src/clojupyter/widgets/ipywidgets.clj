@@ -16,7 +16,7 @@
                 io/resource
                 slurp
                 json/read-str))
-
+#_
 (defn widget-display-data
   ([model-ref {:keys [metadata transient version-major version-minor]}]
    (let [version-major (or version-major WIDGET-PROTOCOL-VERSION-MAJOR)
@@ -38,6 +38,31 @@
                   "bytes" bytes?
                   "Date" nil}) ;; Date is not yet implemented.
 
+(defn min<max?
+  [{:keys [min max]}]
+  (< min max))
+
+(defn min<=val<=max?
+  [{:keys [min max value]}]
+  (<= min value max))
+
+(defn valid-value-pair?
+  [{:keys [min max] [lower upper] :value}]
+  (<= min lower upper max))
+
+(defn valid-index?
+  [{:keys [index _options_labels]}]
+  (or (nil? index)
+      (<= 0 index (dec (count _options_labels)))))
+
+(defn valid-index-range?
+  [{[lower upper] :index labels :_options_labels}]
+  (<= 0 lower upper (dec (count labels))))
+
+(defn valid-indicies?
+  [{:keys [index _options_labels]}]
+  (every? (set (range (count _options_labels))) index))
+
 (defn- def-widget
   [{attrs "attributes"}]
   (reduce merge
@@ -49,6 +74,14 @@
         {(keyword n) nil}
         {(keyword n) (get REPLACEMENTS v v)}))))
 
+(defn- widget-name
+  [spec]
+  (let [name (get-in spec ["model" "name"])]
+    (assert (and (string? name)
+                 (> (count name) 5)
+                 (= "Model" (subs name (- (count name) 5) (count name)))))
+    (csk/->kebab-case-symbol (subs name 0 (- (count name) 5)))))
+
 (defn- make-widget
   [spec]
   (fn constructor
@@ -59,15 +92,20 @@
     ([jup req-msg target comm-id]
      (constructor jup req-msg target comm-id {}))
     ([jup req-msg target comm-id state-map]
-     (ca/create-and-insert jup req-msg target comm-id (merge (def-widget spec) state-map)))))
-
-(defn- widget-name
-  [spec]
-  (let [name (get-in spec ["model" "name"])]
-    (assert (and (string? name)
-                 (> (count name) 5)
-                 (= "Model" (subs name (- (count name) 5) (count name)))))
-    (csk/->kebab-case-symbol (subs name 0 (- (count name) 5)))))
+     (let [widget (ca/create jup req-msg target comm-id (merge (def-widget spec) state-map))
+           w-name (widget-name spec)
+           full-k (keyword "clojupyter.widgets.ipywidgets" (str w-name))
+           valid-spec? (partial s/valid? full-k)]
+       (ca/validate widget
+         (condp contains? w-name
+            #{'bounded-float-text 'bounded-int-text 'float-progress
+              'float-slider 'int-slider 'int-progress 'play}        (every-pred valid-spec? min<=val<=max? min<max?)
+            #{'float-range-slider 'int-range-slider}                (every-pred valid-spec? valid-value-pair? min<max?)
+            #{'dropdown 'selection-slider 'select}                  (every-pred valid-spec? valid-index?)
+            #{'select-multiple}                                     (every-pred valid-spec? valid-indicies?)
+            #{'selection-range-slider}                              (every-pred valid-spec? valid-index-range?)
+            valid-spec?))
+       (ca/insert widget)))))    
 
 (defn- spec-widget!
   [{attrs "attributes" :as spec}]
@@ -80,7 +118,7 @@
 
     (eval `(s/def ~(keyword (str (ns-name *ns*)) (str n)) (s/keys :req-un ~q-keys)))
 
-    ;; Iterate the attributes and define spec for every k/v pair of widget.
+    ;; Iterate the attributes and define a spec for every k/v pair of widget.
     (doall
       (for [{type "type" nilable? "allow_none" items "items" widget "widget" k-name "name" enum "enum"} attrs]
         (let [full-k (keyword k-ns k-name)]

@@ -44,7 +44,8 @@
     new-state, identical to those for `watch` functions (internally CommAtom uses an agent for
     update notification), cf. `add-watch` for details.  Returns `comm-atom`.")
   (unwatch [comm-atom key]
-    "Remove watch added with key `key` from `comm-atom`.  Returns `comm-atom`."))
+    "Remove watch added with key `key` from `comm-atom`.  Returns `comm-atom`.")
+  (validate [comm-atom fn]))
 
 (declare agentfld comm-atom? send-comm-msg! send-comm-open! simple-fmt update-agent!)
 
@@ -74,6 +75,9 @@
     (add-watch (agentfld comm-atom) key f))
   (unwatch [comm-atom key]
     (remove-watch (agentfld comm-atom) key))
+  (validate [comm-atom f]
+    (assert (fn? f))
+    (set-validator! (agentfld comm-atom) f))
 
 
   mc/PMimeConvertible

@@ -46,6 +46,10 @@
   [{:keys [min max value]}]
   (<= min value max))
 
+(defn valid-exp-value?
+  [{:keys [min max base value]}]
+  (<= (Math/pow base min) value (Math/pow base max)))
+
 (defn valid-value-pair?
   [{:keys [min max] [lower upper] :value}]
   (<= min lower upper max))
@@ -104,6 +108,7 @@
             #{'dropdown 'selection-slider 'select}                  (every-pred valid-spec? valid-index?)
             #{'select-multiple}                                     (every-pred valid-spec? valid-indicies?)
             #{'selection-range-slider}                              (every-pred valid-spec? valid-index-range?)
+            #{'float-log-slider}                                    (every-pred valid-spec? valid-exp-value? min<max?)
             valid-spec?))
        (ca/insert widget)))))    
 

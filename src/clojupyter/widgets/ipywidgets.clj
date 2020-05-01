@@ -67,6 +67,42 @@
   [{:keys [index _options_labels]}]
   (every? (set (range (count _options_labels))) index))
 
+(defn- expand-options
+  [{opts :options :as state-map}]
+  (if (seq opts)
+    (cond
+      (map? opts)
+      (assoc state-map :_options_labels (->> (keys opts) (map name) vec)
+                       :_options_values (->> (vals opts) vec))
+
+      (and (every? #(= 2 (count %)) opts) (every? coll? opts))
+      (assoc state-map :_options_labels (->> opts (map first) vec)
+                       :_options_values (->> opts (map second) vec))
+
+      (or (every? string? opts) (every? keyword? opts))
+      (assoc state-map :_options_labels (->> opts (map name) vec)
+                       :_options_values (->> opts (map name) vec)))
+    (assoc state-map :_options_labels [] :_options_values [])))
+
+(defn- index-from-value
+  [{value :value values :_options_values :as state-map}]
+  (if (coll? value)
+    (assoc state-map :index (vec (map #(.indexOf values %) value)))
+    (assoc state-map :index (.indexOf values value))))
+
+(defn- value-from-index
+  [{index :index values :_options_values :as state-map}]
+  (if (coll? index)
+    (assoc state-map :value (vec (map (partial nth values) index)))
+    (assoc state-map :value (nth values index))))
+
+(defn- selection-watcher
+  [ref _ _ {old-options :options old-index :index old-value :value} {new-options :options new-index :index new-value :value :as new-state}]
+  (cond
+    (not= old-options new-options) (swap! ref (comp value-from-index  expand-options))
+    (not= old-index new-index) (swap! ref value-from-index)
+    (not= old-value new-value) (swap! ref index-from-value)))
+    
 (defn- def-widget
   [{attrs "attributes"}]
   (reduce merge
@@ -96,10 +132,19 @@
     ([jup req-msg target comm-id]
      (constructor jup req-msg target comm-id {}))
     ([jup req-msg target comm-id state-map]
-     (let [widget (ca/create jup req-msg target comm-id (merge (def-widget spec) state-map))
+     (let [{d-index :index :as d-widget} (def-widget spec)
+           widget (ca/create jup req-msg target comm-id (merge d-widget state-map))
            w-name (widget-name spec)
            full-k (keyword "clojupyter.widgets.ipywidgets" (str w-name))
            valid-spec? (partial s/valid? full-k)]
+       (when (#{'dropdown 'radio-buttons 'select 'selection-slider 'selection-range-slider 'toggle-buttons 'select-multiple}
+               w-name)
+         (swap! widget expand-options)           
+         (if (not= d-index (:index @widget))
+           (swap! widget value-from-index)
+           (when (:value @widget)
+             (swap! widget index-from-value)))
+         (ca/watch widget :internal-consistency (partial selection-watcher widget)))  
        (ca/validate widget
          (condp contains? w-name
             #{'bounded-float-text 'bounded-int-text 'float-progress

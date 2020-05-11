@@ -102,7 +102,7 @@
     (not= old-options new-options) (swap! ref (comp value-from-index  expand-options))
     (not= old-index new-index) (swap! ref value-from-index)
     (not= old-value new-value) (swap! ref index-from-value)))
-    
+
 (defn- def-widget
   [{attrs "attributes"}]
   (reduce merge
@@ -139,12 +139,12 @@
            valid-spec? (partial s/valid? full-k)]
        (when (#{'dropdown 'radio-buttons 'select 'selection-slider 'selection-range-slider 'toggle-buttons 'select-multiple}
                w-name)
-         (swap! widget expand-options)           
+         (swap! widget expand-options)
          (if (not= d-index (:index @widget))
            (swap! widget value-from-index)
            (when (:value @widget)
              (swap! widget index-from-value)))
-         (ca/watch widget :internal-consistency (partial selection-watcher widget)))  
+         (ca/watch widget :internal-consistency (partial selection-watcher widget)))
        (ca/validate widget
          (condp contains? w-name
             #{'bounded-float-text 'bounded-int-text 'float-progress
@@ -155,7 +155,7 @@
             #{'selection-range-slider}                              (every-pred valid-spec? valid-index-range?)
             #{'float-log-slider}                                    (every-pred valid-spec? valid-exp-value? min<max?)
             valid-spec?))
-       (ca/insert widget)))))    
+       (ca/insert widget)))))
 
 (defn- spec-widget!
   [{attrs "attributes" :as spec}]

@@ -54,6 +54,7 @@
 ,,
 (def COMM-MSG-UPDATE		"update")
 (def COMM-MSG-REQUEST-STATE	"request_state")
+(def COMM-MSG-CUSTOM    "custom")
 
 
 ;;; ----------------------------------------------------------------------------------------------------
@@ -614,5 +615,3 @@
   (s/cat :data ::data, :metadata ::metadata, :transient ::transient)
   [data metadata tsient]
   {:data data, :metadata metadata, :transient tsient})
-
-

@@ -49,7 +49,7 @@
     "Add validator function `fn` to `comm-atom` which will be called when the `comm-atom` is created or changed.
     The validator fn is a single argument (the `comm-atom` updated state) predicate"))
 
-(declare agentfld comm-atom? send-comm-msg! send-comm-open! simple-fmt update-agent!)
+(declare agentfld comm-atom? send-comm-msg! send-comm-open! simple-fmt update-agent! merge-agent!)
 
 (deftype CommAtom
     [comm-state_ jup_ target-name_ reqmsg_ cid_ agent_]
@@ -66,7 +66,7 @@
   (state-set! [comm-atom comm-state]
     (assert (map? comm-state))
     (reset! comm-state_ comm-state)
-    (update-agent! comm-atom comm-state)
+    (merge-agent! comm-atom comm-state)
     (send-comm-msg! comm-atom comm-state)
     comm-atom)
   (state-update! [comm-atom comm-state]
@@ -143,6 +143,19 @@
 (defn- update-agent! [^CommAtom comm-atom, comm-state]
   (let [pre-state @comm-atom]
     (send (agentfld comm-atom) (constantly comm-state))
+    (when-let [err (agent-error (agentfld comm-atom))]
+      (let [err-info  {:comm-atom comm-atom
+                       :pre-state pre-state
+                       :new-state comm-state
+                       :error-str (str err)
+                       :error err}]
+        (log/error "update-agent: error in agent" (log/ppstr err-info))
+        (log/error "restarting using pre-state")
+        (restart-agent (agentfld comm-atom) pre-state)))))
+
+(defn- merge-agent! [^CommAtom comm-atom, comm-state]
+  (let [pre-state @comm-atom]
+    (send (agentfld comm-atom) merge comm-state)
     (when-let [err (agent-error (agentfld comm-atom))]
       (let [err-info  {:comm-atom comm-atom
                        :pre-state pre-state

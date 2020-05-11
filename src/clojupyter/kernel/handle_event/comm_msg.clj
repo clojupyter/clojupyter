@@ -117,6 +117,21 @@
         (return ctx A S))
       (handle-comm-msg-unknown ctx S comm_id))))
 
+(defmethod handle-comm-msg msgs/COMM-MSG-CUSTOM
+  [_ S {:keys [req-message] :as ctx}]
+  (assert req-message)
+  (log/debug "received COMM:CUSTOM")
+  (let [{{:keys [comm_id] {:keys [content method]} :data} :content} req-message]
+    (assert comm_id)
+    (assert (= method msgs/COMM-MSG-CUSTOM))
+    (assert (= content {:event "click"}))
+    (if-let [comm-atom (comm-global-state/comm-atom-get S comm_id)]
+      (let [{:keys [on-click] :or {on-click (constantly nil)}} @(.-agent_ comm-atom)
+            A (action (side-effect on-click
+                                   {:op :callback :comm-id comm_id :content content}))]
+        (return ctx A S))
+      (handle-comm-msg-unknown ctx S comm_id))))
+
 (defmethod calc* msgs/COMM-MSG
   [_ S {:keys [req-message] :as ctx}]
   (assert req-message)

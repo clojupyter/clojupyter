@@ -16,18 +16,6 @@
                 io/resource
                 slurp
                 json/read-str))
-#_
-(defn widget-display-data
-  ([model-ref {:keys [metadata transient version-major version-minor]}]
-   (let [version-major (or version-major WIDGET-PROTOCOL-VERSION-MAJOR)
-         version-minor (or version-minor WIDGET-PROTOCOL-VERSION-MINOR)
-         metadata (or metadata {})
-         transient (or transient {})]
-     {:application/vnd.jupyter.widget-view+json
-      {:model_id model-ref
-       :version_major version-major
-       :version_minor version-minor}
-      :text/plain (str "display_data: " model-ref)})))
 
 (def- REPLACEMENTS {"b''" (byte-array 0)})
 
@@ -134,9 +122,9 @@
     ([jup req-msg target comm-id state-map]
      (let [{d-index :index :as d-widget} (def-widget spec)
            viewer-keys (set (keys d-widget))
-           widget (ca/create jup req-msg target comm-id viewer-keys (merge d-widget state-map))
            w-name (widget-name spec)
            full-k (keyword "clojupyter.widgets.ipywidgets" (str w-name))
+           widget (ca/create jup req-msg target comm-id viewer-keys (merge (with-meta d-widget {:spec full-k}) state-map))
            valid-spec? (partial s/valid? full-k)]
        (when (#{'dropdown 'radio-buttons 'select 'selection-slider 'selection-range-slider 'toggle-buttons 'select-multiple}
                w-name)

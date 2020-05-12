@@ -9,6 +9,7 @@
    [clojupyter.state :as state]
    [clojupyter.util :as u]
    [clojure.pprint :as pp]
+   [clojure.spec.alpha :as s]
    [clojupyter.kernel.jup-channels :as jup]
    [clojupyter.messages :as msgs]
    [io.simplect.compose :refer [def- c C p P >->> >>->]])
@@ -73,7 +74,15 @@
     comm-atom)
   (state-update! [comm-atom comm-state]
     (assert (map? comm-state))
-    (state-set! comm-atom (merge @comm-atom comm-state)))
+    (let [cur-state @comm-atom
+          new-state (merge cur-state comm-state)
+          ca-spec (:spec (meta cur-state))
+          new-state (reduce merge new-state
+                      (when-let [{problems :clojure.spec.alpha/problems} (and ca-spec (s/explain-data ca-spec new-state))]
+                        (for [{:keys [path val pred]} problems]
+                          (when (and (number? val) (= float? pred))
+                            (assoc-in {} path (float val))))))]
+      (state-set! comm-atom new-state)))
   (watch [_ key f]
     (assert (fn? f))
     (add-watch comm-state_ key f))

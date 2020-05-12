@@ -124,12 +124,14 @@
   (let [{{:keys [comm_id] {:keys [content method]} :data} :content} req-message]
     (assert comm_id)
     (assert (= method msgs/COMM-MSG-CUSTOM))
-    (assert (= content {:event "click"}))
     (if-let [comm-atom (comm-global-state/comm-atom-get S comm_id)]
-      (let [{:keys [on-click]} @comm-atom
-            A (action (side-effect on-click
-                                   {:op :callback :comm-id comm_id :content content}))]
-        (return ctx A S))
+      (case (:event content)
+        "click" (let [{:keys [on-click] :or {on-click (constantly nil)}} @comm-atom
+                      A (action (side-effect on-click {:op :click-callback :comm-id comm_id :content content}))]
+                  (return ctx A S))
+        "submit" (let [{:keys [on-submit] :or {on-submit (constantly nil)}} @comm-atom
+                               A (action (side-effect on-submit {:op :submit-callback :comm-id comm_id :content content}))]
+                   (return ctx A S)))
       (handle-comm-msg-unknown ctx S comm_id))))
 
 (defmethod calc* msgs/COMM-MSG

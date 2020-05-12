@@ -98,7 +98,7 @@
             comm-atom (comm-global-state/comm-atom-get S comm-id)
             target-name (ca/target comm-atom)
             msg-metadata ca/MESSAGE-METADATA
-            content (msgs/update-comm-msg comm-id msgs/COMM-MSG-UPDATE target-name @comm-atom)
+            content (msgs/update-comm-msg comm-id msgs/COMM-MSG-UPDATE target-name (ca/sub-state comm-atom))
             A (action (step [`jup/send!! jup IOPUB req-message msgtype msg-metadata content]
                             (jupmsg-spec IOPUB msgtype msg-metadata content)))]
         (return ctx A S))
@@ -126,7 +126,7 @@
     (assert (= method msgs/COMM-MSG-CUSTOM))
     (assert (= content {:event "click"}))
     (if-let [comm-atom (comm-global-state/comm-atom-get S comm_id)]
-      (let [{:keys [on-click] :or {on-click (constantly nil)}} @(.-agent_ comm-atom)
+      (let [{:keys [on-click]} @comm-atom
             A (action (side-effect on-click
                                    {:op :callback :comm-id comm_id :content content}))]
         (return ctx A S))
@@ -155,17 +155,16 @@
     (assert (map? state))
     (assert (string? comm_id))
     (assert (vector? buffer_paths))
-    (let [present? (comm-global-state/known-comm-id? S comm_id)]
-    (if present?
-        (do (log/debug "COMM-OPEN - already present")
-            (return ctx S))
-        (let [msgtype msgs/COMM-OPEN
-              content (msgs/comm-open-content comm_id data {:target_module target_module :target_name target_name})
-              comm-atom (ca/create jup req-message target_name comm_id state)
-              A (action (step [`jup/send!! jup IOPUB req-message msgtype content]
-                              (jupmsg-spec IOPUB msgtype content)))
-              S' (comm-global-state/comm-atom-add S comm_id comm-atom)]
-          (return ctx A S S'))))))
+    (if-let [present? (comm-global-state/known-comm-id? S comm_id)]
+      (do (log/debug "COMM-OPEN - already present")
+          (return ctx S))
+      (let [msgtype msgs/COMM-OPEN
+            content (msgs/comm-open-content comm_id data {:target_module target_module :target_name target_name})
+            comm-atom (ca/create jup req-message target_name comm_id #{} state)
+            A (action (step [`jup/send!! jup IOPUB req-message msgtype content]
+                            (jupmsg-spec IOPUB msgtype content)))
+            S' (comm-global-state/comm-atom-add S comm_id comm-atom)]
+          (return ctx A S S')))))
 
 (defmethod calc* msgs/COMM-CLOSE
   [_ S {:keys [req-message jup] :as ctx}]

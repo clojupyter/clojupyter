@@ -36,7 +36,7 @@
                   "float" float?
                   "string" string?
                   "bytes" bytes?
-                  "Date" nil}) ;; Date is not yet implemented.
+                  "Date" (constantly true)}) ;; Date is not yet implemented.
 
 (defn min<max?
   [{:keys [min max]}]
@@ -97,7 +97,7 @@
     (assoc state-map :value (nth values index))))
 
 (defn- selection-watcher
-  [ref _ _ {old-options :options old-index :index old-value :value} {new-options :options new-index :index new-value :value :as new-state}]
+  [_ ref {old-options :options old-index :index old-value :value} {new-options :options new-index :index new-value :value :as new-state}]
   (cond
     (not= old-options new-options) (swap! ref (comp value-from-index  expand-options))
     (not= old-index new-index) (swap! ref value-from-index)
@@ -133,7 +133,8 @@
      (constructor jup req-msg target comm-id {}))
     ([jup req-msg target comm-id state-map]
      (let [{d-index :index :as d-widget} (def-widget spec)
-           widget (ca/create jup req-msg target comm-id (merge d-widget state-map))
+           viewer-keys (set (keys d-widget))
+           widget (ca/create jup req-msg target comm-id viewer-keys (merge d-widget state-map))
            w-name (widget-name spec)
            full-k (keyword "clojupyter.widgets.ipywidgets" (str w-name))
            valid-spec? (partial s/valid? full-k)]
@@ -144,7 +145,7 @@
            (swap! widget value-from-index)
            (when (:value @widget)
              (swap! widget index-from-value)))
-         (ca/watch widget :internal-consistency (partial selection-watcher widget)))
+         (ca/watch widget :internal-consistency selection-watcher))
        (ca/validate widget
          (condp contains? w-name
             #{'bounded-float-text 'bounded-int-text 'float-progress

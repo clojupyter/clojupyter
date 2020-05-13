@@ -115,17 +115,21 @@
     (state-set! comm-atom v)
     v)
   (swap [comm-atom f]
-    (.swap ^Atom comm-state_ f)
-    (state-set! comm-atom @comm-state_))
+    (let [state (.swap ^Atom comm-state_ f)]
+      (state-set! comm-atom @comm-state_)
+      state))
   (swap [comm-atom f arg]
-    (.swap ^Atom comm-state_ f arg)
-    (state-set! comm-atom @comm-state_))
+    (let [state (.swap ^Atom comm-state_ f arg)]
+      (state-set! comm-atom @comm-state_)
+      state))
   (swap [comm-atom f arg1 arg2]
-    (.swap ^Atom comm-state_ f arg1 arg2)
-    (state-set! comm-atom @comm-state_))
+    (let [state (.swap ^Atom comm-state_ f arg1 arg2)]
+      (state-set! comm-atom @comm-state_)
+      state))
   (swap [comm-atom f arg1 arg2 args]
-    (.swap ^Atom comm-state_ f arg1 arg2 args)
-    (state-set! comm-atom @comm-state_))
+    (let [state (.swap ^Atom comm-state_ f arg1 arg2 args)]
+      (state-set! comm-atom @comm-state_)
+      state))
 
   clojure.lang.IDeref
   (deref [_]
@@ -139,7 +143,6 @@
   [^CommAtom comm-atom]
   (.-jup_ comm-atom))
 
-
 (defn- send-comm-msg! [^CommAtom comm-atom, comm-state]
   (assert (map? comm-state))
   (let [content (msgs/update-comm-msg (comm-id comm-atom) msgs/COMM-MSG-UPDATE (target comm-atom) comm-state)]
@@ -151,34 +154,6 @@
                                         {:state comm-state :buffer_paths []}
                                         {:target_name (target comm-atom)})]
     (jup/send!! (jupfld comm-atom) :iopub_port (origin-message comm-atom) msgs/COMM-OPEN MESSAGE-METADATA content)))
-
-;; Deprecated
-#_(defn- update-agent! [^CommAtom comm-atom, comm-state]
-    (let [pre-state @comm-atom]
-      (send (agentfld comm-atom) (constantly comm-state))
-      (when-let [err (agent-error (agentfld comm-atom))]
-        (let [err-info  {:comm-atom comm-atom
-                        :pre-state pre-state
-                        :new-state comm-state
-                        :error-str (str err)
-                        :error err}]
-          (log/error "update-agent: error in agent" (log/ppstr err-info))
-          (log/error "restarting using pre-state")
-          (restart-agent (agentfld comm-atom) pre-state)))))
-
-;; Deprecated
-#_(defn- merge-agent! [^CommAtom comm-atom, comm-state]
-    (let [pre-state @comm-atom]
-      (send (agentfld comm-atom) merge comm-state)
-      (when-let [err (agent-error (agentfld comm-atom))]
-        (let [err-info  {:comm-atom comm-atom
-                        :pre-state pre-state
-                        :new-state comm-state
-                        :error-str (str err)
-                        :error err}]
-          (log/error "update-agent: error in agent" (log/ppstr err-info))
-          (log/error "restarting using pre-state")
-          (restart-agent (agentfld comm-atom) pre-state)))))
 
 (defn- short-comm-id
   [^CommAtom comm-atom]
@@ -202,7 +177,7 @@
      (pp/pprint-logical-block
        (print (prefix comm-atom))
        (pp/pprint-newline :linear)
-       (pp/pprint-logical-block (pp/write @comm-atom)))
+       (pp/pprint-logical-block (pp/write @comm-atom :length 100)))
      (print ">"))))
 
 (defmethod print-method CommAtom

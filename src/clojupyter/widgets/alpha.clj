@@ -50,3 +50,15 @@
                                     (log/ppstr {:cur @cur :k k :new new})))))))
     (set-value!)
     (ipy/v-box {:children (vec (concat (vals wmap) [output-widget]))})))
+
+(defn interact!
+  [f w0 & ws]
+  (let [widgs (vec (cons w0 ws))
+        out (ipy/label {:value (str (apply f (map (comp :value deref) widgs)))})
+        observe! (fn [idx] (ca/watch (nth widgs idx) :value
+                              (fn [k _ {o-val :value} {n-val :value}]
+                                (when (not= o-val n-val)
+                                  (let [v (apply f (map #(if (= %1 idx) n-val (get @%2 :value)) (range) widgs))]
+                                    (swap! out assoc :value (str v)))))))]
+    (doseq [i (range (count widgs))] (observe! i))
+    (ipy/v-box {:children (conj widgs out)})))

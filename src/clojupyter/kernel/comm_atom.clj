@@ -51,7 +51,7 @@
     "Add validator function `fn` to `comm-atom` which will be called when the `comm-atom` is created or changed.
     The validator fn is a single argument (the `comm-atom` updated state) predicate"))
 
-(declare comm-atom? send-comm-msg! send-comm-open! simple-fmt update-agent! merge-agent!)
+(declare comm-atom? send-comm-msg! send-comm-open! simple-fmt)
 
 (deftype CommAtom
     [comm-state_ jup_ target-name_ reqmsg_ cid_ viewer-keys]

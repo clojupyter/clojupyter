@@ -108,13 +108,24 @@
   [_ S {:keys [req-message] :as ctx}]
   (assert req-message)
   (log/debug "received COMM:UPDATE")
-  (let [{{:keys [comm_id] {:keys [method state]} :data} :content} req-message]
+  (let [{{:keys [comm_id] {:keys [method state buffer_paths]} :data} :content buffers :buffers} req-message]
     (assert comm_id)
     (assert state)
     (if-let [comm-atom (comm-global-state/comm-atom-get S comm_id)]
-      (let [A (action (side-effect #(ca/state-update! comm-atom state)
-                                   {:op :update-agent :comm-id comm_id :new-state state}))]
-        (return ctx A S))
+      (if (seq buffer_paths)
+        (let [buffers (.-buffers buffers)
+              _ (assert (= (count buffer_paths) (count buffers)))
+              [paths _] (msgs/leaf-paths string? keyword buffer_paths)
+              repl-map (reduce merge (map hash-map paths buffers))
+              _ (log/debug "Got paths " paths "Got repl-map " repl-map)
+              state (msgs/insert-paths state repl-map)
+              A (action (side-effect #(ca/state-update! comm-atom state)
+                                     {:op :update-agent :comm-id comm_id :new-state state}))]
+          (return ctx A S S {:buffers buffers}))
+        (let [A (action (side-effect #(ca/state-update! comm-atom state)
+                                    {:op :update-agent :comm-id comm_id :new-state state}))]
+          (log/debug "Received COMM:UPDATE with empty buffers")
+          (return ctx A S)))
       (handle-comm-msg-unknown ctx S comm_id))))
 
 (defmethod handle-comm-msg msgs/COMM-MSG-CUSTOM

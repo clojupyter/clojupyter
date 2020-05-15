@@ -190,8 +190,8 @@
                 "object" (eval `(s/def ~full-k ~(s/coll-of map? :kind vector?)))
 
                 "reference" (eval `(s/def ~full-k ~(s/coll-of (case (get items "widget")
-                                                                "Axis" ::controller-axis
-                                                                "Button" ::controller-button
+                                                                "Axis" (s/and widget? #(s/valid? ::controller-axis @%))
+                                                                "Button" (s/and widget? #(s/valid? ::controller-button @%))
                                                                 "Widget" widget?
                                                                 (log/warn "Can't generate spec for " full-k " of type array of " array-item-type))
                                                               :kind vector?)))

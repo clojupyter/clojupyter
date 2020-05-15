@@ -7,7 +7,8 @@
    [clojupyter.state :as state]
    [clojupyter.util-actions :as u!]
    [clojure.spec.alpha :as s]
-   [io.simplect.compose :refer [def-]]))
+   [io.simplect.compose :refer [def-]]
+   [clojupyter.log :as log]))
 
 (def WIDGET-TARGET "jupyter.widget")
 (def WIDGET-PROTOCOL-VERSION-MAJOR 2)
@@ -54,6 +55,8 @@
 (defn valid-indicies?
   [{:keys [index _options_labels]}]
   (every? (set (range (count _options_labels))) index))
+
+(def widget? ca/comm-atom?)
 
 (defn- expand-options
   [{opts :options :as state-map}]
@@ -168,45 +171,59 @@
                                      (s/nilable (set enum))
                                      (set enum))))
 
-            (or (not= "array" type)
-                (not= "reference" type)
-                (not (nil? type)))
+            (and (not= "array" type)
+                 (not= "reference" type)
+                 (not (nil? type)))
             (eval `(s/def ~full-k ~(if nilable?
                                      (s/nilable (PREDICATES type))
                                      (PREDICATES type))))
 
+            ;; How does this work? It's expecting a reference to self?!
             (= "reference" type)
-            (eval `(s/def ~full-k (s/nilable (keyword (str (ns-name *ns*)) (str ~n)))))
+            (let [ref (csk/->kebab-case-symbol widget)
+                  ref-k (keyword (str (ns-name *ns*)) (str ref))]
+              (eval `(s/def ~full-k ~(s/nilable (s/and widget? #(s/valid? ref-k @%))))))
 
             (= "array" type)
             (let [array-item-type (get items "type")]
               (case array-item-type
-                "object" nil ;; Not yet implemented
+                ;; Broken. It should return the spec of a vector of said elements
+                ;; TODO: Fix it.
+                "object" (eval `(s/def ~full-k ~(s/coll-of map? :kind vector?)))
 
-                "reference" (eval `(s/def ~full-k ~(case (get items "widget")
-                                                     "Axis" ::controller-axis
-                                                     "Button" ::controller-button
-                                                     "Widget" nil ;; Not yet implemented. TODO: Add a predicate for any widget
-                                                     nil))) ;; TODO: Add logging if unknown type of reference
+                ;; Broken. It should return the spec of a vector of said elements
+                ;; TODO: Fix it.
+                "reference" (eval `(s/def ~full-k ~(s/coll-of (case (get items "widget")
+                                                                "Axis" ::controller-axis
+                                                                "Button" ::controller-button
+                                                                "Widget" widget?
+                                                                (log/warn "Can't generate spec for " full-k " of type array of " array-item-type))
+                                                              :kind vector?)))
 
                 ;; When type is array and the items map is missing, the spec is ambigous:
                 ;; it can be a pair of ints, a pair of floats, or a pair of widget/trait_name
                 nil (cond
                       (= n 'float-range-slider)
                       (eval `(s/def ~full-k ~(s/and (s/coll-of float? :kind vector? :count 2)
-                                                    (partial apply <=)))) ;; TODO: Check to see if tuple is strictly sorted
+                                                    (partial apply <=))))
 
                       (or (= n 'selection-range-slider)
                           (= n 'int-range-slider))
                       (eval `(s/def ~full-k ~(s/and (s/coll-of int? :kind vector? :count 2)
-                                                    (partial apply <=)))) ;; TODO: Check to see if tuple is strictly sorted
+                                                    (partial apply <=))))
 
-                      :else
-                      nil) ;; pair of [widget, trait_name]. TODO: Implement
+                      :else ;; pair of [widget, trait_name].
+                      (eval `(s/def ~full-k ~(fn [[w attr & rest :as v]]
+                                               (boolean (and (widget? w)
+                                                             (keyword? attr)
+                                                             (contains? @w attr)
+                                                             (nil? rest)
+                                                             (vector? v)))))))
 
                 (eval `(s/def ~full-k ~(if nilable?
                                          (s/nilable (s/coll-of (PREDICATES array-item-type) :kind vector?))
-                                         (s/coll-of (PREDICATES array-item-type) :kind vector?))))))))))
+                                         (s/coll-of (PREDICATES array-item-type) :kind vector?))))))
+            :else (log/warn "Can't generate spec for " full-k " of type" type)))))
     nil))
 
 (doall (for [spec SPECS]

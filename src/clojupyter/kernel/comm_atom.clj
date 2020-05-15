@@ -77,11 +77,16 @@
     (let [cur-state @comm-atom
           new-state (merge cur-state comm-state)
           ca-spec (:spec (meta cur-state))
-          new-state (reduce merge new-state
-                      (when-let [{problems :clojure.spec.alpha/problems} (and ca-spec (s/explain-data ca-spec new-state))]
-                        (for [{:keys [path val pred]} problems]
-                          (when (and (number? val) (= float? pred))
-                            (assoc-in {} path (float val))))))]
+          new-state (if-let [{problems :clojure.spec.alpha/problems} (and ca-spec (s/explain-data ca-spec new-state))]
+                      (loop [state new-state
+                            problems problems]
+                        (if (seq problems)
+                          (let [{:keys [in val pred]} (first problems)]
+                            (if (and (number? val) (or (= 'float? pred) (= float? pred))) ;; Spec can return the fn or its symbol.
+                              (recur (update-in state in float) (rest problems))
+                              (recur state (rest problems))))
+                          state))
+                      new-state)]
       (state-set! comm-atom new-state)))
   (watch [_ key f]
     (assert (fn? f))

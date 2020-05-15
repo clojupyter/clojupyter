@@ -178,7 +178,6 @@
                                      (s/nilable (PREDICATES type))
                                      (PREDICATES type))))
 
-            ;; How does this work? It's expecting a reference to self?!
             (= "reference" type)
             (let [ref (csk/->kebab-case-symbol widget)
                   ref-k (keyword (str (ns-name *ns*)) (str ref))]
@@ -187,12 +186,9 @@
             (= "array" type)
             (let [array-item-type (get items "type")]
               (case array-item-type
-                ;; Broken. It should return the spec of a vector of said elements
-                ;; TODO: Fix it.
+
                 "object" (eval `(s/def ~full-k ~(s/coll-of map? :kind vector?)))
 
-                ;; Broken. It should return the spec of a vector of said elements
-                ;; TODO: Fix it.
                 "reference" (eval `(s/def ~full-k ~(s/coll-of (case (get items "widget")
                                                                 "Axis" ::controller-axis
                                                                 "Button" ::controller-button

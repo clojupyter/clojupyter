@@ -1,4 +1,6 @@
 (ns clojupyter.widgets.ipywidgets
+  "Interactive widgets for clojupyter. It defines the widget constructors by parsing the json model published by ipywidgets project.
+  It uses the json to produce default value maps, widget names, specs and constructors"
   (:require
    [camel-snake-kebab.core :as csk]
    [clojure.java.io :as io]
@@ -13,12 +15,16 @@
 (def WIDGET-TARGET "jupyter.widget")
 (def WIDGET-PROTOCOL-VERSION-MAJOR 2)
 (def WIDGET-PROTOCOL-VERSION-MINOR 0)
-(def SPECS (-> "ipywidgets/schema/jupyterwidgetmodels.latest.json"
+(def- SPECS (-> "ipywidgets/schema/jupyterwidgetmodels.latest.json"
                 io/resource
                 slurp
                 json/read-str))
 
 (def- REPLACEMENTS {"b''" (byte-array 0)})
+
+;;----------------------------------------------------------------------------------------------
+;; Predicates
+;;----------------------------------------------------------------------------------------------
 
 (def- PREDICATES {"bool" boolean?
                   "int" integer?
@@ -27,36 +33,40 @@
                   "bytes" bytes?
                   "Date" (constantly true)}) ;; Date is not yet implemented.
 
-(defn min<max?
+(defn- min<max?
   [{:keys [min max]}]
   (< min max))
 
-(defn min<=val<=max?
+(defn- min<=val<=max?
   [{:keys [min max value]}]
   (<= min value max))
 
-(defn valid-exp-value?
+(defn- valid-exp-value?
   [{:keys [min max base value]}]
   (<= (Math/pow base min) value (Math/pow base max)))
 
-(defn valid-value-pair?
+(defn- valid-value-pair?
   [{:keys [min max] [lower upper] :value}]
   (<= min lower upper max))
 
-(defn valid-index?
+(defn- valid-index?
   [{:keys [index _options_labels]}]
   (or (nil? index)
       (<= 0 index (dec (count _options_labels)))))
 
-(defn valid-index-range?
+(defn- valid-index-range?
   [{[lower upper] :index labels :_options_labels}]
   (<= 0 lower upper (dec (count labels))))
 
-(defn valid-indicies?
+(defn- valid-indicies?
   [{:keys [index _options_labels]}]
   (every? (set (range (count _options_labels))) index))
 
 (def widget? ca/comm-atom?)
+
+;;------------------------------------------------------------------------------------------
+;; Special handling of selection widgets
+;;------------------------------------------------------------------------------------------
 
 (defn- expand-options
   [{opts :options :as state-map}]
@@ -94,7 +104,12 @@
     (not= old-index new-index) (swap! ref value-from-index)
     (not= old-value new-value) (swap! ref index-from-value)))
 
+;;------------------------------------------------------------------------------------------
+;; Constructors
+;;------------------------------------------------------------------------------------------
+
 (defn- def-widget
+  "Returns a default widget map from json spec."
   [{attrs "attributes"}]
   (reduce merge
     (for [{n "name" v "default"} attrs]
@@ -106,6 +121,9 @@
         {(keyword n) (get REPLACEMENTS v v)}))))
 
 (defn- widget-name
+  "Returns the widget name of a json schema spec.
+  spec is a map of attributes that define the widget.
+  Transforms the model name from e.g. IntSliderModel to int-slider"
   [spec]
   (let [name (get-in spec ["model" "name"])]
     (assert (and (string? name)
@@ -114,6 +132,8 @@
     (csk/->kebab-case-symbol (subs name 0 (- (count name) 5)))))
 
 (defn- make-widget
+  "Returns a fn that builds and returns a widget of type defined by spec.
+  spec is a map of attributes that define de widget."
   [spec]
   (fn constructor
     ([] (constructor {}))
@@ -129,6 +149,8 @@
            full-k (keyword "clojupyter.widgets.ipywidgets" (str w-name))
            widget (ca/create jup req-msg target comm-id viewer-keys (merge (with-meta d-widget {:spec full-k}) state-map))
            valid-spec? (partial s/valid? full-k)]
+      ;; When widget is a selector, we need to sync :options, _options_values, _options_labels, :index and :value
+      ;; We manage that by attaching a watcher fn to keep them in sync
        (when (#{'dropdown 'radio-buttons 'select 'selection-slider 'selection-range-slider 'toggle-buttons 'select-multiple}
                w-name)
          (swap! widget expand-options)
@@ -150,6 +172,7 @@
        (ca/insert widget)))))
 
 (defn- spec-widget!
+  "Defines the specs for widgets interpreted from the spec map."
   [{attrs "attributes" :as spec}]
   (let [n (widget-name spec)
         k-ns (str (ns-name *ns*) \= n)
@@ -216,6 +239,7 @@
                                                              (nil? rest)
                                                              (vector? v)))))))
 
+                ;; Vector of known types, boolean, string, int etc.
                 (eval `(s/def ~full-k ~(if nilable?
                                          (s/nilable (s/coll-of (PREDICATES array-item-type) :kind vector?))
                                          (s/coll-of (PREDICATES array-item-type) :kind vector?))))))

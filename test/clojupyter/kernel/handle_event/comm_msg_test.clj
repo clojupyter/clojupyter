@@ -78,7 +78,7 @@
           comm-id (:comm_id content)
           req-port :shell_port
           state {:x (gensym)}
-          comm (ca/create :jup req-msg "target-name" comm-id state)
+          comm (ca/create :jup req-msg "target-name" comm-id #{:x} state)
           S (comm-global-state/comm-atom-add (comm-global-state/initial-state) comm-id comm)
           ctx {:req-message req-msg, :req-port req-port, :jup :must-be-present}
           [action S'] (comm-msg/calc req-msgtype S ctx)
@@ -157,7 +157,7 @@
           content (assoc content :data data)
           req-msg ((ts/s*message-header req-msgtype) content)
           uuid (msgs/message-comm-id req-msg)
-          pre-comm-state (ca/create :jup :reqmsg  "target-name" uuid (msgs/message-comm-state req-msg))
+          pre-comm-state (ca/create :jup :reqmsg  "target-name" uuid #{:some-key} (msgs/message-comm-state req-msg))
           req-port :shell_port
           S (comm-global-state/comm-atom-add (comm-global-state/initial-state) uuid pre-comm-state)
           ctx {:req-message req-msg, :req-port req-port, :jup :must-be-present}
@@ -187,7 +187,7 @@
           req-port :shell_port
           uuid (msgs/message-comm-id req-msg)
           state {:some-key (gensym)}
-          comm (ca/create :jup req-msg "target-name" uuid state)
+          comm (ca/create :jup req-msg "target-name" uuid #{:some-key} state)
           S (comm-global-state/comm-atom-add (comm-global-state/initial-state) uuid comm)
           ctx {:req-message req-msg, :req-port req-port, :jup :must-be-present}
           [action S'] (comm-msg/calc req-msgtype S ctx)

@@ -17,6 +17,10 @@
   [& args]
   `(timbre/error ~@args))
 
+(defmacro warn
+  [& args]
+  `(timbre/warn ~@args))
+
 (defmacro with-level
   [level & body]
   `(timbre/with-level ~level ~@body))

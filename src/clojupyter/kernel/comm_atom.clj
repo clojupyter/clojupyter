@@ -9,6 +9,7 @@
    [clojupyter.state :as state]
    [clojupyter.util :as u]
    [clojure.pprint :as pp]
+   [clojure.spec.alpha :as s]
    [clojupyter.kernel.jup-channels :as jup]
    [clojupyter.messages :as msgs]
    [io.simplect.compose :refer [def- c C p P >->> >>->]])
@@ -33,6 +34,12 @@
     "The COMM-ATOM's Jupyter Model reference identifier (a string).")
   (origin-message [comm-atom]
     "The message that caused the COMM-ATOM to be created.")
+  (sub-state [comm-atom]
+    "A map of attributes to be sent to front-end")
+  (close! [comm-atom]
+      "Removes the comm-atom from the global state and sends COMM-CLOSE to the front end.")
+  (send! [comm-atom msg]
+    "Sends custom message to front-end. Msg must be a map serializable to JSON.")
   (state-set! [comm-atom comm-state]
     "Sets the value `comm-atom` to be `comm-state` by updating the global state and sending COMM `update`
   message.  `comm-state` must be a map serializable to JSON.  Returns `comm-atom`.")
@@ -41,15 +48,17 @@
   (watch [comm-atom key fn]
     "Add watch to `comm-atom` which will subsequently be called when the value of `comm-atom` is
     updated.  The observer `fn` fn must be a fn of 4 args: a key, the reference, its old-state, its
-    new-state, identical to those for `watch` functions (internally CommAtom uses an agent for
-    update notification), cf. `add-watch` for details.  Returns `comm-atom`.")
+    new-state, identical to those for `watch` functions. cf. `add-watch` for details.  Returns `comm-atom`.")
   (unwatch [comm-atom key]
-    "Remove watch added with key `key` from `comm-atom`.  Returns `comm-atom`."))
+    "Remove watch added with key `key` from `comm-atom`.  Returns `comm-atom`.")
+  (validate [comm-atom fn]
+    "Add validator function `fn` to `comm-atom` which will be called when the `comm-atom` is created or changed.
+    The validator fn is a single argument (the `comm-atom` updated state) predicate"))
 
-(declare agentfld comm-atom? send-comm-msg! send-comm-open! simple-fmt update-agent!)
+(declare comm-atom? send-comm-state! send-comm-open! simple-fmt jupfld)
 
 (deftype CommAtom
-    [comm-state_ jup_ target-name_ reqmsg_ cid_ agent_]
+    [comm-state_ jup_ target-name_ reqmsg_ cid_ viewer-keys]
 
   comm-atom-proto
   (target [_]
@@ -60,26 +69,54 @@
     (str "IPY_MODEL_" cid_))
   (origin-message [_]
     reqmsg_)
+  (sub-state [_]
+    (select-keys @comm-state_ viewer-keys))
+  (close! [comm-atom]
+    (let [id (comm-id comm-atom)
+          content (msgs/comm-close-content id {})]
+      (jup/send!! (jupfld comm-atom) :iopub_port (origin-message comm-atom) msgs/COMM-CLOSE MESSAGE-METADATA content)
+      (state/comm-state-swap! (P comm-global-state/comm-atom-remove id)))
+      nil)
+  (send! [comm-atom msg]
+    (assert (map? msg))
+    (let [content (msgs/custom-comm-msg (comm-id comm-atom) msgs/COMM-MSG-CUSTOM (target comm-atom) msg)]
+      (jup/send!! (jupfld comm-atom) :iopub_port (origin-message comm-atom) msgs/COMM-MSG MESSAGE-METADATA content))
+      msg)
   (state-set! [comm-atom comm-state]
     (assert (map? comm-state))
     (reset! comm-state_ comm-state)
-    (update-agent! comm-atom comm-state)
-    (send-comm-msg! comm-atom comm-state)
+    (send-comm-state! comm-atom (sub-state comm-atom))
     comm-atom)
   (state-update! [comm-atom comm-state]
     (assert (map? comm-state))
-    (state-set! comm-atom (merge @comm-atom comm-state)))
-  (watch [comm-atom key f]
+    (let [cur-state @comm-atom
+          new-state (merge cur-state comm-state)
+          ca-spec (:spec (meta cur-state))
+          new-state (if-let [{problems :clojure.spec.alpha/problems} (and ca-spec (s/explain-data ca-spec new-state))]
+                      (loop [state new-state
+                            problems problems]
+                        (if (seq problems)
+                          (let [{:keys [in val pred]} (first problems)]
+                            (if (and (number? val) (or (= 'float? pred) (= float? pred))) ;; Spec can return the fn or its symbol.
+                              (recur (update-in state in float) (rest problems))
+                              (recur state (rest problems))))
+                          state))
+                      new-state)]
+      (state-set! comm-atom new-state)))
+  (watch [_ key f]
     (assert (fn? f))
-    (add-watch (agentfld comm-atom) key f))
-  (unwatch [comm-atom key]
-    (remove-watch (agentfld comm-atom) key))
+    (add-watch comm-state_ key f))
+  (unwatch [_ key]
+    (remove-watch comm-state_ key))
+  (validate [_ f]
+    (assert (fn? f))
+    (set-validator! comm-state_ f))
 
 
   mc/PMimeConvertible
   (to-mime [_]
     (u/json-str {:text/plain
-                 ,, (str "[" cid_ "]=" @agent_)
+                 ,, (str "[" cid_ "]=" @comm-state_)
                  :application/vnd.jupyter.widget-view+json
                  ,, {:version_major WIDGET-VERSION-MAJOR
                      :version_minor WIDGET-VERSION-MINOR
@@ -98,13 +135,21 @@
     (state-set! comm-atom v)
     v)
   (swap [comm-atom f]
-    (state-set! comm-atom (.swap ^Atom comm-state_ f)))
+    (let [state (.swap ^Atom comm-state_ f)]
+      (state-set! comm-atom @comm-state_)
+      state))
   (swap [comm-atom f arg]
-    (state-set! comm-atom (.swap ^Atom comm-state_ f arg)))
+    (let [state (.swap ^Atom comm-state_ f arg)]
+      (state-set! comm-atom @comm-state_)
+      state))
   (swap [comm-atom f arg1 arg2]
-    (state-set! comm-atom (.swap ^Atom comm-state_ f arg1 arg2)))
+    (let [state (.swap ^Atom comm-state_ f arg1 arg2)]
+      (state-set! comm-atom @comm-state_)
+      state))
   (swap [comm-atom f arg1 arg2 args]
-    (state-set! comm-atom (.swap ^Atom comm-state_ f arg1 arg2 args)))
+    (let [state (.swap ^Atom comm-state_ f arg1 arg2 args)]
+      (state-set! comm-atom @comm-state_)
+      state))
 
   clojure.lang.IDeref
   (deref [_]
@@ -118,11 +163,7 @@
   [^CommAtom comm-atom]
   (.-jup_ comm-atom))
 
-(defn- agentfld
-  [^CommAtom comm-atom]
-  (.-agent_ comm-atom))
-
-(defn- send-comm-msg! [^CommAtom comm-atom, comm-state]
+(defn- send-comm-state! [^CommAtom comm-atom, comm-state]
   (assert (map? comm-state))
   (let [content (msgs/update-comm-msg (comm-id comm-atom) msgs/COMM-MSG-UPDATE (target comm-atom) comm-state)]
     (jup/send!! (jupfld comm-atom) :iopub_port (origin-message comm-atom) msgs/COMM-MSG MESSAGE-METADATA content)))
@@ -133,19 +174,6 @@
                                         {:state comm-state :buffer_paths []}
                                         {:target_name (target comm-atom)})]
     (jup/send!! (jupfld comm-atom) :iopub_port (origin-message comm-atom) msgs/COMM-OPEN MESSAGE-METADATA content)))
-
-(defn- update-agent! [^CommAtom comm-atom, comm-state]
-  (let [pre-state @comm-atom]
-    (send (agentfld comm-atom) (constantly comm-state))
-    (when-let [err (agent-error (agentfld comm-atom))]
-      (let [err-info  {:comm-atom comm-atom
-                       :pre-state pre-state
-                       :new-state comm-state
-                       :error-str (str err)
-                       :error err}]
-        (log/error "update-agent: error in agent" (log/ppstr err-info))
-        (log/error "restarting using pre-state")
-        (restart-agent (agentfld comm-atom) pre-state)))))
 
 (defn- short-comm-id
   [^CommAtom comm-atom]
@@ -169,7 +197,7 @@
      (pp/pprint-logical-block
        (print (prefix comm-atom))
        (pp/pprint-newline :linear)
-       (pp/pprint-logical-block (pp/write @comm-atom)))
+       (pp/pprint-logical-block (pp/write @comm-atom :length 100)))
      (print ">"))))
 
 (defmethod print-method CommAtom
@@ -185,20 +213,28 @@
     (print (simple-fmt comm-atom))))
 
 (defn create
-  [jup req-message target-name comm-id comm-state]
+  [jup req-message target-name comm-id viewer-keys comm-state]
   (assert jup req-message)
-  (->CommAtom (atom comm-state) jup target-name req-message comm-id (agent comm-state)))
+  (->CommAtom (atom comm-state) jup target-name req-message comm-id viewer-keys))
 
 (defn insert
   [comm-atom]
   (let [comm-id (comm-id comm-atom)]
     (state/comm-state-swap! (P comm-global-state/comm-atom-add comm-id comm-atom))
-    (send-comm-open! comm-atom @comm-atom)
+    (send-comm-open! comm-atom (sub-state comm-atom))
     comm-atom))
 
 (defn create-and-insert
-  [jup req-message target-name comm-id comm-state]
-  (insert (create jup req-message target-name comm-id comm-state)))
+  [jup req-message target-name comm-id viewer-keys comm-state]
+  (insert (create jup req-message target-name comm-id viewer-keys comm-state)))
 
 (def comm-atom?
   (p instance? CommAtom))
+
+(defn open?
+  [comm-atom]
+  (let [id (comm-id comm-atom)
+        S (state/comm-state-get)]
+    (comm-global-state/known-comm-id? S id)))
+
+(def closed? (complement open?))

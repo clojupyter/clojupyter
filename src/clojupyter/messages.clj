@@ -615,3 +615,10 @@
   (s/cat :data ::data, :metadata ::metadata, :transient ::transient)
   [data metadata tsient]
   {:data data, :metadata metadata, :transient tsient})
+
+(sdefn custom-comm-msg
+  (s/cat :comm-id ::comm-id, :method ::msp/comm-message-method,
+       :target-name ::msp/target_name,
+       :content map?)
+  [comm-id method target-name content]
+  (comm-msg-content comm-id {:method method :content content} {:target_name target-name}))

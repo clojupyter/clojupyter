@@ -79,7 +79,7 @@
       nil)
   (send! [comm-atom msg]
     (assert (map? msg))
-    (let [content (msgs/update-comm-msg (comm-id comm-atom) msgs/COMM-MSG-CUSTOM (target comm-atom) msg)]
+    (let [content (msgs/custom-comm-msg (comm-id comm-atom) msgs/COMM-MSG-CUSTOM (target comm-atom) msg)]
       (jup/send!! (jupfld comm-atom) :iopub_port (origin-message comm-atom) msgs/COMM-MSG MESSAGE-METADATA content))
       msg)
   (state-set! [comm-atom comm-state]
@@ -237,4 +237,4 @@
         S (state/comm-state-get)]
     (comm-global-state/known-comm-id? S id)))
 
-(def closed? (complement open?))    
+(def closed? (complement open?))

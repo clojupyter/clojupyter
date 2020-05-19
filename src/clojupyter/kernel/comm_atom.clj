@@ -36,6 +36,8 @@
     "The message that caused the COMM-ATOM to be created.")
   (sub-state [comm-atom]
     "A map of attributes to be sent to front-end")
+  (send! [comm-atom msg]
+    "Sends custom message to front-end")
   (state-set! [comm-atom comm-state]
     "Sets the value `comm-atom` to be `comm-state` by updating the global state and sending COMM `update`
   message.  `comm-state` must be a map serializable to JSON.  Returns `comm-atom`.")
@@ -51,7 +53,7 @@
     "Add validator function `fn` to `comm-atom` which will be called when the `comm-atom` is created or changed.
     The validator fn is a single argument (the `comm-atom` updated state) predicate"))
 
-(declare comm-atom? send-comm-msg! send-comm-open! simple-fmt)
+(declare comm-atom? send-comm-state! send-comm-open! simple-fmt jupfld)
 
 (deftype CommAtom
     [comm-state_ jup_ target-name_ reqmsg_ cid_ viewer-keys]
@@ -67,10 +69,14 @@
     reqmsg_)
   (sub-state [_]
     (select-keys @comm-state_ viewer-keys))
+  (send! [comm-atom msg]
+    (assert (map? msg))
+    (let [content (msgs/update-comm-msg (comm-id comm-atom) msgs/COMM-MSG-CUSTOM (target comm-atom) msg)]
+      (jup/send!! (jupfld comm-atom) :iopub_port (origin-message comm-atom) msgs/COMM-MSG MESSAGE-METADATA content)))
   (state-set! [comm-atom comm-state]
     (assert (map? comm-state))
     (reset! comm-state_ comm-state)
-    (send-comm-msg! comm-atom (sub-state comm-atom))
+    (send-comm-state! comm-atom (sub-state comm-atom))
     comm-atom)
   (state-update! [comm-atom comm-state]
     (assert (map? comm-state))
@@ -148,7 +154,7 @@
   [^CommAtom comm-atom]
   (.-jup_ comm-atom))
 
-(defn- send-comm-msg! [^CommAtom comm-atom, comm-state]
+(defn- send-comm-state! [^CommAtom comm-atom, comm-state]
   (assert (map? comm-state))
   (let [content (msgs/update-comm-msg (comm-id comm-atom) msgs/COMM-MSG-UPDATE (target comm-atom) comm-state)]
     (jup/send!! (jupfld comm-atom) :iopub_port (origin-message comm-atom) msgs/COMM-MSG MESSAGE-METADATA content)))

@@ -5,6 +5,8 @@
             [io.simplect.compose :refer [def- c C p P]]
             [taoensso.timbre :as timbre]))
 
+(def ^:dynamic *verbose* false)
+
 (defmacro debug
   [& args]
   `(timbre/debug ~@args))

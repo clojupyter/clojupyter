@@ -63,6 +63,8 @@
   (every? (set (range (count _options_labels))) index))
 
 (def widget? ca/comm-atom?)
+(def open? ca/open?)
+(def closed? ca/closed?)
 
 ;;------------------------------------------------------------------------------------------
 ;; Special handling of selection widgets

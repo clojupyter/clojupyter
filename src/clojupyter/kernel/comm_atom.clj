@@ -36,8 +36,10 @@
     "The message that caused the COMM-ATOM to be created.")
   (sub-state [comm-atom]
     "A map of attributes to be sent to front-end")
+  (close! [comm-atom]
+      "Removes the comm-atom from the global state and sends COMM-CLOSE to the front end.")
   (send! [comm-atom msg]
-    "Sends custom message to front-end")
+    "Sends custom message to front-end. Msg must be a map serializable to JSON.")
   (state-set! [comm-atom comm-state]
     "Sets the value `comm-atom` to be `comm-state` by updating the global state and sending COMM `update`
   message.  `comm-state` must be a map serializable to JSON.  Returns `comm-atom`.")
@@ -69,10 +71,17 @@
     reqmsg_)
   (sub-state [_]
     (select-keys @comm-state_ viewer-keys))
+  (close! [comm-atom]
+    (let [id (comm-id comm-atom)
+          content (msgs/comm-close-content id {})]
+      (jup/send!! (jupfld comm-atom) :iopub_port (origin-message comm-atom) msgs/COMM-CLOSE MESSAGE-METADATA content)
+      (state/comm-state-swap! (P comm-global-state/comm-atom-remove id)))
+      nil)
   (send! [comm-atom msg]
     (assert (map? msg))
     (let [content (msgs/update-comm-msg (comm-id comm-atom) msgs/COMM-MSG-CUSTOM (target comm-atom) msg)]
-      (jup/send!! (jupfld comm-atom) :iopub_port (origin-message comm-atom) msgs/COMM-MSG MESSAGE-METADATA content)))
+      (jup/send!! (jupfld comm-atom) :iopub_port (origin-message comm-atom) msgs/COMM-MSG MESSAGE-METADATA content))
+      msg)
   (state-set! [comm-atom comm-state]
     (assert (map? comm-state))
     (reset! comm-state_ comm-state)
@@ -221,3 +230,11 @@
 
 (def comm-atom?
   (p instance? CommAtom))
+
+(defn open?
+  [comm-atom]
+  (let [id (comm-id comm-atom)
+        S (state/comm-state-get)]
+    (comm-global-state/known-comm-id? S id)))
+
+(def closed? (complement open?))    

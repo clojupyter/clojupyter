@@ -108,12 +108,12 @@
   [_ S {:keys [req-message] :as ctx}]
   (assert req-message)
   (log/debug "received COMM:UPDATE")
-  (let [{{:keys [comm_id] {:keys [method state buffer_paths]} :data} :content buffers :buffers} req-message]
+  (let [{{:keys [comm_id] {:keys [method state buffer_paths]} :data} :content} req-message]
     (assert comm_id)
     (assert state)
     (if-let [comm-atom (comm-global-state/comm-atom-get S comm_id)]
       (if (seq buffer_paths)
-        (let [buffers (.-buffers buffers)
+        (let [buffers (msgs/message-buffers req-message)
               _ (assert (= (count buffer_paths) (count buffers)))
               [paths _] (msgs/leaf-paths string? keyword buffer_paths)
               repl-map (reduce merge (map hash-map paths buffers))
@@ -132,17 +132,21 @@
   [_ S {:keys [req-message] :as ctx}]
   (assert req-message)
   (log/debug "received COMM:CUSTOM")
-  (let [{{:keys [comm_id] {:keys [content method]} :data} :content} req-message]
+  (let [{{:keys [comm_id] {{event :event :as content} :content :keys [method]} :data} :content} req-message]
     (assert comm_id)
     (assert (= method msgs/COMM-MSG-CUSTOM))
     (if-let [comm-atom (comm-global-state/comm-atom-get S comm_id)]
-      (case (:event content)
-        "click" (let [{:keys [on-click] :or {on-click (constantly nil)}} @comm-atom
-                      A (action (side-effect on-click {:op :click-callback :comm-id comm_id :content content}))]
-                  (return ctx A S))
-        "submit" (let [{:keys [on-submit] :or {on-submit (constantly nil)}} @comm-atom
-                               A (action (side-effect on-submit {:op :submit-callback :comm-id comm_id :content content}))]
-                   (return ctx A S)))
+      (let [k (keyword (str "on-" event))
+            state @comm-atom
+            callback (get-in state [:callbacks k] (constantly nil))]
+        (if (fn? callback)
+          (let [A (action (side-effect #(callback state) {:op :callback :comm-id comm_id :content content}))]
+            (return ctx A S))
+          ;; If callback attr is not a fn, we assume it's a collection of fns.
+          (let [call (fn [] (doseq [f callback]
+                              (f state)))
+                A (action (side-effect call {:op :callback :comm-id comm_id :content content}))]
+            (return ctx A S))))
       (handle-comm-msg-unknown ctx S comm_id))))
 
 (defmethod calc* msgs/COMM-MSG

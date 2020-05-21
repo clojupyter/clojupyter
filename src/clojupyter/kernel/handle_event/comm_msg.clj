@@ -119,7 +119,7 @@
               _ (assert (= (count buffer_paths) (count buffers)))
               [paths _] (msgs/leaf-paths string? keyword buffer_paths)
               repl-map (reduce merge (map hash-map paths buffers))
-              _ (log/debug "Got paths " paths "Got repl-map " repl-map)
+              _ (log/debug "Got paths: " paths "Got buffer replacement map: " repl-map)
               state (msgs/insert-paths state repl-map)
               A (action (side-effect #(ca/state-update! comm-atom state)
                                      {:op :update-agent :comm-id comm_id :new-state state}))]
@@ -134,20 +134,21 @@
 (defmethod handle-comm-msg msgs/COMM-MSG-CUSTOM
   [_ S {:keys [req-message] :as ctx}]
   (assert req-message)
-  (let [{{:keys [comm_id] {{event :event :as content} :content :keys [method]} :data} :content} req-message]
+  (let [{{:keys [comm_id] {{event :event :as content} :content :keys [method]} :data} :content} req-message
+        buffers (msgs/message-buffers req-message)]
     (assert comm_id)
     (assert (= method msgs/COMM-MSG-CUSTOM))
-    (log/debug "Received COMM-CUSTOM -- comm_id: " comm_id " content: " content)
+    (log/debug "Received COMM-CUSTOM -- comm_id: " comm_id " content: " content "buffers: " buffers)
     (if-let [comm-atom (comm-global-state/comm-atom-get S comm_id)]
       (let [k (keyword (str "on-" event))
             state @comm-atom
             callback (get-in state [:callbacks k] (constantly nil))]
         (if (fn? callback)
-          (let [A (action (side-effect #(callback state) {:op :callback :comm-id comm_id :content content}))]
+          (let [A (action (side-effect #(callback comm-atom content buffers) {:op :callback :comm-id comm_id :content content}))]
             (return ctx A S))
           ;; If callback attr is not a fn, we assume it's a collection of fns.
           (let [call (fn [] (doseq [f callback]
-                              (f state)))
+                              (f comm-atom content buffers)))
                 A (action (side-effect call {:op :callback :comm-id comm_id :content content}))]
             (return ctx A S))))
       (handle-comm-msg-unknown ctx S comm_id))))

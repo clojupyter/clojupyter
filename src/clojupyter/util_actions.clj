@@ -103,8 +103,9 @@
     (let [action-result (leave-action {})]
       (if (a/success? action-result)
         (assoc result :leave-action action-result)
-        (throw (ex-info (str "Action failed: " action-result)
-                 {:action leave-action, :action-result action-result}))))
+        (do (log/warn "Action failed: " (pr-str (.failure action-result)))
+            (when log/*verbose* (log/warn {:action leave-action, :action-result action-result}))
+            result)))
     result))
 
 (defmacro  exiting-on-completion

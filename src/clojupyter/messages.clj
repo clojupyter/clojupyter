@@ -281,13 +281,13 @@
           strbody (fmap u/bytes->string body)
           buffers (make-jupmsg-buffers (vec (drop n-blobs blobs)))
           preframes (make-jupmsg-preframes envelope delim signature)
-          body-map (parse-json-and-build-jupmsg (select-keys strbody [:header :parent-header :metadata :content]))
-          jupmsg (assoc body-map :preframes preframes :buffers buffers)]
+          orig-body (select-keys strbody [:header :parent-header :metadata :content])]
       (when-not (check-signature strbody signature)
         (let [msg "Invalid message signature"]
+          (log/debug msg ": " (String. signature "UTF-8") ". jupmsg: " orig-body)
           (log/error msg)
          (throw (Exception. msg))))
-      (s/assert ::jsp/jupmsg jupmsg))))
+      (s/assert ::jsp/jupmsg (assoc (parse-json-and-build-jupmsg orig-body) :preframes preframes :buffers buffers)))))
 
 (s/fdef frames->jupmsg
   :args (s/cat :checker fn?, :frames ::msp/frames)
@@ -298,13 +298,14 @@
       jupmsg-keys (drop 2 u/SEGMENT-ORDER)]
 
   (defn jupmsg->frames
-    [{:keys [header parent-header metadata content preframes buffers] :as jupmsg}]
+    [signer {:keys [header parent-header metadata content preframes buffers] :as jupmsg}]
     (assert (every? (complement nil?) (vals (select-keys jupmsg jupmsg-keys))))
     (let [envelope	(.-envelope preframes)
-          signature	(.-signature preframes)
+      ;;    signature	(.-signature preframes)
           _		(assert envelope)
-          _		(assert signature)
           payload-vec	(mapv u/json-str [header parent-header metadata content])
+          signature (signer payload-vec)
+          _		(assert signature)
           byte-buffers	(when buffers
                           (.-buffers buffers))]
         (assert (s/valid? ::sp/byte-arrays envelope))
@@ -316,7 +317,7 @@
              (s/assert ::msp/frames)))))
 
 (s/fdef jupmsg->frames
-  :args (s/cat :jupmsg ::jsp/jupmsg)
+  :args (s/cat :signer fn? :jupmsg ::jsp/jupmsg)
   :ret ::msp/frames)
 (instrument `jupmsg->frames)
 
@@ -333,9 +334,9 @@
   {:error? true, :req-port req-port})
 
 (defn kernelrsp->jupmsg
-  ([port signer kernel-rsp]
-   (kernelrsp->jupmsg port signer kernel-rsp {}))
-  ([port signer
+  ([port kernel-rsp]
+   (kernelrsp->jupmsg port kernel-rsp {}))
+  ([port
     {:keys [rsp-content rsp-msgtype rsp-socket rsp-metadata rsp-buffers req-message]}
     {:keys [messageid now] :as opts}]
    (let [messageid	(str (or messageid (u!/uuid)))
@@ -349,7 +350,7 @@
          envelope	(if (= rsp-socket :iopub_port)
                           [(u/get-bytes rsp-msgtype)]
                           (message-envelope req-message))
-         signature	(u/get-bytes (signer (map u/json-str [header parent-header metadata rsp-content])))]
+         signature	(u/get-bytes "")]
      (make-jupmsg envelope signature header parent-header metadata rsp-content rsp-buffers))))
 
 ;;; ------------------------------------------------------------------------------------------------------------------------

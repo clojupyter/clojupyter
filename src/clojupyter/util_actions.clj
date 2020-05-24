@@ -103,7 +103,7 @@
     (let [action-result (leave-action {})]
       (if (a/success? action-result)
         (assoc result :leave-action action-result)
-        (do (log/warn "Action failed: " (pr-str (.failure action-result)))
+        (do (log/error "Action failed: " (pr-str (.failure action-result)))
             (when log/*verbose* (log/warn {:action leave-action, :action-result action-result}))
             result)))
     result))
@@ -241,6 +241,5 @@
       (catch Exception e
         (log/error e)
         (Thread/sleep 10)
-        [return-value (str e) e])))))
-
+        (assoc return-value :error e))))))
 (set-defn-indent! #'exiting-on-completion #'without-exiting #'with-temp-directory!)

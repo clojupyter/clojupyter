@@ -168,11 +168,15 @@
                       (let [payload-vec [header parent-header metadata content]
                             signature (.-signature preframes)
                             check-signature (signer payload-vec)]
-                        (= check-signature (bytes->string* signature)))))
+                        (log/debug "Checking message with key" key)
+                        (or (= "" check-signature)      ; When signer returns "" authentication and message signing is disabled.
+                            (= check-signature (bytes->string* signature))))))
         signer	(if (empty? key)
                   (constantly "")
                   (fn signer [payload-vec]
-                    (sha256-hmac (apply str (map json-str* payload-vec)) key)))]
+                    ;; BUG: The signer fn should not generate its own strings from maps, but it should
+                    ;;      check the strings it received from the channel.
+                    (sha256-hmac (apply str payload-vec) key)))]
     [signer (mkchecker signer)]))
 
 (redefn parse-json-str cheshire/parse-string)

@@ -116,7 +116,7 @@
   mc/PMimeConvertible
   (to-mime [_]
     (u/json-str {:text/plain
-                 ,, (str "[" cid_ "]=" @comm-state_)
+                 ,, (str "[" cid_ "]=" (:_model_name @comm-state_))
                  :application/vnd.jupyter.widget-view+json
                  ,, {:version_major WIDGET-VERSION-MAJOR
                      :version_minor WIDGET-VERSION-MINOR
@@ -187,7 +187,7 @@
 
 (defn- simple-fmt
   [comm-atom]
-  (str "#<" (prefix comm-atom) (short-comm-id comm-atom) ":" @comm-atom ">"))
+  (str "#<" (prefix comm-atom) (:_model_name @comm-atom) ">"))
 
 (defn- print-prettily
   [^CommAtom comm-atom ^java.io.Writer w]
@@ -197,14 +197,12 @@
      (pp/pprint-logical-block
        (print (prefix comm-atom))
        (pp/pprint-newline :linear)
-       (pp/pprint-logical-block (pp/write @comm-atom :length 100)))
+       (pp/pprint-logical-block (pp/write @comm-atom)))
      (print ">"))))
 
 (defmethod print-method CommAtom
   [^CommAtom comm-atom ^java.io.Writer w]
-  (if pp/*print-pretty*
-    (print-prettily comm-atom w)
-    (.write w ^String (simple-fmt comm-atom))))
+  (.write w ^String (simple-fmt comm-atom)))
 
 (defmethod pp/simple-dispatch CommAtom
   [^CommAtom comm-atom]

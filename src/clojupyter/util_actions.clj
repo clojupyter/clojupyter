@@ -103,8 +103,9 @@
     (let [action-result (leave-action {})]
       (if (a/success? action-result)
         (assoc result :leave-action action-result)
-        (throw (ex-info (str "Action failed: " action-result)
-                 {:action leave-action, :action-result action-result}))))
+        (do (log/error "Action failed: " (pr-str (.failure action-result)))
+            (when log/*verbose* (log/warn {:action leave-action, :action-result action-result}))
+            result)))
     result))
 
 (defmacro  exiting-on-completion
@@ -240,6 +241,5 @@
       (catch Exception e
         (log/error e)
         (Thread/sleep 10)
-        [return-value (str e) e])))))
-
+        (assoc return-value :error e))))))
 (set-defn-indent! #'exiting-on-completion #'without-exiting #'with-temp-directory!)

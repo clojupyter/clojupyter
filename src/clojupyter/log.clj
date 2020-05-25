@@ -5,6 +5,8 @@
             [io.simplect.compose :refer [def- c C p P]]
             [taoensso.timbre :as timbre]))
 
+(def ^:dynamic *verbose* false)
+
 (defmacro debug
   [& args]
   `(timbre/debug ~@args))
@@ -61,7 +63,8 @@
 
 (def CONFIG {:timestamp-opts {:pattern "HH:mm:ss.SSS", :locale :jvm-default, :timezone :utc}
              :ns-blacklist ["io.pedestal.*"]
-             :output-fn output-fn})
+             :output-fn output-fn
+             :level :warn})
 
 (defn- set-clojupyter-config!
   []
@@ -74,6 +77,6 @@
 (defn init!
   []
   (set-clojupyter-config!)
-  (timbre/set-level! (cfg/log-level)))
+  #_(timbre/set-level! (cfg/log-level)))
 
 (init!) ;; avoid spurious debug messages from io.pedestal when loading with midje testing turned on

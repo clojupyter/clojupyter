@@ -11,7 +11,7 @@
 
 (defn- handle-error
   [msg]
-  (log/debug "handle-event-process: error on input" (log/ppstr {:msg msg})))
+  (log/error "handle-event-process: error on input" (log/ppstr {:msg msg})))
 
 (defn- handle-event-or-channel-error
   "Handles request, returns `false` iff event-handling should terminate."
@@ -25,8 +25,8 @@
     (cond
       error?
       ,, (do (handle-error inbound-msg)
-             ;; do not continue after error:
-             false)
+             ;; continue after error:
+             true)
       (not valid?)
       ,, (throw (ex-info (str "Invalid msgtype for port " channel-port ": " msgtype)
                   {:req-message req-message, :msgtype msgtype, :channel-port channel-port}))
@@ -34,7 +34,7 @@
       ,, (do (update-status! "busy")
              (he/handle-event! (assoc ctx :req-message req-message :req-port req-port))
              (update-status! "idle")
-             ;; continue iff we are not handling a shutdown request:
+             ;; continue if we are not handling a shutdown request:
              (not= (msgs/message-msg-type req-message) msgs/SHUTDOWN-REQUEST)))))
 
 (defn- run-dispatch-loop
@@ -48,7 +48,7 @@
           ,, (log/debug (str "handle-event-process received nil - terminating: " sock-kw))
           (shutdown/is-token? inmsg-or-token)
           ,, (log/debug (str "handle-event-process received shutdown - terminating: " sock-kw))
-          :else 
+          :else
           ,, (when (handle-event-or-channel-error ctx sock-kw port-msgtype-pred inmsg-or-token)
                (recur)))))))
 

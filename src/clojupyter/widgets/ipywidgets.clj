@@ -15,7 +15,7 @@
 (def WIDGET-TARGET "jupyter.widget")
 (def WIDGET-PROTOCOL-VERSION-MAJOR 2)
 (def WIDGET-PROTOCOL-VERSION-MINOR 0)
-(def- SPECS (-> "ipywidgets/schema/jupyterwidgetmodels.latest.json"
+(def- SPECS (-> "ipywidgets/schema/jupyterwidgetmodels.min.json"
                 io/resource
                 slurp
                 json/read-str))

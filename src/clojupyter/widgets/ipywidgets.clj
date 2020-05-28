@@ -253,3 +253,11 @@
                w-cons (make-widget spec)]
            (eval `(def ~w-name ~w-cons))
            (spec-widget! spec))))
+
+(defn base-widget
+  ([state] (base-widget state (u!/uuid)))
+  ([state comm-id]
+   (let [{jup :jup req-msg :req-message} (state/current-context)
+         target "jupyter.widget"
+         sync-keys (set (keys state))]
+     (ca/create-and-insert jup req-msg target comm-id sync-keys state))))

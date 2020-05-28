@@ -103,6 +103,8 @@
                           state))
                       new-state)]
       (state-set! comm-atom new-state)))
+
+  ;; DEPRECATED: CommsAtom now implements clojure.lang.IRef to make them compatible with existing clojure fns.
   (watch [_ key f]
     (assert (fn? f))
     (add-watch comm-state_ key f))
@@ -154,6 +156,19 @@
   clojure.lang.IDeref
   (deref [_]
     @comm-state_)
+
+  clojure.lang.IRef
+  (getValidator [_]
+    (get-validator comm-state_))
+  (setValidator [_ p]
+    (set-validator! comm-state_ p))
+
+  (getWatches [_]
+    (.getWatches comm-state_))
+  (addWatch [_ key f]
+     (add-watch comm-state_ key f))
+  (removeWatch [_ key]
+    (remove-watch comm-state_ key))
 
   clojure.lang.IFn
   (invoke [comm-state f]

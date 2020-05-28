@@ -66,7 +66,7 @@
 (defn tie!
   ([f source target] (tie! f source target :value :value))
   ([f source target source-attr target-attr]
-    (.watch source (gensym :on-change)
+    (add-watch source (gensym :on-change)
       (fn [_ _ old new]
         (when (not= (get old source-attr)
                     (get new source-attr))

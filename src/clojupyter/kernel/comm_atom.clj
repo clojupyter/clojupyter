@@ -38,6 +38,8 @@
     "A map of attributes to be sent to front-end")
   (close! [comm-atom]
       "Removes the comm-atom from the global state and sends COMM-CLOSE to the front end.")
+  (close [comm-atom]
+    "Closes a comm-atom recursively")    
   (send! [comm-atom msg]
     "Sends custom message to front-end. Msg must be a map serializable to JSON.")
   (state-set! [comm-atom comm-state]
@@ -77,6 +79,9 @@
       (jup/send!! (jupfld comm-atom) :iopub_port (origin-message comm-atom) msgs/COMM-CLOSE MESSAGE-METADATA content)
       (state/comm-state-swap! (P comm-global-state/comm-atom-remove id)))
       nil)
+  (close [comm-atom]
+    (msgs/leaf-paths comm-atom? #(.close %) (.sub-state comm-atom))
+    (.close! comm-atom))
   (send! [comm-atom msg]
     (assert (map? msg))
     (let [content (msgs/custom-comm-msg (comm-id comm-atom) msgs/COMM-MSG-CUSTOM (target comm-atom) msg)]

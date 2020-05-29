@@ -62,3 +62,13 @@
                                     (swap! out assoc :value (str v)))))))]
     (doseq [i (range (count widgs))] (observe! i))
     (ipy/v-box {:children (conj widgs out)})))
+
+(defn tie!
+  ([f source target] (tie! f source target :value :value))
+  ([f source target source-attr target-attr]
+    (add-watch source (gensym :on-change)
+      (fn [_ _ old new]
+        (when (not= (get old source-attr)
+                    (get new source-attr))
+          (swap! target assoc target-attr
+            (f (get new source-attr))))))))

@@ -15,7 +15,7 @@
 (def WIDGET-TARGET "jupyter.widget")
 (def WIDGET-PROTOCOL-VERSION-MAJOR 2)
 (def WIDGET-PROTOCOL-VERSION-MINOR 0)
-(def- SPECS (-> "ipywidgets/schema/jupyterwidgetmodels.latest.json"
+(def- SPECS (-> "ipywidgets/schema/jupyterwidgetmodels.min.json"
                 io/resource
                 slurp
                 json/read-str))
@@ -253,3 +253,11 @@
                w-cons (make-widget spec)]
            (eval `(def ~w-name ~w-cons))
            (spec-widget! spec))))
+
+(defn base-widget
+  ([state] (base-widget state (u!/uuid)))
+  ([state comm-id]
+   (let [{jup :jup req-msg :req-message} (state/current-context)
+         target "jupyter.widget"
+         sync-keys (set (keys state))]
+     (ca/create-and-insert jup req-msg target comm-id sync-keys state))))

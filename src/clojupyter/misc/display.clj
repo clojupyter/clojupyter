@@ -93,3 +93,7 @@
 (defn ^:deprecated make-markdown
   [markdown-str]
   (markdown markdown-str))
+
+(defn vega-lite
+  [v]
+  (render-mime :application/vnd.vegalite.v1+json v))

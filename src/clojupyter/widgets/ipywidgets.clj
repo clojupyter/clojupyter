@@ -10,7 +10,8 @@
    [clojupyter.util-actions :as u!]
    [clojure.spec.alpha :as s]
    [io.simplect.compose :refer [def-]]
-   [clojupyter.log :as log]))
+   [clojupyter.log :as log])
+  (:import [java.io StringWriter]))
 
 (def WIDGET-TARGET "jupyter.widget")
 (def WIDGET-PROTOCOL-VERSION-MAJOR 2)
@@ -261,3 +262,33 @@
          target "jupyter.widget"
          sync-keys (set (keys state))]
      (ca/create-and-insert jup req-msg target comm-id sync-keys state))))
+
+(defmacro capture* [w form]
+  `(let [stdout# (new StringWriter)
+         stderr# (new StringWriter)]
+     (binding [*err* stderr#
+               *out* stdout#]
+       (let [res# (try ~form
+                    (catch Exception e#
+                      (swap! ~w update :outputs conj  {:output_type "error" :evalue (.getMessage e#) :ename (str (type e#))
+                                                       :traceback (mapv str (cons (str (type e#) ": " (.getMessage e#)) (.getStackTrace e#)))}))
+                    (finally
+                      (when (seq (str stdout#))
+                        (swap! ~w update :outputs conj {:output_type "stream" :name "stdout" :text (str stdout#)}))
+                      (when (seq (str stderr#))
+                        (swap! ~w update :outputs conj {:output_type "stream" :name "stderr" :text (str stderr#)}))))]
+         (try (swap! ~w update :outputs conj {:output_type "display_data" :metadata {}
+                                              :data (json/read-str (.to-mime res#))})
+              res#
+           (catch Exception e# res#))))))
+
+(defn capture
+  [w f]
+  (fn [& args]
+    (capture* w (apply f args))))
+
+(defmacro with-out-widget
+  [out-widget & forms]
+  (cons `do
+    (for [f forms]
+      `(capture* ~out-widget ~f))))

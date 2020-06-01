@@ -22,9 +22,11 @@
         fmtmsg (fn [msg] (str "channel-forward(" id ", " data-socket-addr ") -- " msg "."))
         fmtdbg (C fmtmsg #(log/debug %))
         fmterr (C fmtmsg #(log/error %))]
+    ;; This deals with exception handling. Since is not part of the loop-recur body, once it catches an exception the loop exits and the kernel restart.
+    ;; If it was meant to catch exceptions inside the loop-recur, then this is a bug and needs to replace the inner try - catch.
     (zutil/zmq-thread
      (shutdown/initiating-shutdown-on-exit [:channel-forward-start term]
-       (u!/with-exception-logging
+       (u!/with-exception-logging ;; This also deals with exceptions. See related comments.
            (zutil/rebind-context-shadowing [ztx]
              (let [data-sock (doto (zutil/zsocket ztx :pair) (.connect data-socket-addr))]
                (try (fmtdbg "Starting")
@@ -37,11 +39,19 @@
                           ,, (fmtdbg "Term signal received")
                           (nil? data)
                           ,, (fmtdbg "Outbound channel closed")
+                          ;; 2020-06-01 - Daniel Ciumberică
+                          ;; Added exception handling inside the loop - recur to prevent exceptions from closing the loop and restarting
+                          ;; the kernel.
+                          ;; This might prevent the exception handling outside the loop to catch anything.
                           (and (= rcv-chan fwd-chan) data)
-                          ,, (if (zutil/send-frames data-sock data)
-                               (recur)
-                               (do (fmterr "Could not send all frames - terminated.")
-                                   (terminate!)))
+                          ,, (do
+                               (try
+                                 (when-not (zutil/send-frames data-sock data)
+                                   (fmterr "Could not send all frames - terminated.")
+                                   (terminate!))
+                                 (catch Exception e
+                                    (log/error e)))
+                               (recur))
                           :else
                           (let [errstr (fmtmsg "Internal error occurred")]
                             (log/error errstr)
@@ -136,4 +146,3 @@
   :ret (s/and (s/coll-of ::zp/zsocket) ::zp/two-tuple))
 
 (instrument `start)
-

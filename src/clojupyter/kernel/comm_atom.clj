@@ -39,7 +39,7 @@
   (close! [comm-atom]
       "Removes the comm-atom from the global state and sends COMM-CLOSE to the front end.")
   (close [comm-atom]
-    "Closes a comm-atom recursively")    
+    "Closes a comm-atom recursively")
   (send! [comm-atom msg]
     "Sends custom message to front-end. Msg must be a map serializable to JSON.")
   (state-set! [comm-atom comm-state]
@@ -57,7 +57,7 @@
     "Add validator function `fn` to `comm-atom` which will be called when the `comm-atom` is created or changed.
     The validator fn is a single argument (the `comm-atom` updated state) predicate"))
 
-(declare comm-atom? send-comm-state! send-comm-open! simple-fmt jupfld)
+(declare comm-atom? send-comm-state! send-comm-open! simple-fmt jupfld jsonable?)
 
 (deftype CommAtom
     [comm-state_ jup_ target-name_ reqmsg_ cid_ viewer-keys]
@@ -83,14 +83,14 @@
     (msgs/leaf-paths comm-atom? #(.close %) (.sub-state comm-atom))
     (.close! comm-atom))
   (send! [comm-atom msg]
-    (assert (map? msg))
+    (assert (and (jsonable? msg) (map? msg)))
     (let [content (msgs/custom-comm-msg (comm-id comm-atom) msgs/COMM-MSG-CUSTOM (target comm-atom) msg)]
       (jup/send!! (jupfld comm-atom) :iopub_port (origin-message comm-atom) msgs/COMM-MSG MESSAGE-METADATA content))
       msg)
   (state-set! [comm-atom comm-state]
     (assert (map? comm-state))
+    (send-comm-state! comm-atom (select-keys comm-state viewer-keys))
     (reset! comm-state_ comm-state)
-    (send-comm-state! comm-atom (sub-state comm-atom))
     comm-atom)
   (state-update! [comm-atom comm-state]
     (assert (map? comm-state))
@@ -99,14 +99,14 @@
           ca-spec (:spec (meta cur-state))
           new-state (if-let [{problems :clojure.spec.alpha/problems} (and ca-spec (s/explain-data ca-spec new-state))]
                       (loop [state new-state
-                            problems problems]
+                             problems problems]
                         (if (seq problems)
                           (let [{:keys [in val pred]} (first problems)]
                             (if (and (number? val) (or (= 'float? pred) (= float? pred))) ;; Spec can return the fn or its symbol.
                               (recur (update-in state in float) (rest problems))
                               (recur state (rest problems))))
                           state))
-                      new-state)]
+                    new-state)]
       (state-set! comm-atom new-state)))
 
   ;; DEPRECATED: CommsAtom now implements clojure.lang.IRef to make them compatible with existing clojure fns.
@@ -134,29 +134,33 @@
 
   clojure.lang.IAtom
   (compareAndSet [comm-atom old new]
-    (if (compare-and-set! comm-state_ old new)
-      (do (state-set! comm-atom @comm-state_)
+    (if (= @comm-atom old)
+      (do (state-set! comm-atom new)
           true)
       false))
   (reset [comm-atom v]
     (state-set! comm-atom v)
     v)
   (swap [comm-atom f]
-    (let [state (.swap ^Atom comm-state_ f)]
-      (state-set! comm-atom @comm-state_)
-      state))
+    (let [state @comm-atom
+          n-state (f state)]
+      (when (compare-and-set! comm-atom state n-state)
+        n-state)))
   (swap [comm-atom f arg]
-    (let [state (.swap ^Atom comm-state_ f arg)]
-      (state-set! comm-atom @comm-state_)
-      state))
+    (let [state @comm-atom
+          n-state (f state arg)]
+      (when (compare-and-set! comm-atom state n-state)
+        n-state)))
   (swap [comm-atom f arg1 arg2]
-    (let [state (.swap ^Atom comm-state_ f arg1 arg2)]
-      (state-set! comm-atom @comm-state_)
-      state))
+    (let [state @comm-atom
+          n-state (f state arg1 arg2)]
+      (when (compare-and-set! comm-atom state n-state)
+          n-state)))
   (swap [comm-atom f arg1 arg2 args]
-    (let [state (.swap ^Atom comm-state_ f arg1 arg2 args)]
-      (state-set! comm-atom @comm-state_)
-      state))
+    (let [state @comm-atom
+          n-state (apply f (cons state (cons arg1 (cons arg2 args))))]
+      (when (compare-and-set! comm-atom state n-state)
+        n-state)))
 
   clojure.lang.IDeref
   (deref [_]
@@ -184,12 +188,12 @@
   (.-jup_ comm-atom))
 
 (defn- send-comm-state! [^CommAtom comm-atom, comm-state]
-  (assert (map? comm-state))
+  (assert (and (jsonable? comm-state) (map? comm-state)))
   (let [content (msgs/update-comm-msg (comm-id comm-atom) msgs/COMM-MSG-UPDATE (target comm-atom) comm-state)]
     (jup/send!! (jupfld comm-atom) :iopub_port (origin-message comm-atom) msgs/COMM-MSG MESSAGE-METADATA content)))
 
 (defn- send-comm-open! [^CommAtom comm-atom, comm-state]
-  (assert (map? comm-state))
+  (assert (and (jsonable? comm-state) (map? comm-state)))
   (let [content (msgs/comm-open-content (comm-id comm-atom)
                                         {:state comm-state :buffer_paths []}
                                         {:target_name (target comm-atom)})]
@@ -238,8 +242,8 @@
 (defn insert
   [comm-atom]
   (let [comm-id (comm-id comm-atom)]
-    (state/comm-state-swap! (P comm-global-state/comm-atom-add comm-id comm-atom))
     (send-comm-open! comm-atom (sub-state comm-atom))
+    (state/comm-state-swap! (P comm-global-state/comm-atom-add comm-id comm-atom))
     comm-atom))
 
 (defn create-and-insert
@@ -256,3 +260,22 @@
     (comm-global-state/known-comm-id? S id)))
 
 (def closed? (complement open?))
+
+(defn jsonable?
+  [v]
+  (or (string? v)
+      (keyword? v) ;; Implicitly cast to str
+      (symbol? v) ;; Implicitly cast to str
+      (integer? v)
+      (float? v)
+      (rational? v) ;; Implicitly cast to double
+      (boolean? v)
+      (nil? v)
+      (bytes? v)
+      (comm-atom? v)
+      (and (vector? v) (every? jsonable? v))
+      (and (list? v) (every? jsonable? v)) ;; Implicitly cast to vector
+      (and (instance? clojure.lang.LazySeq v) (every? jsonable? v)) ;; Implicitly cast to vector
+      (and (map? v)
+           (every? #(or (string? %) (keyword? %) (symbol? %)) (keys v))
+           (every? jsonable? (vals v)))))

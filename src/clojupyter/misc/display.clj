@@ -23,6 +23,13 @@
     (throw (Exception. "display: Evaluation context not found.")))
   :ok)
 
+
+(defn render-mime
+  [mime-type v]
+  (reify mc/PMimeConvertible
+    (to-mime [_]
+      (u/to-json-str (hash-map mime-type v)))))
+
 ;; Html
 
 (defrecord HiccupHTML [html-data]
@@ -70,7 +77,6 @@
   [latex-str]
   (latex latex-str))
 
-
 ;; Markdown
 
 (defrecord Markdown [markdown]
@@ -88,15 +94,6 @@
   [markdown-str]
   (markdown markdown-str))
 
-;; Vega Lite
-
 (defn vega-lite
   [v]
-  (u/to-json-str {:application/vnd.vegalite.v1+json v}))
-
-(defn render-mime
-  [mime-type v]
-  (reify mc/PMimeConvertible
-    (to-mime [_]
-      (u/to-json-str (hash-map mime-type v)))))
-
+  (render-mime :application/vnd.vegalite.v1+json v))

@@ -98,7 +98,7 @@
           new-state (merge cur-state comm-state)
           ca-spec (:spec (meta cur-state))
           new-state (if-let [{problems :clojure.spec.alpha/problems} (and ca-spec (s/explain-data ca-spec new-state))]
-                      (loop [state new-state
+                      (loop [state comm-state
                              problems problems]
                         (if (seq problems)
                           (let [{:keys [in val pred]} (first problems)]
@@ -106,8 +106,9 @@
                               (recur (update-in state in float) (rest problems))
                               (recur state (rest problems))))
                           state))
-                    new-state)]
-      (state-set! comm-atom new-state)))
+                    comm-state)]
+      ;; We only update the atom to prevent echoing of the state change back to front-end.
+      (swap! comm-state_ merge new-state)))
 
   ;; DEPRECATED: CommsAtom now implements clojure.lang.IRef to make them compatible with existing clojure fns.
   (watch [_ key f]

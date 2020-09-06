@@ -1,0 +1,28 @@
+#!/bin/env bash
+
+USER_PATH=$(if [[ -d ${JUPYTER_DATA_DIR}/kernels ]]; then
+                echo ${JUPYTER_DATA_DIR}/kernels
+            elif [[ $(uname -s) == Darwin ]]; then
+                echo $HOME/Library/Jupyter/kernels
+            elif [[ -d ${XDG_DATA_HOME}/jupyter/kernels ]]; then
+                echo $XDG_DATA_HOME/jupyter/kernels
+            else
+                echo $HOME/.local/share/jupyter/kernels
+            fi)
+
+SYSTEM_PATH=$(if [[ $(uname -s) == Darwin ]]; then
+                  echo /usr/share/jupyter/kernels
+              else
+                  echo /usr/local/share/jupyter/kernels
+              fi)
+
+# Defaults
+SYSTEM=false
+IDENT=$(cat ident)
+JAR=${IDENT}-standalone.jar
+
+parse_opts() {
+    for arg in $@; do
+        ( [[ $arg == --system ]] && SYSTEM=true ) ||
+        ( [[ $arg == --ident ]] || [[ $arg == -i ]] )
+}

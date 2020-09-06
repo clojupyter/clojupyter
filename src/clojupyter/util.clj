@@ -10,7 +10,8 @@
             [io.simplect.compose :refer [C def- p redefn]]
             [pandect.algo.sha256 :refer [sha256-hmac]]
             [zprint.core :as zp]
-            [clojupyter.log :as log]))
+            [clojupyter.log :as log]
+            [clojupyter.kernel.os :as os]))
 
 (def- CHARSET "UTF8")
 
@@ -135,10 +136,14 @@
 
 (defn kernel-spec
   [dest-jar kernel-id-string]
-  {:argv ["java" "-cp" (str dest-jar) "clojupyter.kernel.core" "{connection_file}"]
-   :display_name (kernel-full-identifier kernel-id-string)
-   :language "clojure"
-   :interrupt_mode "message"})
+  (let [sep (case (os/operating-system)
+              :windows \;
+              \:)]
+    {:env {:CLASSPATH (str dest-jar sep "${CLASSPATH}")}
+     :argv ["java" "clojupyter.kernel.core" "{connection_file}"]
+     :display_name (kernel-full-identifier kernel-id-string)
+     :language "clojure"
+     :interrupt_mode "message"}))
 
 (defmacro ^{:style/indent :defn} define-simple-record-print
   [name format-fn]

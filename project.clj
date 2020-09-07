@@ -1,4 +1,4 @@
-(defproject clojupyter "0.3.3-SNAPSHOT"
+(defproject clojupyter "0.4.0-SNAPSHOT"
   :description "A Jupyter kernel for Clojure"
   :license     {:name "MIT"}
   :url         "https://github.com/clojupyter/clojupyter"
@@ -6,8 +6,9 @@
   :scm         {:name "git" :url "https://github.com/clojupyter/clojupyter"}
   :source-paths      [] ;; provided by lein-tools-deps
   :resource-paths    [] ;; provided by lein-tools-deps
-  :profiles    {:dev     {:dependencies [[midje "1.9.6" :exclusions [org.clojure/clojure]]]
-                          :plugins      [[lein-midje "3.2.1"] [com.roomkey/lein-v "7.0.0"]]}
+  :profiles    {:dev     {:dependencies [[midje "1.9.9" :exclusions [org.clojure/clojure]]]
+                          :plugins      [[lein-midje "3.2.2"]
+                                         [com.roomkey/lein-v "7.2.0"]]}
                 :uberjar {:aot :all}}
 
   :main        clojupyter.kernel.core

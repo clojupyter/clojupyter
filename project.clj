@@ -7,8 +7,7 @@
   :source-paths      [] ;; provided by lein-tools-deps
   :resource-paths    [] ;; provided by lein-tools-deps
   :profiles    {:dev     {:dependencies [[midje "1.9.9" :exclusions [org.clojure/clojure]]]
-                          :plugins      [[lein-midje "3.2.2"]
-                                         [com.roomkey/lein-v "7.2.0"]]}
+                          :plugins      [[lein-midje "3.2.2"]]}
                 :uberjar {:aot :all}}
 
   :main        clojupyter.kernel.core

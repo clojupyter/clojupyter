@@ -1,0 +1,33 @@
+#!/bin/env bash
+
+USER_PATH=$(if [[ -d ${JUPYTER_DATA_DIR}/kernels ]]; then
+                echo ${JUPYTER_DATA_DIR}/kernels
+            elif [[ $(uname -s) == Darwin ]]; then
+                echo $HOME/Library/Jupyter/kernels
+            elif [[ -d ${XDG_DATA_HOME}/jupyter/kernels ]]; then
+                echo $XDG_DATA_HOME/jupyter/kernels
+            else
+                echo $HOME/.local/share/jupyter/kernels
+            fi)
+
+SYSTEM_PATH=$(if [[ $(uname -s) == Darwin ]]; then
+                  echo /usr/share/jupyter/kernels
+              else
+                  echo /usr/local/share/jupyter/kernels
+              fi)
+
+[[ $# -gt 1 ]] && { echo Error: Wrong number of arguments \($#\) passed to program. >&2;
+					exit 1; }
+if [[ $# == 0 || -z $1 ]]; then
+	target=clojupyter-$($(dirname $0)/version)
+else
+	target=$1
+fi
+
+for dir in $USER_PATH/*/ $SYSTEM_PATH/*/; do
+	[[ $dir =~ $target ]] &&\
+	{ echo Uninstalling $(basename $dir);
+	  rm -rf $dir; }
+done
+
+exit 0

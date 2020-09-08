@@ -1,7 +1,5 @@
 #!/bin/env bash
 
-## TODO: Print errors to stderr
-
 ########################################################################################
 #  DEFAULTS
 ########################################################################################
@@ -56,6 +54,7 @@ while [[ $# -gt 0 ]]; do
         shift
         shift
         ;;
+        ## Missing fail condition for unknown arguments
     esac
 done
 
@@ -86,7 +85,8 @@ fi
 # INSTALLING
 #########################################################################################
 
-mkdir $INSTALLDIR/$IDENT 2>/dev/null
+echo Installing $IDENT to $INSTALLDIR >&2
+mkdir -p $INSTALLDIR/$IDENT/plugins 2>/dev/null
 cp $JAR $INSTALLDIR/$IDENT/clojupyter-standalone.jar &&\
 cp resources/clojupyter/assets/logo-64x64.png $INSTALLDIR/$IDENT/. &&\
 

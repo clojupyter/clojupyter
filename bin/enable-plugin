@@ -1,0 +1,73 @@
+#!/bin/env bash
+
+USER_PATH=$(if [[ -d ${JUPYTER_DATA_DIR}/kernels ]]; then
+                echo ${JUPYTER_DATA_DIR}/kernels
+            elif [[ $(uname -s) == Darwin ]]; then
+                echo $HOME/Library/Jupyter/kernels
+            elif [[ -d ${XDG_DATA_HOME}/jupyter/kernels ]]; then
+                echo $XDG_DATA_HOME/jupyter/kernels
+            else
+                echo $HOME/.local/share/jupyter/kernels
+            fi)
+
+SYSTEM_PATH=$(if [[ $(uname -s) == Darwin ]]; then
+                  echo /usr/share/jupyter/kernels
+              else
+                  echo /usr/local/share/jupyter/kernels
+              fi)
+KERNEL=clojupyter-$($(dirname $0)/version)
+
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        --kernel|-k)
+        KERNEL=$2
+        shift
+        shift
+        ;;
+        *)
+        TARGET=$1
+        shift
+        ;;
+    esac
+done
+
+[[ -d $USER_PATH/$KERNEL || -d $SYSTEM_PATH/$KERNEL ]] ||\
+{ echo Can\'t find the kernel dir 2>/dev/null;
+  exit 1; }
+
+[[ -d $SYSTEM_PATH/$KERNEL ]] && WORKDIR=$SYSTEM_PATH/$KERNEL
+[[ -d $USER_PATH/$KERNEL ]] && WORKDIR=$USER_PATH/$KERNEL
+
+[[ -r $WORKDIR/plugins ]] ||\
+{ echo The kernel does not appear to support plugins >&2;
+  exit 2; }
+
+[[ -n $TARGET ]] ||\
+{ echo Must provide a plugin to enable 2>/dev/null;
+  exit 3; }
+
+matches=
+for plug in $WORKDIR/plugins/*; do
+    [[ $(basename ${plug}) != "*" && $(basename ${plug:0:-4}) =~ $TARGET ]] &&\
+    matches+="$plug "
+done
+
+[[ -n $matches ]] ||\
+{ echo No plugin found that matches $TARGET >&2;
+  exit 3; }
+
+enabled_plugs=$(jq .env.CLASSPATH $WORKDIR/kernel.json |\
+    sed -E 's/^"|"$//g' | sed 's/:/\n/g' | grep -vE "$WORKDIR/clojupyter-standalone.jar|\\\${CLASSPATH}")
+
+new_plugs="$enabled_plugs"
+for match in $matches; do
+    (echo "$enabled_plugs" | grep $match &>/dev/null) ||\
+    { new_plugs=$(cat <(echo "$new_plugs") <(echo "$match"));
+      echo Enabling plugin $match for $KERNEL >&2; }
+done
+
+[[ "$new_plugs" != "$enabled_plugs" ]] &&\
+new_spec=$(jq .env.CLASSPATH="\"$WORKDIR/clojupyter-standalone.jar:$(echo "$new_plugs" | tr '\n' : | sed 's/^://g')\${CLASSPATH}\"" $WORKDIR/kernel.json) &&\
+echo "$new_spec" > $WORKDIR/kernel.json
+
+exit 0

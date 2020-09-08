@@ -1,32 +1,21 @@
 #!/bin/env bash
 
-version() {
-    sed '/:version/ s/^.*"\(.\+\)".*$/\1/g' resources/clojupyter/assets/version.edn
-}
+which lein &>/dev/null && exec=lein
+which clojure &>/dev/null && exec=clojure
 
-install() {
-    echo Installing
-}
+[[ -z $exec ]] && { echo "Can't find lein or clojure on PATH." >&2; exit 2; }
 
-uninstall() {
-    echo Uninstalling
-}
+case $exec in
+    lein)
+    CLASSPATH=$(lein classpath 2>/dev/null)
+    ;;
+    clojure)
+    for path in $(clojure -Spath | sed 's/:/\n/g'); do
+        CLASSPATH+=$(realpath $path):;
+    done
+    ;;
+esac
 
-list () {
-    echo Installed kernels:
-}
-help() {
-    echo "Clojupyter $(version)"
-    echo
-    echo "Available Commands:"
-    echo
-    echo "  - help command* | --help | -h"
-    echo "  - install opts*"
-    echo "  - uninstall opts*"
-    echo "  - list opts* filt*"
-    echo "  - version"
-}
+export CLASSPATH
 
-([[ $# == 0 ]] || [[ $1 == --help ]] || [[ $1 == -h ]]) && { help; exit 0; }
-
-$@
+jupyter $@

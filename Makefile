@@ -7,8 +7,11 @@ update-version-edn:
 uberjar:
 	lein uberjar
 
-install: uberjar
-	lein clojupyter install
+metajar:
+	lein metajar
+
+install: metajar
+	bin/install
 
 conda-build: uberjar
 	@echo "BUILDNUM=${BUILDNUM}"

@@ -17,17 +17,17 @@ SYSTEM_PATH=$(if [[ $(uname -s) == Darwin ]]; then
               fi)
 
 [[ $# -gt 1 ]] && { echo Error: Wrong number of arguments \($#\) passed to program. >&2;
-					exit 1; }
+                    exit 1; }
 if [[ $# == 0 || -z $1 ]]; then
-	target=clojupyter-$($(dirname $0)/version)
+    target=clojupyter-$($(dirname $0)/version)
 else
-	target=$1
+    target=$1
 fi
 
 for dir in $USER_PATH/*/ $SYSTEM_PATH/*/; do
-	[[ $dir =~ $target ]] &&\
-	{ echo Uninstalling $(basename $dir);
-	  rm -rf $dir; }
+    [[ $dir =~ $target ]] &&\
+    { echo Uninstalling $(basename $dir);
+      rm -rf $dir; }
 done
 
 exit 0

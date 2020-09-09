@@ -3,7 +3,7 @@
 ########################################################################################
 #  DEFAULTS
 ########################################################################################
-USER_PATH=$(if [[ -d ${JUPYTER_DATA_DIR}/kernels ]]; then
+USER_DATA_PATH=$(if [[ -d ${JUPYTER_DATA_DIR}/kernels ]]; then
                 echo ${JUPYTER_DATA_DIR}/kernels
             elif [[ $(uname -s) == Darwin ]]; then
                 echo $HOME/Library/Jupyter/kernels
@@ -12,17 +12,26 @@ USER_PATH=$(if [[ -d ${JUPYTER_DATA_DIR}/kernels ]]; then
             else
                 echo $HOME/.local/share/jupyter/kernels
             fi)
-
-SYSTEM_PATH=$(if [[ $(uname -s) == Darwin ]]; then
+USER_LIB_PATH=$(if [[ $(uname -s) == Darwin ]]; then
+                  echo $HOME/Library
+              else
+                  echo $HOME/.local/lib
+              fi)
+SYSTEM_DATA_PATH=$(if [[ $(uname -s) == Darwin ]]; then
                   echo /usr/share/jupyter/kernels
               else
                   echo /usr/local/share/jupyter/kernels
+              fi)
+SYSTEM_LIB_PATH=$(if [[ $(uname -s) == Darwin ]]; then
+                  echo /usr/lib
+              else
+                  echo /usr/local/lib
               fi)
 
 SYSTEM=false
 VERSION=$($(dirname $0)/version)
 IDENT="clojupyter-$VERSION"
-JAR=target/${IDENT}-standalone.jar
+JAR=target/${IDENT}.jar
 OVERWRITE=false
 
 HELP='not implemented'
@@ -59,39 +68,58 @@ while [[ $# -gt 0 ]]; do
 done
 
 if [[ $SYSTEM == true ]]; then
-    INSTALLDIR=$SYSTEM_PATH
+    KDIR=$SYSTEM_DATA_PATH
+    LIBDIR=$SYSTEM_LIB_PATH
 else
-    INSTALLDIR=$USER_PATH
+    KDIR=$USER_DATA_PATH
+    LIBDIR=$USER_LIB_PATH
 fi
 
 #########################################################################################
 # FAIL CONDITIONS
 #########################################################################################
 [[ -f $JAR && -r $JAR ]] || { echo Can\'t read the jarfile. >&2;
-                              exit 1; }
+                              exit 10; }
 
-[[ -w $INSTALLDIR ]] ||\
-if [[ -d $INSTALLDIR ]]; then
-    echo Can\'t install clojupyter in $INSTALLDIR. Insufficient permissions. >&2
+[[ -w $KDIR ]] ||\
+if [[ -d $KDIR ]]; then
+    echo Can\'t install clojupyter in $KDIR. Insufficient permissions. >&2
 else
-    mkdir -p $INSTALLDIR || exit 2
+    mkdir -p $KDIR || exit 20
 fi
 
-[[ $OVERWRITE == false && -f $INSTALLDIR/$IDENT/kernel.json ]] &&\
-{ echo $IDENT is already installed in $INSTALLDIR >&2;
-  exit 3; }
+[[ -w $LIBDIR ]] ||\
+if [[ -d $LIBDIR ]]; then
+    echo Can\'t install clojupyter in $LIBDIR. Insufficient permissions. >&2
+else
+    mkdir -p $LIBDIR || exit 21
+fi
+
+[[ $OVERWRITE == false ]] &&\
+if [[ -f $KDIR/$IDENT/kernel.json ]]; then
+    echo $IDENT is already installed in $KDIR >&2
+    exit 30
+elif [[ -f $LIBDIR/$IDENT/$IDENT.jar || -d $LIBDIR/$IDENT/lib ]]; then
+    echo $IDENT is already installed in $LIBDIR >&2;
+    exit 31;
+fi
 
 #########################################################################################
 # INSTALLING
 #########################################################################################
 
-echo Installing $IDENT to $INSTALLDIR >&2
-mkdir -p $INSTALLDIR/$IDENT/plugins 2>/dev/null
-cp $JAR $INSTALLDIR/$IDENT/clojupyter-standalone.jar &&\
-cp resources/clojupyter/assets/logo-64x64.png $INSTALLDIR/$IDENT/. &&\
+echo Installing $IDENT >&2
+mkdir -p $LIBDIR/$IDENT/plugins 2>/dev/null
+mkdir $KDIR/$IDENT 2>/dev/null
+cp $JAR $LIBDIR/$IDENT/$IDENT.jar &&\
+cp -r target/lib $LIBDIR/$IDENT/
+pushd $LIBDIR/$IDENT
+ln -s $IDENT.jar lib
+popd
+cp resources/clojupyter/assets/logo-64x64.png $KDIR/$IDENT &&\
 
-cat >$INSTALLDIR/$IDENT/kernel.json <<EOF
-{"env": {"CLASSPATH": "$INSTALLDIR/$IDENT/clojupyter-standalone.jar:\${CLASSPATH}"},
+cat >$KDIR/$IDENT/kernel.json <<EOF
+{"env": {"CLASSPATH": "$LIBDIR/$IDENT/$IDENT.jar:\${CLASSPATH}"},
  "argv": ["java", "clojupyter.kernel.core", "{connection_file}"],
  "display_name": "Clojure ($IDENT)",
  "language": "clojure",

@@ -63,7 +63,10 @@ while [[ $# -gt 0 ]]; do
         shift
         shift
         ;;
-        ## Missing fail condition for unknown arguments
+        *)
+        echo Unknown argument $1
+        exit 1
+        ;;
     esac
 done
 
@@ -118,10 +121,4 @@ ln -s $IDENT.jar lib
 popd
 cp resources/clojupyter/assets/logo-64x64.png $KDIR/$IDENT &&\
 
-cat >$KDIR/$IDENT/kernel.json <<EOF
-{"env": {"CLASSPATH": "$LIBDIR/$IDENT/$IDENT.jar:\${CLASSPATH}"},
- "argv": ["java", "clojupyter.kernel.core", "{connection_file}"],
- "display_name": "Clojure ($IDENT)",
- "language": "clojure",
- "interrupt_mode": "message"}
-EOF
+$(dirname $0)/kernel.json --i $IDENT $LIBDIR >$KDIR/$IDENT/kernel.json

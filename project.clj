@@ -20,5 +20,4 @@
   :lein-tools-deps/config  {:config-files [:install :user :project]}
 
   ;; The aliases below can be invoked with 'lein <alias>':
-  :aliases      {"clojupyter"           ["run" "-m" "clojupyter.cmdline"]
-                 "update-version-edn"   ["v" "cache" "resources/clojupyter/assets" "edn"]})
+  :aliases      {"clojupyter"           ["run" "-m" "clojupyter.cmdline"]})

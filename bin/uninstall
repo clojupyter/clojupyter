@@ -1,6 +1,6 @@
 #!/bin/env bash
 
-USER_PATH=$(if [[ -d ${JUPYTER_DATA_DIR}/kernels ]]; then
+USER_DATA_PATH=$(if [[ -d ${JUPYTER_DATA_DIR}/kernels ]]; then
                 echo ${JUPYTER_DATA_DIR}/kernels
             elif [[ $(uname -s) == Darwin ]]; then
                 echo $HOME/Library/Jupyter/kernels
@@ -9,11 +9,20 @@ USER_PATH=$(if [[ -d ${JUPYTER_DATA_DIR}/kernels ]]; then
             else
                 echo $HOME/.local/share/jupyter/kernels
             fi)
-
-SYSTEM_PATH=$(if [[ $(uname -s) == Darwin ]]; then
+USER_LIB_PATH=$(if [[ $(uname -s) == Darwin ]]; then
+                  echo $HOME/Library
+              else
+                  echo $HOME/.local/lib
+              fi)
+SYSTEM_DATA_PATH=$(if [[ $(uname -s) == Darwin ]]; then
                   echo /usr/share/jupyter/kernels
               else
                   echo /usr/local/share/jupyter/kernels
+              fi)
+SYSTEM_LIB_PATH=$(if [[ $(uname -s) == Darwin ]]; then
+                  echo /usr/lib
+              else
+                  echo /usr/local/lib
               fi)
 
 [[ $# -gt 1 ]] && { echo Error: Wrong number of arguments \($#\) passed to program. >&2;
@@ -24,10 +33,20 @@ else
     target=$1
 fi
 
-for dir in $USER_PATH/*/ $SYSTEM_PATH/*/; do
+for dir in $USER_DATA_PATH/*/; do
     [[ $dir =~ $target ]] &&\
     { echo Uninstalling $(basename $dir);
-      rm -rf $dir; }
+      rm -rf $dir 2>/dev/null;
+      rm -rf $USER_LIB_PATH/$(basename $dir) 2>/dev/null;
+   }
+done
+
+for dir in $SYSTEM_DATA_PATH/*/; do
+    [[ $dir =~ $target ]] &&\
+    { echo Uninstalling $(basename $dir);
+      rm -rf $dir 2>/dev/null;
+      rm -rf $SYSTEM_LIB_PATH/$(basename $dir) 2>/dev/null;
+   }
 done
 
 exit 0

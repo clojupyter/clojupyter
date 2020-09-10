@@ -1,6 +1,6 @@
 #!/bin/env bash
 
-USER_PATH=$(if [[ -d ${JUPYTER_DATA_DIR}/kernels ]]; then
+USER_DATA_PATH=$(if [[ -d ${JUPYTER_DATA_DIR}/kernels ]]; then
                 echo ${JUPYTER_DATA_DIR}/kernels
             elif [[ $(uname -s) == Darwin ]]; then
                 echo $HOME/Library/Jupyter/kernels
@@ -9,11 +9,20 @@ USER_PATH=$(if [[ -d ${JUPYTER_DATA_DIR}/kernels ]]; then
             else
                 echo $HOME/.local/share/jupyter/kernels
             fi)
-
-SYSTEM_PATH=$(if [[ $(uname -s) == Darwin ]]; then
+USER_LIB_PATH=$(if [[ $(uname -s) == Darwin ]]; then
+                  echo $HOME/Library
+              else
+                  echo $HOME/.local/lib
+              fi)
+SYSTEM_DATA_PATH=$(if [[ $(uname -s) == Darwin ]]; then
                   echo /usr/share/jupyter/kernels
               else
                   echo /usr/local/share/jupyter/kernels
+              fi)
+SYSTEM_LIB_PATH=$(if [[ $(uname -s) == Darwin ]]; then
+                  echo /usr/lib
+              else
+                  echo /usr/local/lib
               fi)
 KERNEL=clojupyter-$($(dirname $0)/version)
 
@@ -31,14 +40,19 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-[[ -d $USER_PATH/$KERNEL || -d $SYSTEM_PATH/$KERNEL ]] ||\
+[[ -d $USER_DATA_PATH/$KERNEL || -d $SYSTEM_DATA_PATH/$KERNEL ]] ||\
 { echo Can\'t find the kernel dir 2>/dev/null;
   exit 1; }
 
-[[ -d $SYSTEM_PATH/$KERNEL ]] && WORKDIR=$SYSTEM_PATH/$KERNEL
-[[ -d $USER_PATH/$KERNEL ]] && WORKDIR=$USER_PATH/$KERNEL
+[[ -d $SYSTEM_DATA_PATH/$KERNEL ]] &&\
+{ KDIR=$SYSTEM_DATA_PATH/$KERNEL;
+  LIBDIR=$SYSTEM_LIB_PATH/$KERNEL; }
 
-[[ -r $WORKDIR/plugins ]] ||\
+[[ -d $USER_DATA_PATH/$KERNEL ]] &&\
+{ KDIR=$USER_DATA_PATH/$KERNEL;
+  LIBDIR=$USER_LIB_PATH/$KERNEL; }
+
+[[ -r $LIBDIR/plugins ]] ||\
 { echo The kernel does not appear to support plugins >&2;
   exit 2; }
 
@@ -47,7 +61,7 @@ done
   exit 3; }
 
 matches=
-for plug in $WORKDIR/plugins/*; do
+for plug in $LIBDIR/plugins/*; do
     [[ $(basename ${plug}) != "*" && $(basename ${plug:0:-4}) =~ $TARGET ]] &&\
     matches+="$plug "
 done
@@ -56,8 +70,8 @@ done
 { echo No plugin found that matches $TARGET >&2;
   exit 3; }
 
-enabled_plugs=$(jq .env.CLASSPATH $WORKDIR/kernel.json |\
-    sed -E 's/^"|"$//g' | sed 's/:/\n/g' | grep -vE "$WORKDIR/clojupyter-standalone.jar|\\\${CLASSPATH}")
+enabled_plugs=$(jq .env.CLASSPATH $KDIR/kernel.json |\
+    sed -E 's/^"|"$//g' | sed 's/:/\n/g' | grep -vE "$LIBDIR/$KERNEL\.jar|\\\${CLASSPATH}")
 
 new_plugs="$enabled_plugs"
 for match in $matches; do
@@ -67,7 +81,7 @@ for match in $matches; do
 done
 
 [[ "$new_plugs" != "$enabled_plugs" ]] &&\
-new_spec=$(jq .env.CLASSPATH="\"$WORKDIR/clojupyter-standalone.jar:$(echo "$new_plugs" | tr '\n' : | sed 's/^://g')\${CLASSPATH}\"" $WORKDIR/kernel.json) &&\
-echo "$new_spec" > $WORKDIR/kernel.json
+new_spec=$(jq .env.CLASSPATH="\"$LIBDIR/$KERNEL.jar:$(echo "$new_plugs" | tr '\n' : | sed 's/^://g')\${CLASSPATH}\"" $KDIR/kernel.json) &&\
+echo "$new_spec" > $KDIR/kernel.json
 
 exit 0

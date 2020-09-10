@@ -8,6 +8,7 @@
    [clojupyter.protocol.mime-convertible :as mc]
    [clojupyter.state :as state]
    [clojupyter.util :as u]
+   [clojupyter.util-actions :as u!]
    [clojure.pprint :as pp]
    [clojure.spec.alpha :as s]
    [clojupyter.kernel.jup-channels :as jup]
@@ -280,3 +281,11 @@
       (and (map? v)
            (every? #(or (string? %) (keyword? %) (symbol? %)) (keys v))
            (every? jsonable? (vals v)))))
+
+(defn base-widget
+  ([state] (base-widget state (u!/uuid)))
+  ([state comm-id]
+   (let [{jup :jup req-msg :req-message} (state/current-context)
+         target "jupyter.widget"
+         sync-keys (set (keys state))]
+     (create-and-insert jup req-msg target comm-id sync-keys state))))

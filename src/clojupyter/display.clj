@@ -1,15 +1,37 @@
 (ns clojupyter.display
-  (:require [clojupyter.misc.display :as dis]
+  (:require [clojupyter.protocol.mime-convertible :as mc]
+            [clojupyter.util :as u]
             [io.simplect.compose :refer [redefn]]
-            [clojure.data.codec.base64 :as b64]))
+            [clojure.data.codec.base64 :as b64]
+            [hiccup.core :as hiccup]))
 
-(redefn display		dis/display)
-(redefn hiccup-html	dis/hiccup-html)
-(redefn html		dis/html)
-(redefn latex		dis/latex)
-(redefn markdown	dis/markdown)
-(redefn render-mime	dis/render-mime)
+(defn render-mime
+  [mime-type v]
+  (reify mc/PMimeConvertible
+    (to-mime [_]
+      (u/to-json-str (hash-map mime-type v)))))
 
+;; HTML
+
+(defn hiccup
+  [v]
+  (render-mime :text/html (hiccup/html v)))
+
+(defn html
+  [v]
+  (render-mime :text/html v))
+
+;; Latex
+
+(defn latex
+  [v]
+  (render-mime :text/latex v))
+
+;; Markdown
+
+(defn markdown
+  [v]
+  (render-mime :text/markdown v))
 ;; Vega Lite
 
 (defn vega-lite-1

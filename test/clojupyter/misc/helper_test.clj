@@ -1,5 +1,5 @@
 (ns clojupyter.misc.helper-test
-  (:require [clojupyter.misc.display		:as display]
+  (:require [clojupyter.display		:as display]
             [clojupyter.misc.helper		:as helper]
             [clojupyter.test-shared		:as ts]
             [midje.sweet					:refer [facts =>]]))

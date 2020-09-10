@@ -8,11 +8,12 @@
   :resource-paths    [] ;; provided by lein-tools-deps
   :profiles    {:dev     {:dependencies [[midje "1.9.9" :exclusions [org.clojure/clojure]]]
                           :plugins      [[lein-midje "3.2.2"]
-                                         [lein-metajar "0.1.1"]]}
+                                         [lein-metajar "0.1.1"]]
+                          :source-paths ["dev"]}
+
                 :uberjar {:aot :all}}
 
   :main        clojupyter.kernel.core
-  :aot         [clojupyter.cmdline]
 
   ;; Use tools-deps for dependencies:
   :plugins     [[lein-tools-deps "0.4.5"]]

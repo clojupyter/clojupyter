@@ -9,7 +9,7 @@
 
   Alpha version - breakage may happen.  Please report issues or
   missing features."
-  (:require [clojupyter.misc.display :as display]
+  (:require [clojupyter.display :as display]
             [clojupyter.util-actions :as u!]
             [clojure.data.json :as json]
             [clojure.spec.alpha :as s]
@@ -116,7 +116,7 @@
   that the library was loaded."
   ([jsdefs] (amd-add-javascript-html {} jsdefs))
   ([{:keys [brief?] :or {brief? false}} jsdefs]
-   (display/hiccup-html [:div
+   (display/hiccup [:div
                          [:script (amd-wrap-semicolons (amd-add-javascript jsdefs))]
                          (if brief?
                            [:pre "Javascript libraries added."]
@@ -141,5 +141,3 @@
   (instrument `and-wrap-require)
   (map (partial u!/assoc-meta! :style/indent :defn)
        [#'amd-wrap-require #'amd-wrap-semicolons #'amd-wrap-config]))
-
-

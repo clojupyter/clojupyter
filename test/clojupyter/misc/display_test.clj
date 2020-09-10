@@ -1,9 +1,9 @@
-(ns clojupyter.misc.display-test
+(ns clojupyter.display-test
   (:require
    [cheshire.core				:as cheshire]
    [midje.sweet							:refer [facts =>]]
    ,,
-   [clojupyter.misc.display			:as display]
+   [clojupyter.display			:as display]
    [clojupyter.misc.mime-convertible]
    [clojupyter.test-shared			:as ts]
    [clojupyter.protocol.mime-convertible	:as mc]

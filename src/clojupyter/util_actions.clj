@@ -1,6 +1,6 @@
 (ns clojupyter.util-actions
   (:require [clojupyter.kernel.os :as os]
-            [clojupyter.kernel.version :as ver]
+            [clojupyter]
             [clojupyter.log :as log]
             [clojure.core.async :as async]
             [clojure.java.io :as io]
@@ -93,9 +93,9 @@
         (delete-f f)))))
 
 (defn default-ident
-  ([] (default-ident (ver/version)))
+  ([] (default-ident (clojupyter/version)))
   ([ver]
-   (str "clojupyter-" (ver/version-string-long ver))))
+   (str "clojupyter-" ver)))
 
 (defn execute-leave-action
   [result]

@@ -7,7 +7,6 @@
             [clojupyter.install.local :as local]
             [clojupyter.install.local-specs :as lsp]
             [clojupyter.install.log :as log]
-            [clojupyter.kernel.version :as ver]
             [clojupyter.plan :as pl]
             [clojure.java.io :as io]
             [clojure.spec.alpha :as s]

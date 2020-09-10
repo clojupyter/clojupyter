@@ -1,20 +1,16 @@
 #!/bin/env bash
 
-USER_PATH=$(if [[ -d ${JUPYTER_DATA_DIR}/kernels ]]; then
-                echo ${JUPYTER_DATA_DIR}/kernels
-            elif [[ $(uname -s) == Darwin ]]; then
-                echo $HOME/Library/Jupyter/kernels
-            elif [[ -d ${XDG_DATA_HOME}/jupyter/kernels ]]; then
-                echo $XDG_DATA_HOME/jupyter/kernels
-            else
-                echo $HOME/.local/share/jupyter/kernels
-            fi)
-
-SYSTEM_PATH=$(if [[ $(uname -s) == Darwin ]]; then
-                  echo /usr/share/jupyter/kernels
+USER_LIB_PATH=$(if [[ $(uname -s) == Darwin ]]; then
+                  echo $HOME/Library
               else
-                  echo /usr/local/share/jupyter/kernels
+                  echo $HOME/.local/lib
               fi)
+SYSTEM_LIB_PATH=$(if [[ $(uname -s) == Darwin ]]; then
+                  echo /usr/lib
+              else
+                  echo /usr/local/lib
+              fi)
+
 KERNEL=clojupyter-$($(dirname $0)/version)
 
 while [[ $# -gt 0 ]]; do
@@ -31,14 +27,14 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-[[ -d $USER_PATH/$KERNEL || -d $SYSTEM_PATH/$KERNEL ]] ||\
+[[ -d $USER_LIB_PATH/$KERNEL || -d $SYSTEM_LIB_PATH/$KERNEL ]] ||\
 { echo Can\'t find the kernel dir 2>/dev/null;
   exit 1; }
 
-[[ -d $SYSTEM_PATH/$KERNEL ]] && WORKDIR=$SYSTEM_PATH/$KERNEL
-[[ -d $USER_PATH/$KERNEL ]] && WORKDIR=$USER_PATH/$KERNEL
+[[ -d $SYSTEM_LIB_PATH/$KERNEL ]] && WORKDIR=$SYSTEM_LIB_PATH/$KERNEL
+[[ -d $USER_LIB_PATH/$KERNEL ]] && WORKDIR=$USER_LIB_PATH/$KERNEL
 
-[[ -r $WORKDIR/plugins ]] ||\
+[[ -r $WORKDIR/plugins || -w $WORKDIR/plugins/enabled ]] ||\
 { echo The kernel does not appear to support plugins >&2;
   exit 2; }
 
@@ -46,18 +42,19 @@ done
 { echo Must provide a plugin to disable 2>/dev/null;
   exit 3; }
 
-enabled_plugs=$(jq .env.CLASSPATH $WORKDIR/kernel.json |\
-    sed -E 's/^"|"$//g' | sed 's/:/\n/g' | grep -vE "$WORKDIR/clojupyter-standalone.jar|\\\${CLASSPATH}")
+enabled_plugs=$(ls $WORKDIR/plugins/enabled)
 
-new_plugs="$enabled_plugs"
+new_plugs=
 for plug in $enabled_plugs; do
-    [[ $(basename ${plug:0:-4}) =~ $TARGET ]] &&\
-    { new_plugs=$(echo "$new_plugs" | grep -v $plug);
+    [[ ${plug:0:-4} =~ $TARGET ]] &&\
+    { new_plugs+=$plug;
       echo Disabling plugin $plug for $KERNEL >&2; }
 done
 
-[[ "$enabled_plugs" != "$new_plugs" ]] &&\
-new_spec=$(jq .env.CLASSPATH="\"$WORKDIR/clojupyter-standalone.jar:$(echo "$new_plugs" | tr '\n' : | sed 's/^:$//g')\${CLASSPATH}\"" $WORKDIR/kernel.json) &&\
-echo "$new_spec" > $WORKDIR/kernel.json
+[[ -n "$new_plugs" ]] &&\
+{ cd $WORKDIR/plugins/enabled;
+  for plug in $new_plugs; do
+      rm $plug
+  done; }
 
 exit 0

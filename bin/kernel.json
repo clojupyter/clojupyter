@@ -20,7 +20,7 @@ done
 [[ -z $IDENT ]] && IDENT=clojupyter-$($(dirname $0)/version)
 
 cat <<EOF
-{"env": {"CLASSPATH": "$LIBPATH/$IDENT/$IDENT.jar:\${CLASSPATH}"},
+{"env": {"CLASSPATH": "$LIBPATH/$IDENT/$IDENT.jar:$LIBPATH/$IDENT/plugins/enabled/*:\${CLASSPATH}"},
  "argv": ["java", "clojupyter.kernel.core", "{connection_file}"],
  "display_name": "Clojure ($IDENT)",
  "language": "clojure",

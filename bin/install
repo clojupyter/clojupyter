@@ -112,12 +112,12 @@ fi
 #########################################################################################
 
 echo Installing $IDENT >&2
-mkdir -p $LIBDIR/$IDENT/plugins 2>/dev/null
+mkdir -p $LIBDIR/$IDENT/plugins/enabled 2>/dev/null
 mkdir $KDIR/$IDENT 2>/dev/null
 cp $JAR $LIBDIR/$IDENT/$IDENT.jar &&\
 cp -r target/lib $LIBDIR/$IDENT/
 pushd $LIBDIR/$IDENT
-ln -s $IDENT.jar lib
+ln -s ../$IDENT.jar lib
 popd
 cp resources/clojupyter/assets/logo-64x64.png $KDIR/$IDENT &&\
 

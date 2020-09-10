@@ -108,7 +108,7 @@
 
 (defn amd-add-javascript-html
   "Same as `amd-add-javascript` except the returned string is embedded in a
-  `script` element wrapped in a `hiccup-html` form.
+  `script` element wrapped in a `hiccup` form.
   Cf. `amd-add-javascript` for details.
 
   NOTE: Evaluation of `amd-add-javascript-html` must be the last form

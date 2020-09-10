@@ -22,5 +22,5 @@
          ((pretty-maker display/make-markdown) "# hello world") => {:text/markdown "# hello world"})
 
 (facts "Should be able to produce from hiccup html"
-       ((pretty-maker display/hiccup-html) [:p "some text"]) => {:text/html "<p>some text</p>"}
+       ((pretty-maker display/hiccup) [:p "some text"]) => {:text/html "<p>some text</p>"}
        ((pretty-maker display/html) [:p "some text"]) => {:text/html "<p>some text</p>"})

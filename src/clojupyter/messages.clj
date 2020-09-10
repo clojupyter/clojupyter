@@ -317,8 +317,8 @@
                           (.-buffers buffers))]
         (assert (s/valid? ::sp/byte-arrays envelope))
         (->> (concat envelope
-                     [u/IDSMSG-BYTES (u/get-bytes signature)]
-                     (mapv u/get-bytes payload-vec)
+                     [u/IDSMSG-BYTES (u/string->bytes signature)]
+                     (mapv u/string->bytes payload-vec)
                      byte-buffers)
              vec
              (s/assert ::msp/frames)))))
@@ -355,9 +355,9 @@
          metadata	(or rsp-metadata {})
          rsp-buffers	(or rsp-buffers [])
          envelope	(if (= rsp-socket :iopub_port)
-                          [(u/get-bytes rsp-msgtype)]
+                          [(u/string->bytes rsp-msgtype)]
                           (message-envelope req-message))
-         signature	(u/get-bytes "")]
+         signature	(u/string->bytes "")]
      (make-jupmsg envelope signature header parent-header metadata rsp-content rsp-buffers))))
 
 ;;; ------------------------------------------------------------------------------------------------------------------------

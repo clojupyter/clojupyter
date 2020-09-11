@@ -4,7 +4,6 @@
             [clojupyter.install.filemap :as fm]
             [clojupyter.install.conda.conda-specs :as csp]
             [clojupyter.install.local-specs :as lsp]
-            [clojupyter.kernel.version :as ver]
             [clojupyter.tools-actions :as u!]
             [clojure.java.io :as io]
             [clojure.set :as set]
@@ -50,7 +49,7 @@
   ([] (conda-link-environment {}))
   ([{:keys [jarfile prefix]}]
    (let [build-num (env/PKG_BUILDNUM)
-         ident (str "clojupyter=" (ver/version-string) "=" (or build-num "?"))
+         ident (str "clojupyter=" u!/version-short "=" (or build-num "?"))
          prefix (or prefix (env/PREFIX))
          jarfiles (classpath-clojupyter-jarfiles)
          jarfile (or jarfile (when (-> jarfiles count (= 1))

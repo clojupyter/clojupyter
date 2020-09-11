@@ -1,6 +1,5 @@
 (ns clojupyter.tools-actions
   (:require [clojupyter.kernel.os :as os]
-            [clojupyter]
             [clojure.java.io :as io]
             [clojure.java.shell :as sh]
             [clojure.string :as str]
@@ -8,8 +7,25 @@
             [me.raynes.fs :as fs])
   (:import java.time.format.DateTimeFormatter))
 
+(def version
+  (binding [*read-eval* false]
+    (-> (slurp "project.clj")
+        read-string
+        (nth 2))))
+
+(def version-map
+  (let [[_ major minor incremental qualifier]
+        (re-find #"(\p{Digit}+)\.(\p{Digit}+)\.(\p{Digit}+)(-.+)?$" version)]
+    {:major major
+     :minor minor
+     :incremental incremental
+     :qualifier (or qualifier "")}))
+
+(def version-short
+  (re-find #"\p{Digit}+\.\p{Digit}+\.\p{Digit}+" version))
+
 (defn default-ident
-  ([] (default-ident clojupyter/version))
+  ([] (default-ident version))
   ([ver]
    (str "clojupyter-" ver)))
 
@@ -81,3 +97,21 @@
           (finally
             (when-not ~keep-files?
               (delete-files-recursively! tmpdir#))))))
+
+
+(def version
+  (binding [*read-eval* false]
+    (-> (slurp "project.clj")
+        read-string
+        (nth 2))))
+
+(def version-map
+  (let [[_ major minor incremental qualifier]
+        (re-find #"(\p{Digit}+)\.(\p{Digit}+)\.(\p{Digit}+)(-.+)?$" version)]
+    {:major major
+     :minor minor
+     :incremental incremental
+     :qualifier (if qualifier qualifier "")}))
+
+(def version-short
+  (re-find #"\p{Digit}+\.\p{Digit}+\.\p{Digit}+" version))

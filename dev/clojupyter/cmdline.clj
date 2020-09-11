@@ -13,7 +13,6 @@
             [clojupyter.install.local-actions :as local!]
             [clojupyter.install.local-specs :as lsp]
             [clojupyter.kernel.os :as os]
-            [clojupyter.kernel.version :as ver]
             [clojupyter.plan :as pl :refer [s*when s*when-not]]
             [clojupyter.tools :as u]
             [clojupyter.tools-actions :as u!]
@@ -133,7 +132,7 @@
 
 (defn- s*version
   []
-  (let [ver (ver/version)]
+  (let [ver u!/version-map]
     (C (cmdline/set-header "Version")
        (cmdline/set-prefix "  ")
        (cmdline/set-result {:version ver})
@@ -403,16 +402,16 @@
 
 (defn- format-report
   [version-map {:keys [:cmdline/exit-code :cmdline/header :cmdline/output :cmdline/prefix]}]
-  (->> (concat [(str "Clojupyter v" (ver/version-string-long version-map) " - " header)  ""]
+  (->> (concat [(str "Clojupyter v" u!/version " - " header)  ""]
                (->> output (map (p str "  " prefix "  ")))
                ["" (str "exit(" exit-code ")")])
        (str/join "\n")))
 
-(defn- -main*
+(defn -main*
   [& cmdline-args]
   (let [cmd (first cmdline-args)
         {:keys [:cmdline/exit-code] :as result} (handle-cmd cmdline-args cmd)]
-    (println (format-report (ver/version) result))
+    (println (format-report u!/version-map result))
     (flush)
     exit-code))
 

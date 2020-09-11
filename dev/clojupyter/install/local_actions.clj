@@ -2,7 +2,6 @@
   (:require [clojupyter.install.filemap :as fm]
             [clojupyter.install.local-specs :as lsp]
             [clojupyter.kernel.os :as os]
-            [clojupyter.kernel.version :as ver]
             [clojupyter.tools :as u]
             [clojupyter.tools-actions :as u!]
             [clojure.java.io :as io]
@@ -101,7 +100,7 @@
   "Action returning the data needed to calculate how to install Clojupyter on the local machine."
   []
   (let [convert-exe (find-imagemagick-convert)
-        version-map (ver/version)
+        version-map u!/version-map
         host-kdir(kernels-dir :host)
         user-kdir (kernels-dir :user)
         jarfiles (find-standalone-jars fs/*cwd*)
@@ -109,7 +108,7 @@
         kernels (installed-clojupyter-kernels)
         kernels-map (->> kernels (map (juxt :kernel/ident identity)) (into {}))
         res (merge {
-                    :local/default-ident ((u/sanitize-string lsp/IDENT-CHAR-REGEX) (u!/default-ident version-map))
+                    :local/default-ident ((u/sanitize-string lsp/IDENT-CHAR-REGEX) (u!/default-ident u!/version))
                     :local/filemap (fm/filemap jarfiles other-files)
                     :local/host-kernel-dir host-kdir
                     :local/installed-kernels kernels-map

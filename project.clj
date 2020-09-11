@@ -6,7 +6,10 @@
   :scm         {:name "git" :url "https://github.com/clojupyter/clojupyter"}
   :source-paths      [] ;; provided by lein-tools-deps
   :resource-paths    [] ;; provided by lein-tools-deps
-  :profiles    {:dev     {:dependencies [[midje "1.9.9" :exclusions [org.clojure/clojure]]]
+  :profiles    {:dev     {:dependencies [[midje "1.9.9" :exclusions [org.clojure/clojure]]
+                                         [me.raynes/fs "1.4.6"]
+                                         [io.forward/yaml "1.0.10" :exclusions [org.flatland/ordered]]
+                                         [org.flatland/ordered "1.5.9"]]
                           :plugins      [[lein-midje "3.2.2"]
                                          [lein-metajar "0.1.1"]]
                           :source-paths ["dev"]}

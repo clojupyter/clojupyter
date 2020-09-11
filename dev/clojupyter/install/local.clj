@@ -4,7 +4,6 @@
             [clojupyter.install.filemap :as fm]
             [clojupyter.install.local-actions :as local!]
             [clojupyter.install.local-specs :as lsp]
-            [clojupyter.kernel.version :as version]
             [clojupyter.plan :as pl :refer [s*action-append s*bind-state s*log-debug s*log-error s*log-info s*when s*when-not]]
             [clojupyter.tools :as u]
             [clojupyter.tools-actions :as u!]

@@ -1,7 +1,7 @@
 (ns clojupyter.install.conda.yaml
   (:require [clojupyter.install.conda.conda-specs :as csp]
-            [clojupyter.kernel.version :as ver]
             [clojupyter.tools :as u]
+            [clojupyter.tools-actions :as u!]
             [clojure.spec.alpha :as s]
             [clojure.spec.test.alpha :refer [instrument]]
             [clojure.string :as str]
@@ -43,7 +43,7 @@
 (defn- conda-configuration
   "Returns the EDN equivalent of the `meta.yaml` file needed to Conda-build Clojupyter."
   [version-map buildnum kernel-dir build-reqs run-reqs]
-  (let [version-string (ver/version-string version-map)]
+  (let [version-string u!/version-short]
     {:conda-config/about	{:conda-config-about/description "Clojupyter - Run Clojure in Jupyter"
                                  :conda-config-about/home "https://github.com/clojupyter/clojupyter"
                                  :conda-config-about/license "MIT"}

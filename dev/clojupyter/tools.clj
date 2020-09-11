@@ -2,7 +2,6 @@
   (:require [io.simplect.compose :refer [C def- p redefn]]
             [clojure.walk :as walk]
             [cheshire.core :as cheshire]
-            [clojupyter.kernel.os :as os]
             [clojure.string :as str]))
 
 (defn call-if
@@ -36,14 +35,10 @@
 
 (defn kernel-spec
   [dest-jar kernel-id-string]
-  (let [sep (case (os/operating-system)
-              :windows \;
-              \:)]
-    {:env {:CLASSPATH (str dest-jar sep "${CLASSPATH}")}
-     :argv ["java" "clojupyter.kernel.core" "{connection_file}"]
-     :display_name (kernel-full-identifier kernel-id-string)
-     :language "clojure"
-     :interrupt_mode "message"}))
+  {:argv ["java" "-cp" (str dest-jar) "clojupyter.kernel.core" "{connection_file}"]
+   :display_name (kernel-full-identifier kernel-id-string)
+   :language "clojure"
+   :interrupt_mode "message"})
 
 (defn log-messages
   ([log] (log-messages #{:info :warn :error} log))

@@ -9,10 +9,8 @@
     com.taoensso/timbre             {:mvn/version "4.10.0"}
     hiccup                          {:mvn/version "1.0.5"}
     io.aviso/pretty                 {:mvn/version "0.1.37"}
-    io.forward/yaml                 {:mvn/version "1.0.10" :exclusions [org.flatland/ordered]}
     io.pedestal/pedestal.interceptor    {:mvn/version "0.5.8"}
     io.simplect/compose             {:mvn/version "0.7.27"}
-    me.raynes/fs                    {:mvn/version "1.4.6"}
     net.cgrand/parsley              {:mvn/version "0.9.3" :exclusions [org.clojure/clojure]}
     net.cgrand/regex                {:mvn/version "1.1.0" :exclusions [org.clojure/clojure]}
     org.clojars.trptcolin/sjacket   {:mvn/version "0.1.1.1" :exclusions [org.clojure/clojure net.cgrand.parsley]}
@@ -23,7 +21,6 @@
     org.clojure/java.jdbc           {:mvn/version "0.7.11"}
     org.clojure/test.check          {:mvn/version "1.1.0"}
     org.clojure/tools.cli           {:mvn/version "0.4.2"}
-    org.flatland/ordered            {:mvn/version "1.5.9"}
     org.xerial/sqlite-jdbc          {:mvn/version "3.32.3.2"}
     org.zeromq/jeromq               {:mvn/version "0.5.2"}
     pandect                         {:mvn/version "0.6.1"}

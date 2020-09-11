@@ -4,10 +4,7 @@
             [clojupyter.install.filemap :as fm]
             [clojupyter.install.log :as log]
             [clojupyter.install.local-specs :as lsp]
-            [clojupyter.plan
-             :as
-             pl
-             :refer
+            [clojupyter.plan :as pl :refer
              [s*bind-state s*log-error s*log-info s*set-value s*when s*when-not]]
             [clojure.spec.alpha :as s]
             [clojure.spec.test.alpha :refer [instrument]]
@@ -76,4 +73,3 @@
      ))
 
 (instrument `s*generate-unlink-actions)
-

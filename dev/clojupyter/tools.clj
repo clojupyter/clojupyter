@@ -1,9 +1,9 @@
-(ns clojupyter.util
+(ns clojupyter.tools
   (:require [io.simplect.compose :refer [C def- p redefn]]
             [clojure.walk :as walk]
             [cheshire.core :as cheshire]
             [clojupyter.kernel.os :as os]
-            [clojure.string :as str])
+            [clojure.string :as str]))
 
 (defn call-if
   "Takes a single argument.  If applying `pred` to the argument yields a truthy value returns the
@@ -11,14 +11,24 @@
   [pred f]
   #(if (pred %) (f %) %))
 
+(defn kernel-full-identifier
+  [ident]
+  (str "Clojure (" ident ")"))
+
 (defn display-name->ident
   [s]
   (if-let [[_ m] (re-find #"^Clojure \(([^\)]+)\)$" s)] m s))
 
+(defn tildeize-filename
+  [user-homedir v]
+  (if (instance? java.io.File v)
+    (str/replace (str v) (str user-homedir) "~")
+    v))
+
 (defn files-as-strings
   [user-homedir coll]
   (walk/postwalk (C (call-if (p instance? java.net.URL) str)
-                    (p tildeize-filename* user-homedir))
+                    (p tildeize-filename user-homedir))
                  (if (seq? coll) (vec coll) coll)))
 
 (redefn json-str cheshire/generate-string)
@@ -55,11 +65,5 @@
      (p apply str)
      str/lower-case))
 
-(defn tildeize-filename
-  [user-homedir v]
-  (if (instance? java.io.File v)
-    (str/replace (str v) (str user-homedir) "~")
-    v))
-
 (defn falsey? [v] (or (= v nil) (= v false)))
-(def truthy (complement falsey))
+(def truthy? (complement falsey?))

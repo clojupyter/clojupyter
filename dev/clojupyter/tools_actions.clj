@@ -1,5 +1,6 @@
-(ns clojupyter.util-actions
+(ns clojupyter.tools-actions
   (:require [clojupyter.kernel.os :as os]
+            [clojupyter]
             [clojure.java.io :as io]
             [clojure.java.shell :as sh]
             [clojure.string :as str]
@@ -8,7 +9,7 @@
   (:import java.time.format.DateTimeFormatter))
 
 (defn default-ident
-  ([] (default-ident (clojupyter/version)))
+  ([] (default-ident clojupyter/version))
   ([ver]
    (str "clojupyter-" ver)))
 
@@ -35,12 +36,12 @@
   [var]
   (alter-meta! var (P assoc :private true)))
 
-(defn- throw-info
+(defn throw-info
   ([msg] (throw-info msg {}))
   ([msg m]
    (throw (ex-info msg (assoc m :msg msg)))))
 
-(defn- uuid
+(defn uuid
   "Returns a random UUID as a string."
   []
   (str (java.util.UUID/randomUUID)))
@@ -63,10 +64,10 @@
   []
   (letfn [(sys-tmpdir [] (io/file (System/getProperty "java.io.tmpdir")))]
     (if-let [sysdir (sys-tmpdir)]
-      (let [tmpdir (io/file (str sysdir "/clojure-tmp-" (uuid*)))]
+      (let [tmpdir (io/file (str sysdir "/clojure-tmp-" (uuid)))]
         (if (.mkdir tmpdir)
           tmpdir
-          (throw-info* (str "Failed to create temp dir: " tmpdir)
+          (throw-info (str "Failed to create temp dir: " tmpdir)
                        {:sysdir sysdir, :tmpdir tmpdir})))
       (throw (Exception. "Failed to get location for temp files (java.io.tmpdir).")))))
 

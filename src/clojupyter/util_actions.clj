@@ -91,6 +91,10 @@
             (when-not ~keep-files?
               (delete-files-recursively! tmpdir#))))))
 
+(defn assoc-meta!
+  [k v var]
+  (alter-meta! var #(assoc % k v)))
+
 (defn wrap-report-and-absorb-exceptions
   ([f]
    (wrap-report-and-absorb-exceptions nil f))

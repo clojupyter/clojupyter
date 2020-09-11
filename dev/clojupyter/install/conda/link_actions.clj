@@ -5,7 +5,7 @@
             [clojupyter.install.conda.conda-specs :as csp]
             [clojupyter.install.local-specs :as lsp]
             [clojupyter.kernel.version :as ver]
-            [clojupyter.util-actions :as u!]
+            [clojupyter.tools-actions :as u!]
             [clojure.java.io :as io]
             [clojure.set :as set]
             [clojure.spec.alpha :as s]

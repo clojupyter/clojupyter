@@ -1,6 +1,6 @@
 (ns clojupyter.install.log
   (:require [clojupyter.cmdline.api :as cmdline]
-            [clojupyter.util :as u]
+            [clojupyter.tools :as u]
             [io.simplect.compose :refer [C p]]))
 
 (defn s*report-log
@@ -14,4 +14,3 @@
              (cmdline/outputs (mapv (p str "  ") msgs)))
           (cmdline/output "Nothing found in the log."))
         (cmdline/output "")))))
-

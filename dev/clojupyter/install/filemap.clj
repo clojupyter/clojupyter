@@ -1,5 +1,5 @@
 (ns clojupyter.install.filemap
-  (:require [clojupyter.util-actions :as u!]
+  (:require [clojupyter.tools-actions :as u!]
             [clojure.java.io :as io]
             [clojure.pprint :as pp]
             [io.simplect.compose :refer [p P]]))
@@ -81,4 +81,3 @@
    (filemap (merge (coerce-to-map fm1) (coerce-to-map fm2))))
   ([fm1 fm2 & fms]
    (apply filemap (filemap fm1 fm2) fms)))
-

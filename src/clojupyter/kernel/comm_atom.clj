@@ -47,16 +47,7 @@
     "Sets the value `comm-atom` to be `comm-state` by updating the global state and sending COMM `update`
   message.  `comm-state` must be a map serializable to JSON.  Returns `comm-atom`.")
   (state-update! [comm-atom comm-state]
-    "Merges `comm-state` into current value of `comm-atom`.")
-  (watch [comm-atom key fn]
-    "Add watch to `comm-atom` which will subsequently be called when the value of `comm-atom` is
-    updated.  The observer `fn` fn must be a fn of 4 args: a key, the reference, its old-state, its
-    new-state, identical to those for `watch` functions. cf. `add-watch` for details.  Returns `comm-atom`.")
-  (unwatch [comm-atom key]
-    "Remove watch added with key `key` from `comm-atom`.  Returns `comm-atom`.")
-  (validate [comm-atom fn]
-    "Add validator function `fn` to `comm-atom` which will be called when the `comm-atom` is created or changed.
-    The validator fn is a single argument (the `comm-atom` updated state) predicate"))
+    "Merges `comm-state` into current value of `comm-atom`."))
 
 (declare comm-atom? send-comm-state! send-comm-open! simple-fmt jupfld jsonable?)
 

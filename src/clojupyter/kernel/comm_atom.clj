@@ -93,35 +93,9 @@
     (send-comm-state! comm-atom (select-keys comm-state viewer-keys))
     (reset! comm-state_ comm-state)
     comm-atom)
-  (state-update! [comm-atom comm-state]
+  (state-update! [_ comm-state]
     (assert (map? comm-state))
-    ;;TODO: Remove from release.
-    (let [cur-state @comm-atom
-          new-state (merge cur-state comm-state)
-          ca-spec (:spec (meta cur-state))
-          new-state (if-let [{problems :clojure.spec.alpha/problems} (and ca-spec (s/explain-data ca-spec new-state))]
-                      (loop [state comm-state
-                             problems problems]
-                        (if (seq problems)
-                          (let [{:keys [in val pred]} (first problems)]
-                            (if (and (number? val) (or (= 'float? pred) (= float? pred))) ;; Spec can return the fn or its symbol.
-                              (recur (update-in state in float) (rest problems))
-                              (recur state (rest problems))))
-                          state))
-                    comm-state)]
-      ;; We only update the atom to prevent echoing of the state change back to front-end.
-      (swap! comm-state_ merge new-state)))
-
-  ;; DEPRECATED: CommsAtom now implements clojure.lang.IRef to make them compatible with existing clojure fns.
-  (watch [_ key f]
-    (assert (fn? f))
-    (add-watch comm-state_ key f))
-  (unwatch [_ key]
-    (remove-watch comm-state_ key))
-  (validate [_ f]
-    (assert (fn? f))
-    (set-validator! comm-state_ f))
-
+    (swap! comm-state_ merge comm-state))
 
   mc/PMimeConvertible
   (to-mime [_]
@@ -264,6 +238,14 @@
 
 (def closed? (complement open?))
 
+(defn base-widget
+  ([state] (base-widget state (u!/uuid)))
+  ([state comm-id]
+   (let [{jup :jup req-msg :req-message} (state/current-context)
+         target "jupyter.widget"
+         sync-keys (set (keys state))]
+     (create-and-insert jup req-msg target comm-id sync-keys state))))
+
 (defn jsonable?
   [v]
   (or (string? v)
@@ -282,11 +264,3 @@
       (and (map? v)
            (every? #(or (string? %) (keyword? %) (symbol? %)) (keys v))
            (every? jsonable? (vals v)))))
-
-(defn base-widget
-  ([state] (base-widget state (u!/uuid)))
-  ([state comm-id]
-   (let [{jup :jup req-msg :req-message} (state/current-context)
-         target "jupyter.widget"
-         sync-keys (set (keys state))]
-     (create-and-insert jup req-msg target comm-id sync-keys state))))

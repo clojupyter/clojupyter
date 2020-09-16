@@ -2,7 +2,7 @@
   (:require [clojure.spec.alpha :as s]
             [clojupyter.specs :as sp]
             [clojupyter.util :as u]
-            [io.simplect.compose :refer [p P C]]))
+            [io.simplect.compose :refer [p C]]))
 
 ;;; ------------------------------------------------------------------------------------------------------------------------
 ;;; SHARED

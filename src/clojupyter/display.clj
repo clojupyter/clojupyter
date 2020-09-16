@@ -1,7 +1,6 @@
 (ns clojupyter.display
   (:require [clojupyter.protocol.mime-convertible :as mc]
             [clojupyter.util :as u]
-            [io.simplect.compose :refer [redefn]]
             [clojure.data.codec.base64 :as b64]
             [hiccup.core :as hiccup]))
 

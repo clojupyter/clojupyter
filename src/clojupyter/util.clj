@@ -1,8 +1,8 @@
 (ns clojupyter.util
   (:require [cheshire.core :as cheshire]
             [clojure.string :as str]
-             [clojure.pprint :as pp]
-            [io.simplect.compose :refer [C def- p redefn]]
+            [clojure.pprint :as pp]
+            [io.simplect.compose :refer [def- redefn]]
             [pandect.algo.sha256 :refer [sha256-hmac]]
             [clojupyter.log :as log]))
 

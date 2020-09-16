@@ -2,17 +2,15 @@
   (:require
    [clojupyter.kernel.comm-global-state :as comm-global-state]
    [clojupyter.kernel.comm-atom :as ca]
-   [clojupyter.kernel.handle-event.ops :refer [definterceptor s*set-response]]
-   [clojupyter.kernel.jup-channels :as jup]
+    [clojupyter.kernel.jup-channels :as jup]
    [clojupyter.log :as log]
    [clojupyter.messages :as msgs]
    [clojupyter.messages-specs :as msp]
-   [clojupyter.state :as state]
-   [clojupyter.util-actions :as u!]
-   [clojure.pprint :as pp]
+
+
    [clojure.spec.alpha :as s]
    [clojure.spec.test.alpha :refer [instrument]]
-   [io.simplect.compose :refer [def- c C p P >->> >>->]]
+   [io.simplect.compose :refer [def- C p P]]
    [io.simplect.compose.action :as a :refer [action step side-effect]]))
 
 ;;; ------------------------------------------------------------------------------------------------------------------------

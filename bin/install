@@ -121,4 +121,4 @@ ln -s ../$IDENT.jar lib
 popd
 cp resources/clojupyter/assets/logo-64x64.png $KDIR/$IDENT &&\
 
-$(dirname $0)/kernel.json --i $IDENT $LIBDIR >$KDIR/$IDENT/kernel.json
+$(dirname $0)/kernel.json -i $IDENT $LIBDIR >$KDIR/$IDENT/kernel.json

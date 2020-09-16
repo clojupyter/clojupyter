@@ -6,7 +6,6 @@
             [clojupyter.kernel.handle-event-process :as hep :refer [start-handle-event-process]]
             [clojupyter.kernel.init :as init]
             [clojupyter.kernel.jup-channels :refer [jup? make-jup]]
-            [clojupyter.jupmsg-specs :as jsp]
             [clojupyter.log :as log]
             [clojupyter.messages :as msgs]
             [clojupyter.messages-specs :as msp]

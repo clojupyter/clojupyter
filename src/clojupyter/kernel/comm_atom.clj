@@ -95,6 +95,7 @@
     comm-atom)
   (state-update! [comm-atom comm-state]
     (assert (map? comm-state))
+    ;;TODO: Remove from release.
     (let [cur-state @comm-atom
           new-state (merge cur-state comm-state)
           ca-spec (:spec (meta cur-state))

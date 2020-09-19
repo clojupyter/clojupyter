@@ -2,7 +2,7 @@
   (:require
    [clojupyter.kernel.comm-global-state :as comm-global-state]
    [clojupyter.kernel.comm-atom :as ca]
-    [clojupyter.kernel.jup-channels :as jup]
+   [clojupyter.kernel.jup-channels :as jup]
    [clojupyter.log :as log]
    [clojupyter.messages :as msgs]
    [clojupyter.messages-specs :as msp]

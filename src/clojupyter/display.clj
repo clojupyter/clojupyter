@@ -31,6 +31,8 @@
 (defn markdown
   [v]
   (render-mime :text/markdown v))
+
+
 ;; Vega Lite
 
 (defn vega-lite-1

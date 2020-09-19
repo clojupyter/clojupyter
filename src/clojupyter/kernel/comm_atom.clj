@@ -39,7 +39,7 @@
     "A map of attributes to be sent to front-end")
   (close! [comm-atom]
       "Removes the comm-atom from the global state and sends COMM-CLOSE to the front end.")
-  (close [comm-atom]
+  (close-all! [comm-atom]
     "Closes a comm-atom recursively")
   (send! [comm-atom msg]
     "Sends custom message to front-end. Msg must be a map serializable to JSON.")
@@ -71,8 +71,8 @@
       (jup/send!! (jupfld comm-atom) :iopub_port (origin-message comm-atom) msgs/COMM-CLOSE MESSAGE-METADATA content)
       (state/comm-state-swap! (P comm-global-state/comm-atom-remove id)))
       nil)
-  (close [comm-atom]
-    (msgs/leaf-paths comm-atom? #(.close %) (.sub-state comm-atom))
+  (close-all! [comm-atom]
+    (msgs/leaf-paths comm-atom? #(.close-all! %) (.sub-state comm-atom))
     (.close! comm-atom))
   (send! [comm-atom msg]
     (assert (and (jsonable? msg) (map? msg)))
@@ -145,11 +145,7 @@
   (addWatch [_ key f]
      (add-watch comm-state_ key f))
   (removeWatch [_ key]
-    (remove-watch comm-state_ key))
-
-  clojure.lang.IFn
-  (invoke [comm-state f]
-    (f @comm-state)))
+    (remove-watch comm-state_ key)))
 
 (defn- jupfld
   [^CommAtom comm-atom]

@@ -60,7 +60,7 @@
 
 (defn replace-comm-atoms-with-references
   [{:keys [rsp-content] :as kernel-rsp}]
-  (let [[repl-content _] (msgs/leaf-paths ca/comm-atom? ca/model-ref rsp-content)]
+  (let [[repl-content _] (msgs/leaf-paths ca/comm-atom? #(str "IPY_MODEL_" (.-comm-id %)) rsp-content)]
     (assoc kernel-rsp :rsp-content repl-content)))
 
 (def- LOG-COUNTER

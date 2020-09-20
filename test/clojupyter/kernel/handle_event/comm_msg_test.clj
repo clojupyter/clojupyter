@@ -33,8 +33,7 @@
           ctx {:req-message req-msg, :req-port req-port, :jup :must-be-present}
           [action S'] (comm-msg/calc req-msgtype S ctx)
           specs (a/step-specs action)
-          {op1 :op port1 :port msgtype1 :msgtype content1 :content} (first specs)
-          ]
+          {op1 :op port1 :port msgtype1 :msgtype content1 :content} (first specs)]
       (and (sh/single-step-action? action)
            (not (comm-global-state/known-comm-id? S comm-id))
            (comm-global-state/known-comm-id? S' comm-id)
@@ -65,7 +64,7 @@
            (= S S')))))
 
 (fact
- "COMM-CLOSE with unknown comm-id leaves state and does nothing"
+ "COMM-CLOSE with unknown comm-id does not change state"
  (log/with-level :error
    (:pass? (tc/quick-check QC-ITERS prop--comm-close-with-unknown-leaves-state-yielding-nothing)))
  => true)
@@ -95,7 +94,7 @@
            (= comm-id comm_id)))))
 
 (fact
- "COMM-CLOSE with known comm-id leaves state and does nothing"
+ "COMM-CLOSE with known comm-id updates state and yields COM-CLOSE"
  (log/with-level :error
    (:pass? (tc/quick-check QC-ITERS prop--comm-close-with-known-removes-it-yielding-comm-close)))
  => true)
@@ -140,9 +139,40 @@
            (= S S')))))
 
 (fact
- "COMM-MSG with unknown comm-id does not change state and yields no messages"
+ "COMM-MSG-REQUEST-STATE with unknown comm-id does not change state and yields no messages"
  (log/with-level :error
    (:pass? (tc/quick-check QC-ITERS prop--comm-msg-unknown-does-not-change-state-and-yields-nothing)))
+ => true)
+
+(def prop--comm-request-state-yields-comm-update-message-on-iopub
+  (prop/for-all [{:keys [content]} mg/g-comm-message-content]
+    (let [req-msgtype msgs/COMM-MSG
+          data {:method msgs/COMM-MSG-REQUEST-STATE}
+          content (assoc content :data data)
+          req-msg ((ts/s*message-header req-msgtype) content)
+          req-port :shell_port
+          uuid (msgs/message-comm-id req-msg)
+          state {:some-key (gensym)}
+          comm (ca/create :jup req-msg "target-name" uuid #{:some-key} state)
+          S (comm-global-state/comm-atom-add (comm-global-state/initial-state) uuid comm)
+          ctx {:req-message req-msg, :req-port req-port, :jup :must-be-present}
+          [action S'] (comm-msg/calc req-msgtype S ctx)
+          {:keys [op port msgtype content]}  (sh/first-spec action)
+          rsp-message ((ts/s*message-header msgtype) content)]
+      (and (sh/single-step-action? action)
+           (= S S')
+           (= op :send-jupmsg)
+           (= port :iopub_port)
+           (= msgtype msgs/COMM-MSG)
+           (= uuid (msgs/message-comm-id rsp-message))
+           (= msgs/COMM-MSG-UPDATE (msgs/message-comm-method rsp-message))
+           (= state (msgs/message-comm-state rsp-message))
+           (s/valid? ::msp/comm-message-content content)))))
+
+(fact
+ "COMM-MSG-REQUEST-STATE with known comm-id yields COMM-UPDATE message on iopub_port"
+ (log/with-level :error
+   (:pass? (tc/quick-check QC-ITERS prop--comm-request-state-yields-comm-update-message-on-iopub)))
  => true)
 
 (def prop--comm-state-can-be-updated-using-comm-msg
@@ -173,38 +203,7 @@
            (= @(comm-global-state/comm-atom-get S' uuid) post-comm-state)))))
 
 (fact
- "Comm-state can be updated using COMM-MSG yielding no actions"
+ "COMM-MSG-UPDATE with known comm-id updates state yielding no actions"
  (log/with-level :error
    (:pass? (tc/quick-check QC-ITERS prop--comm-state-can-be-updated-using-comm-msg)))
- => true)
-
-(def prop--comm-request-state-yields-comm-update-message-on-iopub
-  (prop/for-all [{:keys [content]} mg/g-comm-message-content]
-    (let [req-msgtype msgs/COMM-MSG
-          data {:method msgs/COMM-MSG-REQUEST-STATE}
-          content (assoc content :data data)
-          req-msg ((ts/s*message-header req-msgtype) content)
-          req-port :shell_port
-          uuid (msgs/message-comm-id req-msg)
-          state {:some-key (gensym)}
-          comm (ca/create :jup req-msg "target-name" uuid #{:some-key} state)
-          S (comm-global-state/comm-atom-add (comm-global-state/initial-state) uuid comm)
-          ctx {:req-message req-msg, :req-port req-port, :jup :must-be-present}
-          [action S'] (comm-msg/calc req-msgtype S ctx)
-          {:keys [op port msgtype content]}  (sh/first-spec action)
-          rsp-message ((ts/s*message-header msgtype) content)]
-      (and (sh/single-step-action? action)
-           (= S S')
-           (= op :send-jupmsg)
-           (= port :iopub_port)
-           (= msgtype msgs/COMM-MSG)
-           (= uuid (msgs/message-comm-id rsp-message))
-           (= msgs/COMM-MSG-UPDATE (msgs/message-comm-method rsp-message))
-           (= state (msgs/message-comm-state rsp-message))
-           (s/valid? ::msp/comm-message-content content)))))
-
-(fact
- "COMM-REQUEST-STATE yields COMM-UPDATE message on iopub_port"
- (log/with-level :error
-   (:pass? (tc/quick-check QC-ITERS prop--comm-request-state-yields-comm-update-message-on-iopub)))
  => true)

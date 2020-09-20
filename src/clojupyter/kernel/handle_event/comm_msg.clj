@@ -95,9 +95,9 @@
     (if present?
       (let [msgtype msgs/COMM-MSG
             comm-atom (comm-global-state/comm-atom-get S comm-id)
-            target-name (ca/target comm-atom)
+            target-name (.-target comm-atom)
             msg-metadata ca/MESSAGE-METADATA
-            content (msgs/update-comm-msg comm-id msgs/COMM-MSG-UPDATE target-name (ca/sub-state comm-atom))
+            content (msgs/update-comm-msg comm-id msgs/COMM-MSG-UPDATE target-name (ca/sync-state comm-atom))
             A (action (step [`jup/send!! jup IOPUB req-message msgtype msg-metadata content]
                             (jupmsg-spec IOPUB msgtype msg-metadata content)))]
         (return ctx A S))
@@ -119,10 +119,10 @@
               repl-map (reduce merge (map hash-map paths buffers))
               _ (log/debug "Got paths: " paths "Got buffer replacement map: " repl-map)
               state (msgs/insert-paths state repl-map)
-              A (action (side-effect #(ca/state-update! comm-atom state)
+              A (action (side-effect #(swap! (.-comm-state_ comm-atom) merge state)
                                      {:op :update-agent :comm-id comm_id :new-state state}))]
           (return ctx A S S {:buffers buffers}))
-        (let [A (action (side-effect #(ca/state-update! comm-atom state)
+        (let [A (action (side-effect #(swap! (.-comm-state_ comm-atom) merge state)
                                     {:op :update-agent :comm-id comm_id :new-state state}))]
           (log/debug "Received COMM-UPDATE with empty buffers and known comm_id: " comm_id " and state: " state)
           (return ctx A S)))
@@ -213,7 +213,7 @@
   (assert (and req-message req-port jup ctx))
   (let [msgtype msgs/COMM-INFO-REPLY
         content (msgs/comm-info-reply-content (->> (for [comm-id (comm-global-state/known-comm-ids S)]
-                                                     [comm-id (ca/target (comm-global-state/comm-atom-get S comm-id))])
+                                                     [comm-id (.-target (comm-global-state/comm-atom-get S comm-id))])
                                                    (into {})))
         A (action (step [`jup/send!! jup req-port req-message msgtype content]
                         (jupmsg-spec req-port msgtype content)))]

@@ -27,87 +27,60 @@
 ;;; ------------------------------------------------------------------------------------------------------------------------
 
 (defprotocol comm-atom-proto
-  (target [comm-atom]
-    "The Jupyter target name to which the COMM-ATOM belongs.")
-  (comm-id [comm-atom]
-    "The Jupyter protocol ID of the COMM-ATOM.")
-  (model-ref [comm-atom]
-    "The COMM-ATOM's Jupyter Model reference identifier (a string).")
-  (origin-message [comm-atom]
-    "The message that caused the COMM-ATOM to be created.")
-  (sub-state [comm-atom]
+  (sync-state [comm-atom]
     "A map of attributes to be sent to front-end")
   (close! [comm-atom]
-      "Removes the comm-atom from the global state and sends COMM-CLOSE to the front end.")
-  (close-all! [comm-atom]
-    "Closes a comm-atom recursively")
+    "Removes the comm-atom from the global state and sends COMM-CLOSE to the front end.")
   (send! [comm-atom msg]
-    "Sends custom message to front-end. Msg must be a map serializable to JSON.")
-  (state-set! [comm-atom comm-state]
-    "Sets the value `comm-atom` to be `comm-state` by updating the global state and sending COMM `update`
-  message.  `comm-state` must be a map serializable to JSON.  Returns `comm-atom`.")
-  (state-update! [comm-atom comm-state]
-    "Merges `comm-state` into current value of `comm-atom`."))
+    "Sends custom message to front-end. Msg must be a map serializable to JSON."))
 
 (declare comm-atom? send-comm-state! send-comm-open! simple-fmt jupfld jsonable?)
 
 (deftype CommAtom
-    [comm-state_ jup_ target-name_ reqmsg_ cid_ viewer-keys]
+    [comm-state_ jup_ target origin-message comm-id sync-keys]
 
   comm-atom-proto
-  (target [_]
-    target-name_)
-  (comm-id [_]
-    cid_)
-  (model-ref [_]
-    (str "IPY_MODEL_" cid_))
-  (origin-message [_]
-    reqmsg_)
-  (sub-state [_]
-    (select-keys @comm-state_ viewer-keys))
+  (sync-state [_]
+    (select-keys @comm-state_ sync-keys))
   (close! [comm-atom]
     (let [id (comm-id comm-atom)
           content (msgs/comm-close-content id {})]
-      (jup/send!! (jupfld comm-atom) :iopub_port (origin-message comm-atom) msgs/COMM-CLOSE MESSAGE-METADATA content)
+      (jup/send!! (jupfld comm-atom) :iopub_port origin-message msgs/COMM-CLOSE MESSAGE-METADATA content)
       (state/comm-state-swap! (P comm-global-state/comm-atom-remove id)))
       nil)
-  (close-all! [comm-atom]
-    (msgs/leaf-paths comm-atom? #(.close-all! %) (.sub-state comm-atom))
-    (.close! comm-atom))
   (send! [comm-atom msg]
     (assert (and (jsonable? msg) (map? msg)))
-    (let [content (msgs/custom-comm-msg (comm-id comm-atom) msgs/COMM-MSG-CUSTOM (target comm-atom) msg)]
+    (let [content (msgs/custom-comm-msg comm-id msgs/COMM-MSG-CUSTOM (target comm-atom) msg)]
       (jup/send!! (jupfld comm-atom) :iopub_port (origin-message comm-atom) msgs/COMM-MSG MESSAGE-METADATA content))
       msg)
-  (state-set! [comm-atom comm-state]
-    (assert (map? comm-state))
-    (send-comm-state! comm-atom (select-keys comm-state viewer-keys))
-    (reset! comm-state_ comm-state)
-    comm-atom)
-  (state-update! [_ comm-state]
-    (assert (map? comm-state))
-    (swap! comm-state_ merge comm-state))
+
+  java.io.Closeable
+  (close [comm-atom]
+    (msgs/leaf-paths comm-atom? #(.close %) (.sync-state comm-atom)))
 
   mc/PMimeConvertible
   (to-mime [_]
     (u/json-str {:text/plain
-                 ,, (str "[" cid_ "]=" (:_model_name @comm-state_))
+                 ,, (str "[" comm-id "]=" (:_model_name @comm-state_))
                  :application/vnd.jupyter.widget-view+json
                  ,, {:version_major WIDGET-VERSION-MAJOR
                      :version_minor WIDGET-VERSION-MINOR
-                     :model_id cid_}}))
+                     :model_id comm-id}}))
 
   (toString [comm-atom]
     (simple-fmt comm-atom))
 
   clojure.lang.IAtom
   (compareAndSet [comm-atom old new]
+    (assert (jsonable? (select-keys new sync-keys)))
     (if (= @comm-atom old)
-      (do (state-set! comm-atom new)
+      (do (reset! comm-atom new)
           true)
       false))
   (reset [comm-atom v]
-    (state-set! comm-atom v)
+    (assert (jsonable? (select-keys v sync-keys)))
+    (reset! comm-state_ v)
+    (send-comm-state! comm-atom (select-keys v sync-keys))
     v)
   (swap [comm-atom f]
     (let [state @comm-atom
@@ -153,19 +126,19 @@
 
 (defn- send-comm-state! [^CommAtom comm-atom, comm-state]
   (assert (and (jsonable? comm-state) (map? comm-state)))
-  (let [content (msgs/update-comm-msg (comm-id comm-atom) msgs/COMM-MSG-UPDATE (target comm-atom) comm-state)]
-    (jup/send!! (jupfld comm-atom) :iopub_port (origin-message comm-atom) msgs/COMM-MSG MESSAGE-METADATA content)))
+  (let [content (msgs/update-comm-msg (.-comm-id comm-atom) msgs/COMM-MSG-UPDATE (.-target comm-atom) comm-state)]
+    (jup/send!! (jupfld comm-atom) :iopub_port (.-origin-message comm-atom) msgs/COMM-MSG MESSAGE-METADATA content)))
 
 (defn- send-comm-open! [^CommAtom comm-atom, comm-state]
   (assert (and (jsonable? comm-state) (map? comm-state)))
-  (let [content (msgs/comm-open-content (comm-id comm-atom)
+  (let [content (msgs/comm-open-content (.-comm-id comm-atom)
                                         {:state comm-state :buffer_paths []}
-                                        {:target_name (target comm-atom)})]
-    (jup/send!! (jupfld comm-atom) :iopub_port (origin-message comm-atom) msgs/COMM-OPEN MESSAGE-METADATA content)))
+                                        {:target_name (.-target comm-atom)})]
+    (jup/send!! (jupfld comm-atom) :iopub_port (.-origin-message comm-atom) msgs/COMM-OPEN MESSAGE-METADATA content)))
 
 (defn- short-comm-id
   [^CommAtom comm-atom]
-  (let [comm-id (str (comm-id comm-atom))
+  (let [comm-id (str (.-comm-id comm-atom))
         [_ id] (re-find #"^([^-]+)" comm-id)]
     (or id comm-id "??")))
 
@@ -199,27 +172,27 @@
     (print (simple-fmt comm-atom))))
 
 (defn create
-  [jup req-message target-name comm-id viewer-keys comm-state]
+  [jup req-message target-name comm-id sync-keys comm-state]
   (assert jup req-message)
-  (->CommAtom (atom comm-state) jup target-name req-message comm-id viewer-keys))
+  (->CommAtom (atom comm-state) jup target-name req-message comm-id sync-keys))
 
 (defn insert
   [comm-atom]
-  (let [comm-id (comm-id comm-atom)]
-    (send-comm-open! comm-atom (sub-state comm-atom))
+  (let [comm-id (.-comm-id comm-atom)]
+    (send-comm-open! comm-atom (sync-state comm-atom))
     (state/comm-state-swap! (P comm-global-state/comm-atom-add comm-id comm-atom))
     comm-atom))
 
 (defn create-and-insert
-  [jup req-message target-name comm-id viewer-keys comm-state]
-  (insert (create jup req-message target-name comm-id viewer-keys comm-state)))
+  [jup req-message target-name comm-id sync-keys comm-state]
+  (insert (create jup req-message target-name comm-id sync-keys comm-state)))
 
 (def comm-atom?
   (p instance? CommAtom))
 
 (defn open?
   [comm-atom]
-  (let [id (comm-id comm-atom)
+  (let [id (.-comm-id comm-atom)
         S (state/comm-state-get)]
     (comm-global-state/known-comm-id? S id)))
 

@@ -42,7 +42,7 @@ done
 
 [[ -d $USER_DATA_PATH/$KERNEL || -d $SYSTEM_DATA_PATH/$KERNEL ]] ||\
 { echo Can\'t find the kernel dir 2>/dev/null;
-  exit 1; }
+  exit 10; }
 
 [[ -d $SYSTEM_DATA_PATH/$KERNEL ]] &&\
 { KDIR=$SYSTEM_DATA_PATH/$KERNEL;
@@ -54,38 +54,69 @@ done
 
 [[ -r $LIBDIR/plugins || -w $LIBDIR/plugins/enabled ]] ||\
 { echo Can\'t write to plugin directory. >&2;
-  exit 2; }
+  exit 20; }
 
 [[ -n $TARGET ]] ||\
 { echo Must provide a plugin to enable 2>/dev/null;
-  exit 3; }
+  exit 30; }
+
+meta-deps() {
+
+    CP=$(unzip -p $1 META-INF/MANIFEST.MF |\
+         while read line; do
+            if [[ $line =~ ^Class-Path: ]]; then
+                if [[ $line =~ \.jar[[:space:]]*$ ]]; then
+                    echo "${line//Class-Path:/} "
+                else
+                    echo "${line//Class-Path:/}"
+                fi
+            elif [[ $line =~ ^[^:]+$ ]]; then
+                if [[ $line =~ \.jar[[:space:]]*$ ]]; then
+                    echo "${line} "
+                else
+                    echo "$line"
+                fi
+            else
+                continue
+            fi
+        done)
+
+    for jar in $(echo "$CP" | tr -d '\n' | tr -d '\r'); do
+        path=$(dirname $1)
+        echo $(realpath $path/$jar)
+    done
+}
 
 matches=
-for plug in $LIBDIR/plugins/*.jar; do
-    [[ $(basename ${plug}) != "*.jar" && $(basename ${plug:0:-4}) =~ $TARGET ]] &&\
-    matches+="$plug "
+for plug in $(ls -pa1 $LIBDIR/plugins | grep -v /); do
+    [[ $(basename -s .jar ${plug}) =~ $TARGET ]] &&\
+    { name=$(basename -s .jar $plug);
+      for dep in $(meta-deps $LIBDIR/plugins/${name}.jar | grep -E ^$LIBDIR/plugins); do
+          matches+="$(basename -s .jar $dep) "
+      done;
+      matches+="$name "; }
 done
 
 [[ -n $matches ]] ||\
 { echo No plugin found that matches $TARGET >&2;
-  exit 3; }
+  exit 31; }
 
 enabled_plugs=
-for plug in $(ls $LIBDIR/plugins/enabled); do
-    enabled_plugs+=$LIBDIR/plugins/$plug
+for plug in $(ls -pa1 $LIBDIR/plugins/enabled | grep -v /); do
+    enabled_plugs+="$LIBDIR/plugins/$plug "
 done
 
 new_plugs="$enabled_plugs"
-for match in $matches; do
-    (echo "$enabled_plugs" | grep $match &>/dev/null) ||\
-    { new_plugs=$(cat <(echo "$new_plugs") <(echo "$match"));
-      echo Enabling plugin $(basename ${match:0:-4}) for $KERNEL >&2; }
+for match in $(echo $matches | tr ' ' '\n' | sort -u); do
+    (echo "$enabled_plugs" | grep $LIBDIR/plugins/${match}.jar &>/dev/null) ||\
+    { new_plugs=$(cat <(echo "$new_plugs") <(echo "$LIBDIR/plugins/${match}.jar"));
+      echo Enabling plugin $match for $KERNEL >&2; }
 done
 
 [[ "$new_plugs" != "$enabled_plugs" ]] &&\
 { cd $LIBDIR/plugins/enabled;
   for plug in $new_plugs; do
-      ln -s ../$(basename $plug) .
+      ln -s ../$(basename $plug) . 2>/dev/null
   done; }
 
 exit 0

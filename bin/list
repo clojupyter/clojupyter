@@ -1,5 +1,9 @@
 #!/bin/env bash
 
+########################################################################################
+#  DEFAULTS
+########################################################################################
+
 USER_DATA_PATH=$(if [[ -d ${JUPYTER_DATA_DIR}/kernels ]]; then
                 echo ${JUPYTER_DATA_DIR}/kernels
             elif [[ $(uname -s) == Darwin ]]; then
@@ -25,6 +29,10 @@ SYSTEM_LIB_PATH=$(if [[ $(uname -s) == Darwin ]]; then
                   echo /usr/local/lib
               fi)
 
+########################################################################################
+#  ARGUMENTS & FAIL CONDITIONS
+########################################################################################
+
 all=""
 for dir in $USER_DATA_PATH/*/ $SYSTEM_DATA_PATH/*/; do
     match=$(jq '.display_name' $dir/kernel.json 2>/dev/null | sed -nE 's/"Clojure \((.*)\)"/\1/g p')
@@ -43,6 +51,11 @@ else
 fi
 
 [[ -z "$res" ]] && { echo No installed kernel found >&2; exit 0; }
+
+
+########################################################################################
+#  OUTPUT
+########################################################################################
 
 cols=$(tput cols)
 id_cols=$(( $cols / 3 - 1 ))

@@ -10,6 +10,8 @@ if (!$kernel) {
 
 $kt = bin/list ^${kernel}$
 
+Add-Type -AssemblyName System.IO.Compression.FileSystem
+
 function Get-Dependencies {
     Param (
         $jar
@@ -20,6 +22,7 @@ function Get-Dependencies {
     $file = New-TemporaryFile
     $file.Delete()
     [System.IO.Compression.ZipFileExtensions]::ExtractToFile($manifest, $file.FullName)
+    $manifest.Dispose()
     $CP_key = $false
     $deps = foreach ($line in $(Get-Content $file)) {
                 Switch -Regex ($line) {
@@ -58,8 +61,18 @@ function disable {
     Pop-Location
 }
 
+$match = @()
 foreach ($plugin in $kt.EnabledPlugins) {
     if ($plugin -match $target) {
-        disable $plugin
+        $match += $plugin
     }
+    elseif (Get-Dependencies $(Get-ChildItem "$($kt.LibPath)\plugins" "$plugin.jar") |
+            Where-Object { $kt.EnabledPlugins -contains $_.Basename } |
+            Where-Object { $_.Basename -match $target }) {
+        $match += $plugin
+    }
+}
+
+foreach ($m in $($match | Sort-Object | Get-Unique)) {
+    disable $m
 }

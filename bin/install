@@ -32,21 +32,17 @@ SYSTEM=false
 VERSION=$($(dirname $0)/version)
 IDENT="clojupyter-$VERSION"
 JAR=target/${IDENT}.jar
-OVERWRITE=false
 
 HELP='not implemented'
 
 ########################################################################################
 # ARGUMENTS
 ########################################################################################
+
 while [[ $# -gt 0 ]]; do
     case $1 in
         --system)
         SYSTEM=true
-        shift
-        ;;
-        --overwrite|-o)
-        OVERWRITE=true
         shift
         ;;
         --help)
@@ -98,7 +94,6 @@ else
     mkdir -p $LIBDIR || exit 21
 fi
 
-[[ $OVERWRITE == false ]] &&\
 if [[ -f $KDIR/$IDENT/kernel.json ]]; then
     echo $IDENT is already installed in $KDIR >&2
     exit 30

@@ -16,13 +16,14 @@ function Get-Dependencies {
     Param (
         $jar
     )
-    $manifest = [System.IO.Compression.ZipFile]::OpenRead($jar.FullName) |
+    $jarfile = [System.IO.Compression.ZipFile]::OpenRead($jar.FullName)
+    $manifest = $jarfile |
                 Select-Object -ExpandProperty Entries |
                 Where-Object {$_.Name -eq "MANIFEST.MF"}
     $file = New-TemporaryFile
     $file.Delete()
     [System.IO.Compression.ZipFileExtensions]::ExtractToFile($manifest, $file.FullName)
-    $manifest.Dispose()
+    $jarfile.Dispose()
     $CP_key = $false
     $deps = foreach ($line in $(Get-Content $file)) {
                 Switch -Regex ($line) {

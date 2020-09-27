@@ -11,7 +11,7 @@ source:
     path: ../target
 
 build:
-    number: 10
+    number: 0
 
 requirements:
     run:

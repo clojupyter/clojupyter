@@ -46,4 +46,5 @@
 
                 :metajar {:jvm-opts ["-Dclojure.compiler.direct-linking=true"]}}
 
+  :aot         [clojupyter.kernel.core]
   :main        clojupyter.kernel.core)

@@ -42,10 +42,8 @@
                                          [org.clojure/tools.cli "0.4.2"]
                                          [org.clojure/test.check "1.1.0"]]
                           :plugins      [[lein-midje "3.2.2"]
-                                         [lein-metajar "0.1.1"]]
-                          :source-paths ["dev"]}
+                                         [lein-metajar "0.1.1"]]}
 
-                :uberjar {:aot :all}
                 :metajar {:jvm-opts ["-Dclojure.compiler.direct-linking=true"]}}
 
   :main        clojupyter.kernel.core)

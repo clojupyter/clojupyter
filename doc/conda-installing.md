@@ -51,10 +51,14 @@ This should work on all supported platforms: Linux, MacOS and Windows.
 More details on installing below.
 
 ## Using Conda: Building Clojupyter
-To build a conda package run `make conda-build`.
-To build a custom distribution of Clojupyter, run `make conda-config` to build the
-prerequisites, but without running `conda build`. At this point you can add any extra files
-to the package, update the meta file and/or the build scripts and run either `conda build conda` or `make conda-build`
+To build a conda package run:
+```bash
+$ make conda-build
+```
+
+To build a custom distribution of Clojupyter, run `make conda-config` to build the prerequisites, but without running `conda build`.
+At this point you can add any extra files to the package, update the meta file and/or the build
+scripts and run either `conda build conda` or `make conda-build`.
 
 ## Using Conda: Installing Clojupyter
 

@@ -36,10 +36,6 @@
                       [org.slf4j/jcl-over-slf4j "1.7.30"]]
 
   :profiles    {:dev     {:dependencies [[midje "1.9.9" :exclusions [org.clojure/clojure]]
-                                         [me.raynes/fs "1.4.6"]
-                                         [io.forward/yaml "1.0.10" :exclusions [org.flatland/ordered]]
-                                         [org.flatland/ordered "1.5.9"]
-                                         [org.clojure/tools.cli "0.4.2"]
                                          [org.clojure/test.check "1.1.0"]]
                           :plugins      [[lein-midje "3.2.2"]
                                          [lein-metajar "0.1.1"]]}

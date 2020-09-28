@@ -17,8 +17,18 @@ Details of each scenario described below.
 If you already have `Jupyter` installed, you can install Clojupyter alongside your other existing kernels.
 Clojupyter build, installs and runs natively on **Linux**, **MacOS** and **Windows**.
 
-`bin` directory contains bash and powershell scripts to manage the native installations of clojupyter, including but not limited to: *installing*, *uninstalling*, *listing*, *enabling* and *disabling plugins*.
+`bin` directory contains bash and powershell scripts to manage the native installations of clojupyter,
+including but not limited to: *installing*, *uninstalling*, *listing*, *enabling* and *disabling plugins*.
 
+The **STANDALONE** and **CONDA** scenarios allow you to use the Clojupyter kernel in the context of
+a clojure project by passing the `CLASSPATH` environment variable to the jupyter process.
+E.g.: Let's imagine a clojure project `foo` that includes `project.clj` in its root directory.
+If you call `CLASSPATH=$(lein classpath) jupyter <lab/notebook>`, you'll start a jupyter lab/notebook
+process with the source code of `foo` and its dependencies available to Clojupyter at runtime.
+If you use `deps.edn` for dependency management, you can get a list of deps with `clojure -Spath`
+
+`bin/clojupyter` does the `CLASSPATH` setup automatically, so it can be copied somewhere on the `PATH`
+and be used to start jupyter when working with clojure projects.
 
 ## CONDA: Use `conda` to install Clojupyter on Linux, MacOS and Windows
 

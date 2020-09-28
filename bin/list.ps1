@@ -21,7 +21,7 @@ $SystemLibPath = "$env:ProgramFiles"
 ########################################################################################
 
 if ($args.count -gt 1) {
-    echo ("Wrong number of arguments (" + $args.count + ") passed to program")
+    Write-Error ("Wrong number of arguments (" + $args.count + ") passed to program")
     exit 1
 }
 

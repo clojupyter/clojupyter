@@ -21,7 +21,7 @@ $SystemLibPath = "$env:ProgramFiles"
 ########################################################################################
 
 if ($args.count -gt 1) {
-    echo ("Wrong number of arguments (" + $args.count + ") passed to program")
+    Write-Error ("Wrong number of arguments (" + $args.count + ") passed to program")
     exit 1
 }
 
@@ -39,10 +39,10 @@ else {
 if (Test-Path $UserDataPath) {
     foreach ($file in $(Get-ChildItem -Path $UserDataPath).name) {
         if ("$file" -match $target) {
-            echo "Uninstalling $file"
-            rm -r "$UserDataPath\$file"
+            Write-Host "Uninstalling $file"
+            Remove-Item -Recurse "$UserDataPath\$file"
             if (Test-Path "$UserLibPath\$file") {
-                rm -r "$UserLibPath\$file"
+                Remove-Item -Recurse "$UserLibPath\$file"
             }
         }
     }
@@ -51,10 +51,10 @@ if (Test-Path $UserDataPath) {
 if (Test-Path $SystemDataPath) {
     foreach ($file in $(Get-ChildItem -Path $SystemDataPath).name) {
         if ("$file" -match $target) {
-            echo "Uninstalling $file"
-            rm -r "$SystemDataPath\$file"
+            Write-Host "Uninstalling $file"
+            Remove-Item -Recurse "$SystemDataPath\$file"
             if (test-path "$SystemLibPath\$file") {
-                rm -r "$SystemLibPath\$file"
+                Remove-Item -Recurse "$SystemLibPath\$file"
             }
         }
     }

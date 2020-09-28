@@ -1,4 +1,8 @@
 
+########################################################################################
+#  ARGUMENTS
+########################################################################################
+
 Param (
     [Alias('k')][string] $kernel,
     [Parameter(Mandatory=$true, Position=0)][string] $target
@@ -9,6 +13,10 @@ if (!$kernel) {
 }
 
 $kt = bin/list ^${kernel}$
+
+########################################################################################
+#  DEPENDENCIES
+########################################################################################
 
 Add-Type -AssemblyName System.IO.Compression.FileSystem
 
@@ -73,6 +81,15 @@ foreach ($plugin in $kt.EnabledPlugins) {
         $match += $plugin
     }
 }
+
+if (!$match) {
+    Write-Error "No plugin found that matches $target"
+    exit 31
+}
+
+########################################################################################
+#  DISABLING
+########################################################################################
 
 foreach ($m in $($match | Sort-Object | Get-Unique)) {
     disable $m

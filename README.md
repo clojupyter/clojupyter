@@ -10,10 +10,10 @@ A Jupyter kernel for Clojure - run Clojure code in Jupyter Lab, Notebook and Con
 * [Getting Started](#getting-started)
 * [Installation](#installation)
   * [Usage Scenarios - check here to see options for using Clojupyter](./doc/usage-scenarios.md)
-  * [Using Clojupyter as a library](./doc/library.md)
+  * [Using Clojupyter Plugins](./doc/plugins.md)
   * [Clojupyter and Conda](./doc/clojupyter-and-conda.md)
-   * [Conda-installing Clojupyter](./doc/conda-installing.md)
-* [Command line interface](#command-line-interface)
+  * [Conda-installing Clojupyter](./doc/conda-installing.md)
+  * [Docker Image](./doc/docker.md)
 * [To do](#todo)
 * [Collaboration](#collaboration)
 

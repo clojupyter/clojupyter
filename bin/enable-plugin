@@ -1,5 +1,9 @@
 #!/bin/env bash
 
+########################################################################################
+#  DEFAULTS
+########################################################################################
+
 USER_DATA_PATH=$(if [[ -d ${JUPYTER_DATA_DIR}/kernels ]]; then
                 echo ${JUPYTER_DATA_DIR}/kernels
             elif [[ $(uname -s) == Darwin ]]; then
@@ -26,6 +30,10 @@ SYSTEM_LIB_PATH=$(if [[ $(uname -s) == Darwin ]]; then
               fi)
 KERNEL=clojupyter-$($(dirname $0)/version)
 
+########################################################################################
+#  ARGUMENTS
+########################################################################################
+
 while [[ $# -gt 0 ]]; do
     case $1 in
         --kernel|-k)
@@ -39,6 +47,10 @@ while [[ $# -gt 0 ]]; do
         ;;
     esac
 done
+
+########################################################################################
+#  FAIL CONDITIONS
+########################################################################################
 
 [[ -d $USER_DATA_PATH/$KERNEL || -d $SYSTEM_DATA_PATH/$KERNEL ]] ||\
 { echo Can\'t find the kernel dir 2>/dev/null;
@@ -59,6 +71,10 @@ done
 [[ -n $TARGET ]] ||\
 { echo Must provide a plugin to enable 2>/dev/null;
   exit 30; }
+
+########################################################################################
+#  DEPENDENCIES
+########################################################################################
 
 meta-deps() {
 
@@ -112,6 +128,10 @@ for match in $(echo $matches | tr ' ' '\n' | sort -u); do
     { new_plugs=$(cat <(echo "$new_plugs") <(echo "$LIBDIR/plugins/${match}.jar"));
       echo Enabling plugin $match for $KERNEL >&2; }
 done
+
+########################################################################################
+#  ENABLING
+########################################################################################
 
 [[ "$new_plugs" != "$enabled_plugs" ]] &&\
 { cd $LIBDIR/plugins/enabled;

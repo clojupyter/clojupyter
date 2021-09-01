@@ -164,15 +164,14 @@
 (defn make-signer-checker
   [key]
   (let [mkchecker (fn mkchecker [signer]
-                    (fn [{:keys [header parent-header metadata content preframes]}]
+                    (fn [{:keys [header parent-header metadata content]} signature]
                       (let [payload-vec [header parent-header metadata content]
-                            signature (.-signature preframes)
                             check-signature (signer payload-vec)]
                         (= check-signature (bytes->string* signature)))))
         signer	(if (empty? key)
                   (constantly "")
                   (fn signer [payload-vec]
-                    (sha256-hmac (apply str (map json-str* payload-vec)) key)))]
+                    (sha256-hmac (apply str payload-vec) key)))]
     [signer (mkchecker signer)]))
 
 (redefn parse-json-str cheshire/parse-string)

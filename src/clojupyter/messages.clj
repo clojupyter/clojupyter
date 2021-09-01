@@ -283,7 +283,7 @@
           preframes (make-jupmsg-preframes envelope delim signature)
           body-map (parse-json-and-build-jupmsg (select-keys strbody [:header :parent-header :metadata :content]))
           jupmsg (assoc body-map :preframes preframes :buffers buffers)]
-      (when-not (check-signature jupmsg)
+      (when-not (check-signature strbody signature)
         (let [msg "Invalid message signature"]
           (log/error msg)
          (throw (Exception. msg))))
@@ -349,7 +349,7 @@
          envelope	(if (= rsp-socket :iopub_port)
                           [(u/get-bytes rsp-msgtype)]
                           (message-envelope req-message))
-         signature	(u/get-bytes (signer [header parent-header metadata rsp-content]))]
+         signature	(u/get-bytes (signer (map u/json-str [header parent-header metadata rsp-content])))]
      (make-jupmsg envelope signature header parent-header metadata rsp-content rsp-buffers))))
 
 ;;; ------------------------------------------------------------------------------------------------------------------------
@@ -614,5 +614,3 @@
   (s/cat :data ::data, :metadata ::metadata, :transient ::transient)
   [data metadata tsient]
   {:data data, :metadata metadata, :transient tsient})
-
-

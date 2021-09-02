@@ -1,4 +1,4 @@
-#!/bin/env bash
+#!/usr/bin/env bash
 
 which lein &>/dev/null && exec=lein
 which clojure &>/dev/null && [[ -r "./deps.edn" ]] && exec=clojure

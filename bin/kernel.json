@@ -1,4 +1,4 @@
-#!/bin/env bash
+#!/usr/bin/env bash
 
 [[ $# == 0 ]] && { echo Wrong number of arguments \(0\) passed. >&2;
                    exit 1; }

@@ -4,6 +4,7 @@ Table of Contents
 
 * [Quickstart](#quickstart)
 * [Using Conda: Installing Clojupyter](#using-conda-installing-clojupyter)
+* [Using Conda: Using Environments](#using-conda-using-environments)
 * [Using Conda: Upgrading Clojupyter](#using-conda-upgrading-clojupyter)
 * [Using Conda: Uninstalling Clojupyter](#using-conda-uninstalling-clojupyter)
 * [Supported Platforms when using Conda (Linux, MacOS, Windows)](#supported-platforms-when-using-conda)
@@ -57,7 +58,12 @@ manage 'environments' which enable you have multiple versions of your installed 
 be used to switch between different version of Java, Clojure and Clojupyter), but we believe most
 Clojupyter users with more advanced requirements will want to switch to self-managed kernels and so
 we'll not spend much time on the possibilities and features of Conda.  If you are interested [see
-the technical documentation conda](https://docs.conda.io/projects/conda/en/latest/index.html).
+the technical documentation conda](https://docs.conda.io/projects/conda/en/latest/index.html). There
+is additional documentation in the following section titled
+[Using Conda: Using Environments](#using-conda-using-environments) which will help guide you through
+some of the caveats you may run into, but it is not expected to be comprehensive. You may wish to
+jump ahead and familiarize yourself with that first before proceeding if you plan on using
+environments, but it is considered optional and the following will still apply.
 
 Clojupyter is available [as the `clojupyter` package on the `simplect` channel in Anaconda
 Cloud](https://anaconda.org/simplect/clojupyter).
@@ -167,6 +173,128 @@ when you use package management commands related to Clojupyter.  If you want to 
 upgrades components and dependencies consult the `conda` technical documentation for the relevant
 command.
 
+## Using Conda: Using Environments
+
+The proceeding section installs Clojupyter to the base environment. This is probably sufficient to
+familiarize yourself with Clojupyter, especially if you are new to using Conda, but if you use Conda
+already for different languages and already use environments, this is probably not desirable. The
+command `conda env list` will show you the environments currently configured.
+
+```
+> conda env list
+# conda environments:
+#
+base                  *  /path/to/conda
+```
+
+To create a new environment use the command `conda create --name <env-name>`.
+
+```
+> conda create --name clojupyter
+Collecting package metadata (current_repodata.json): done
+Solving environment: done
+
+## Package Plan ##
+
+  environment location: /path/to/conda-env/clojupyter
+
+
+
+Proceed ([y]/n)? y
+
+Preparing transaction: done
+Verifying transaction: done
+Executing transaction: done
+#
+# To activate this environment, use
+#
+#     $ conda activate clojupyter
+#
+# To deactivate an active environment, use
+#
+#     $ conda deactivate
+
+
+> conda env list
+# conda environments:
+#
+base                  *  /path/to/conda
+clojupyter               /path/to/conda-env/clojupyter
+```
+
+Then use the command `conda activate <env-name>` to switch to the environment anytime you want to
+select it:
+
+```
+> conda activate clojupyter
+```
+
+At this point follow the installation steps already provided. If you switch to this environment and
+start Jupyter, the Clojupyter kernel will be available. However, one of the more flexible benefits
+of using Conda environments is that you can isolate dependencies and make it possible to run
+different kernels side-by-side. If you are already using Jupyter with a Python kernel for instance,
+you may want to have a separate Jupyter environment and expose the different kernels there. This has
+the convenience of being able to use one environment for Jupyter but being able to switch to
+different kernels on-demand for different Notebooks.
+
+This capability may not be working fully as intended, so if you run into problems, please document
+them and open a report. For this scenario, it is assumed that you have 3 environments configured:
+
+```
+> conda env list
+# conda environments:
+#
+base                  *  /path/to/conda
+clojupyter               /path/to/conda-env/clojupyter
+jupyter                  /path/to/conda-env/jupyter
+```
+
+Assuming you have jupyter configured as your JupyterLab environment and clojupyter configured as
+where you have installed Clojupyter, how do you expose the clojupyter kernel to the Jupyter
+environment? This is done using the `jupyter kernelspec` command:
+
+```
+> conda activate jupyter
+> jupyter kernelspec install /path/to/conda-env/clojupyter/share/jupyter/kernels/conda-clojupyter --user
+[InstallKernelSpec] Installed kernelspec conda-clojupyter in /path/to/conda-user-env/jupyter/kernels/conda-clojupyter
+```
+
+You may need to adjust the path to get the correct location depending on your OS, but in the
+environment directory you should find something similar. Look at the help for `jupyter kernelspec`
+for more information. You can also make adjustments to the `kernel.json` file or pass additional
+arguments to adjust how the kernel is installed.
+
+If you try running this kernel right now, it will fail with a rather cryptic error message. While
+Jupyter doesn't require it, Clojupyter requires OpenJDK to be installed. This must be added to the
+Jupyter environment which loads the Clojupyter kernel.
+
+```
+> conda install openjdk
+Collecting package metadata (current_repodata.json): done
+Solving environment: done
+
+## Package Plan ##
+
+  environment location: /path/to/conda-env/clojupyter
+
+  added / updated specs:
+    - openjdk
+
+
+The following NEW packages will be INSTALLED:
+
+  openjdk            pkgs/main/win-64::openjdk-11.0.6-he774522_1
+
+
+Proceed ([y]/n)?
+
+Preparing transaction: done
+Verifying transaction: done
+Executing transaction: done
+```
+
+At this point, you should be able to open JupyterLab and see Clojupyter available next to any other
+kernels you may have in your Jupyter environment.
 
 ## Using Conda: Upgrading Clojupyter
 

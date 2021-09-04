@@ -1,0 +1,5 @@
+{"env": {"CLASSPATH": "/home/jovyan/.local/lib/clojupyter-0.4.0-SNAPSHOT/clojupyter-0.4.0-SNAPSHOT.jar:/home/jovyan/.local/lib/clojupyter-0.4.0-SNAPSHOT/plugins/enabled/*:${CLASSPATH}"},
+ "argv": ["java", "clojupyter.kernel.core", "{connection_file}"],
+ "display_name": "Clojure (clojupyter-0.4.0-SNAPSHOT)",
+ "language": "clojure",
+ "interrupt_mode": "message"}

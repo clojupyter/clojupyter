@@ -240,5 +240,6 @@
       (catch Exception e
         (log/error e)
         (Thread/sleep 10)
-        (assoc return-value :error e))))))
+        [return-value (str e) e])))))
+
 (set-defn-indent! #'exiting-on-completion #'without-exiting #'with-temp-directory!)

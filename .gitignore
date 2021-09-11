@@ -10,3 +10,4 @@
 /tmp/*
 pom.xml
 pom.xml.asc
+/docker.new/*/

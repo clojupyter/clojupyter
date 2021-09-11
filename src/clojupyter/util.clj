@@ -165,9 +165,11 @@
   [key]
   (let [mkchecker (fn mkchecker [signer]
                     (fn [{:keys [header parent-header metadata content]} signature]
-                      (let [payload-vec [header parent-header metadata content]
+                      (or (empty? key)         ; Disable signature checking when no session key
+                        (let [payload-vec [header parent-header metadata content]
                             check-signature (signer payload-vec)]
-                        (= check-signature (bytes->string* signature)))))
+                        (log/debug "Checking message with key" key)
+                        (= check-signature (bytes->string* signature))))))
         signer	(if (empty? key)
                   (constantly "")
                   (fn signer [payload-vec]

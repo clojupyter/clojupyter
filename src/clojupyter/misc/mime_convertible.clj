@@ -1,7 +1,6 @@
 (ns clojupyter.misc.mime-convertible
   (:require [clojupyter.protocol.mime-convertible :as mc]
             [clojupyter.util :as u]
-            [clojure.data.codec.base64 :as b64]
             [clojure.java.io :as io])
   (:import java.awt.image.BufferedImage
            javax.imageio.ImageIO))
@@ -18,4 +17,4 @@
     (let [out (io/java.io.ByteArrayOutputStream.)]
       (ImageIO/write o "png" out)
       (u/to-json-str
-       {:image/png (-> out .toByteArray b64/encode String.)}))))
+       {:image/png (-> out .toByteArray u/base64-encode String.)}))))

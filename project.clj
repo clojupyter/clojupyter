@@ -20,7 +20,6 @@
                       [clojure.java-time "0.3.2"]
                       [hiccup "1.0.5"]
                       [io.aviso/pretty "0.1.37"]        ;; Exceptions pretty printing
-                      [org.clojure/data.codec "0.1.1"]  ;; Base64 encoder/decoder
                       [pandect "0.6.1"]                 ;; Message signing
                       ;; Dependencies Management
                       [com.cemerick/pomegranate "1.1.0"]
@@ -42,7 +41,6 @@
                       [io.forward/yaml "1.0.9" :exclusions [org.flatland/ordered]]
                       [me.raynes/fs "1.4.6"]
                       [net.cgrand/regex "1.1.0" :exclusions [org.clojure/clojure net.cgrand.parsley]]
-                      [org.clojure/data.json "2.3.1"]
                       [org.clojure/tools.cli "0.4.2"]
                       [org.flatland/ordered "1.5.7"]
                       [slingshot "0.12.2"]

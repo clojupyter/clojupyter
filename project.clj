@@ -9,7 +9,7 @@
   :dependencies      [;; Core
                       [org.clojure/clojure "1.10.1"]
                       ;; Networking
-                      [nrepl "0.8.1"]
+                      [nrepl "0.8.3"]
                       [org.zeromq/jeromq "0.5.2"]
                       [org.clojure/core.async "1.3.618"]
                       [cider/cider-nrepl "0.26.0"]
@@ -20,7 +20,6 @@
                       [clojure.java-time "0.3.2"]
                       [hiccup "1.0.5"]
                       [io.aviso/pretty "0.1.37"]        ;; Exceptions pretty printing
-                      [org.clojure/data.codec "0.1.1"]  ;; Base64 encoder/decoder
                       [pandect "0.6.1"]                 ;; Message signing
                       ;; Dependencies Management
                       [com.cemerick/pomegranate "1.1.0"]
@@ -42,7 +41,6 @@
                       [io.forward/yaml "1.0.9" :exclusions [org.flatland/ordered]]
                       [me.raynes/fs "1.4.6"]
                       [net.cgrand/regex "1.1.0" :exclusions [org.clojure/clojure net.cgrand.parsley]]
-                      [org.clojure/data.json "2.3.1"]
                       [org.clojure/tools.cli "0.4.2"]
                       [org.flatland/ordered "1.5.7"]
                       [slingshot "0.12.2"]
@@ -51,9 +49,13 @@
   :profiles    {:dev     {:dependencies [[midje "1.9.9" :exclusions [org.clojure/clojure]]
                                          [org.clojure/test.check "1.1.0"]]
                           :plugins      [[lein-midje "3.2.2"]
-                                         [lein-metajar "0.1.1"]]}
+                                         [org.clojars.nighcoder/lein-metajar "0.1.3"]
+                                         [com.roomkey/lein-v "7.2.0"]]}
 
-                :metajar {:jvm-opts ["-Dclojure.compiler.direct-linking=true"]}}
+                :metajar {:jvm-opts ["-Dclojure.compiler.direct-linking=true"]
+                          :aot [clojupyter.kernel.core]}}
 
+  :main        clojupyter.kernel.core
 
-  :main        clojupyter.kernel.core)
+  :aliases      {"clojupyter"            ["run" "-m" "clojupyter.cmdline"]
+                 "update-version-edn"    ["v" "cache" "resources/clojupyter/assets" "edn"]})

@@ -10,7 +10,8 @@
             [io.simplect.compose :refer [C def- p redefn]]
             [pandect.algo.sha256 :refer [sha256-hmac]]
             [zprint.core :as zp]
-            [clojupyter.log :as log]))
+            [clojupyter.log :as log])
+  (:import [java.util Base64]))
 
 (def- CHARSET "UTF8")
 
@@ -45,6 +46,10 @@
     ,, (.getBytes ^String v CHARSET)
     :else
     ,, (.getBytes (json-str* v) CHARSET)))
+
+(defn base64-encode
+  [data]
+  (.encode (Base64/getEncoder) data))
 
 ;;; ----------------------------------------------------------------------------------------------------
 ;;; EXTERNAL

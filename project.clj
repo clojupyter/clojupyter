@@ -9,7 +9,7 @@
   :dependencies      [;; Core
                       [org.clojure/clojure "1.10.1"]
                       ;; Networking
-                      [nrepl "0.8.1"]
+                      [nrepl "0.8.3"]
                       [org.zeromq/jeromq "0.5.2"]
                       [org.clojure/core.async "1.3.618"]
                       [cider/cider-nrepl "0.26.0"]
@@ -49,9 +49,13 @@
   :profiles    {:dev     {:dependencies [[midje "1.9.9" :exclusions [org.clojure/clojure]]
                                          [org.clojure/test.check "1.1.0"]]
                           :plugins      [[lein-midje "3.2.2"]
-                                         [org.clojars.nighcoder/lein-metajar "0.1.3"]]}
+                                         [org.clojars.nighcoder/lein-metajar "0.1.3"]
+                                         [com.roomkey/lein-v "7.2.0"]]}
 
                 :metajar {:jvm-opts ["-Dclojure.compiler.direct-linking=true"]
                           :aot [clojupyter.kernel.core]}}
 
-  :main        clojupyter.kernel.core)
+  :main        clojupyter.kernel.core
+
+  :aliases      {"clojupyter"            ["run" "-m" "clojupyter.cmdline"]
+                 "update-version-edn"    ["v" "cache" "resources/clojupyter/assets" "edn"]})

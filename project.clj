@@ -49,9 +49,9 @@
   :profiles    {:dev     {:dependencies [[midje "1.9.9" :exclusions [org.clojure/clojure]]
                                          [org.clojure/test.check "1.1.0"]]
                           :plugins      [[lein-midje "3.2.2"]
-                                         [lein-metajar "0.1.1"]]}
+                                         [org.clojars.nighcoder/lein-metajar "0.1.3"]]}
 
-                :metajar {:jvm-opts ["-Dclojure.compiler.direct-linking=true"]}}
-
+                :metajar {:jvm-opts ["-Dclojure.compiler.direct-linking=true"]
+                          :aot [clojupyter.kernel.core]}}
 
   :main        clojupyter.kernel.core)

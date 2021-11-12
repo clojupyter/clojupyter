@@ -38,19 +38,22 @@
                       [net.cgrand/parsley "0.9.3" :exclusions [org.clojure/clojure]]
                       [org.clojars.trptcolin/sjacket "0.1.1.1" :exclusions [org.clojure/clojure net.cgrand.parsley]]
                       ;; Dev
-                      [io.forward/yaml "1.0.9" :exclusions [org.flatland/ordered]]
-                      [me.raynes/fs "1.4.6"]
                       [net.cgrand/regex "1.1.0" :exclusions [org.clojure/clojure net.cgrand.parsley]]
-                      [org.clojure/tools.cli "0.4.2"]
-                      [org.flatland/ordered "1.5.7"]
                       [slingshot "0.12.2"]
                       [zprint "0.4.15"]]
 
   :profiles    {:dev     {:dependencies [[midje "1.9.9" :exclusions [org.clojure/clojure]]
-                                         [org.clojure/test.check "1.1.0"]]
+                                         [org.clojure/test.check "1.1.0"]
+                                         [io.forward/yaml "1.0.9" :exclusions [org.flatland/ordered]]
+                                         [me.raynes/fs "1.4.6"]
+                                         [org.clojure/tools.cli "0.4.2"]
+                                         [org.flatland/ordered "1.5.7"]]
+
                           :plugins      [[lein-midje "3.2.2"]
                                          [org.clojars.nighcoder/lein-metajar "0.1.3"]
-                                         [com.roomkey/lein-v "7.2.0"]]}
+                                         [com.roomkey/lein-v "7.2.0"]]
+
+                          :source-paths ["dev"]}
 
                 :metajar {:jvm-opts ["-Dclojure.compiler.direct-linking=true"]
                           :aot [clojupyter.kernel.core]}}

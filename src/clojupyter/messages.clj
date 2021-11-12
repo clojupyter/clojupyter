@@ -2,7 +2,7 @@
   (:require [clojupyter.jupmsg-specs :as jsp]
             [clojupyter.specs :as sp]
             [clojupyter.kernel.stacktrace :as stacktrace]
-            [clojupyter.kernel.version :as ver]
+            [clojupyter]
             [clojupyter.log :as log]
             [clojupyter.messages-specs :as msp]
             [clojupyter.util :as u]
@@ -540,7 +540,7 @@
   (s/cat :opts (s/? map?))
   ([protocol-version] (kernel-info-reply-content protocol-version {}))
   ([protocol-version {:keys [banner clj-ver help-links implementation version-string]}]
-   (let [version-string		(or version-string (ver/version-string) "clojupyter-0.0.0")
+   (let [version-string		(or version-string clojupyter/*version* "clojupyter-0.0.0")
          banner			(or banner (str "Clojupyter (" version-string ")"))
          clj-ver		(or clj-ver (clojure-version))
          help-links		(or help-links [])

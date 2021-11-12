@@ -32,7 +32,7 @@
                       [org.slf4j/jcl-over-slf4j "1.7.30"]
                       ;; History
                       [org.clojure/java.jdbc "0.7.11"]
-                      [org.xerial/sqlite-jdbc "3.32.3.2"]
+                      [org.xerial/sqlite-jdbc "3.36.0.3"]
                       ;; Framework
                       [io.pedestal/pedestal.interceptor "0.5.8"]
                       [io.simplect/compose "0.7.27"]

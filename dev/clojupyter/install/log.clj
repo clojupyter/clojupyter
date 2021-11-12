@@ -1,6 +1,6 @@
 (ns clojupyter.install.log
   (:require [clojupyter.cmdline.api :as cmdline]
-            [clojupyter.util :as u]
+            [clojupyter.tools :as u]
             [io.simplect.compose :refer [C p]]))
 
 (defn s*report-log

@@ -1,5 +1,5 @@
 (ns clojupyter.install.filemap
-  (:require [clojupyter.util-actions :as u!]
+  (:require [clojupyter.tools-actions :as u!]
             [clojure.java.io :as io]
             [clojure.pprint :as pp]
             [io.simplect.compose :refer [p P]]))

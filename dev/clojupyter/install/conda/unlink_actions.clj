@@ -10,7 +10,7 @@
             [clojupyter.install.filemap :as fm]
             [clojupyter.install.conda.conda-specs :as csp]
             [clojupyter.install.local-specs :as lsp]
-            [clojupyter.util-actions :as u!]
+            [clojupyter.tools-actions :as u!]
             [clojure.spec.alpha :as s]))
 
 (def LSP-DEPEND [csp/DEPEND-DUMMY lsp/DEPEND-DUMMY])

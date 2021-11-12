@@ -1,7 +1,7 @@
 (ns clojupyter.install.conda.yaml
   (:require [clojupyter.install.conda.conda-specs :as csp]
             [clojupyter.kernel.version :as ver]
-            [clojupyter.util :as u]
+            [clojupyter.tools :as u]
             [clojure.spec.alpha :as s]
             [clojure.spec.test.alpha :refer [instrument]]
             [clojure.string :as str]

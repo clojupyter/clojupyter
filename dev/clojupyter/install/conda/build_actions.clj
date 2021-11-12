@@ -2,7 +2,7 @@
   (:require [clojupyter.install.conda.conda-specs :as csp]
             [clojupyter.install.filemap :as fm]
             [clojupyter.plan :as pl]
-            [clojupyter.util-actions :as u!]
+            [clojupyter.tools-actions :as u!]
             [clojure.java.io :as io]
             [clojure.java.shell :as sh]
             [clojure.spec.alpha :as s]

@@ -1,5 +1,6 @@
 (ns clojupyter.kernel.handle-event.execute-test
-  (:require [clojupyter.kernel.cljsrv :as srv]
+  (:require [clojupyter.display]
+            [clojupyter.kernel.cljsrv :as srv]
             [clojupyter.kernel.core-test :as core-test]
             [clojupyter.kernel.handle-event.execute :as execute]
             [clojupyter.kernel.handle-event.shared-ops :as sh]

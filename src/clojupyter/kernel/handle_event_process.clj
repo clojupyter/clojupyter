@@ -7,7 +7,7 @@
             [clojupyter.util :as u]
             [clojupyter.util-actions :as u!]
             [clojure.core.async :as async]
-            [io.simplect.compose :refer [c C p P]]))
+            [io.simplect.compose :refer [p]]))
 
 (defn- handle-error
   [msg]

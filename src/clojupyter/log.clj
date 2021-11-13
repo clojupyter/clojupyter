@@ -2,7 +2,7 @@
   (:require [clojupyter.kernel.config :as cfg]
             [clojure.pprint :as pp]
             [clojure.string :as str]
-            [io.simplect.compose :refer [def- c C p P]]
+            [io.simplect.compose :refer [def- C]]
             [taoensso.timbre :as timbre]))
 
 (defmacro debug

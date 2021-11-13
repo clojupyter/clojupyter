@@ -11,7 +11,7 @@
             [clojure.spec.test.alpha :refer [instrument]]
             [clojure.string :as str]
             [clojure.walk :as walk]
-            [io.simplect.compose :refer [C def- fmap p P sdefn >->> >>->]]))
+            [io.simplect.compose :refer [C def- fmap p sdefn]]))
 
 (def PROTOCOL-VERSION "5.2")
 

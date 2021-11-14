@@ -160,9 +160,7 @@
              (s*a-l (send-step :iopub_port msgs/EXECUTE-RESULT
                                (msgs/execute-result-content (u/parse-json-str (:result result) true) exe-count))))))
        (s*when final-segment?
-         (if ename
-           (s*a-l (send-step req-port msgs/ERROR reply))
-           (s*a-l (send-step req-port msgs/EXECUTE-REPLY reply))))
+         (s*a-l (send-step req-port msgs/EXECUTE-REPLY reply)))
        (s*when (and store-history? final-segment?)
          (s*a-l (step [`hist/add-history! code]
                       {:op :add-history, :data code})))

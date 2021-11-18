@@ -25,8 +25,6 @@
     :else
     ,, (.getBytes (json-str v) CHARSET)))
 
-(redefn get-bytes string->bytes)
-
 (defn base64-encode
   [data]
   (.encode (Base64/getEncoder) data))

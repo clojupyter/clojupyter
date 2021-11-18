@@ -3,7 +3,10 @@
             [clojure.pprint :as pp]
             [clojure.string :as str]
             [io.simplect.compose :refer [def- C]]
-            [taoensso.timbre :as timbre]))
+            [taoensso.timbre :as timbre])
+  (:import [java.util TimeZone]))
+
+(def ^:dynamic *verbose* false)
 
 (defmacro debug
   [& args]
@@ -12,6 +15,10 @@
 (defmacro info
   [& args]
   `(timbre/info ~@args))
+
+(defmacro warn
+  [& args]
+  `(timbre/warn ~@args))
 
 (defmacro error
   [& args]
@@ -55,7 +62,7 @@
           (when-let [err ?err]
             (str "\n" (timbre/stacktrace err opts))))))))
 
-(def CONFIG {:timestamp-opts {:pattern "HH:mm:ss.SSS", :locale :jvm-default, :timezone :utc}
+(def CONFIG {:timestamp-opts {:pattern "HH:mm:ss.SSS", :locale :jvm-default, :timezone (TimeZone/getDefault)}
              :ns-blacklist ["io.pedestal.*"]
              :output-fn output-fn})
 

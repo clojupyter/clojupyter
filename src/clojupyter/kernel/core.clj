@@ -146,6 +146,7 @@
           (let [[jup term] (start-zmq-socket-forwarding ztx config)
                 wait-ch	(shutdown/notify-on-shutdown term (chan 1))]
             (with-open [cljsrv (cljsrv/make-cljsrv)]
+              (swap! state/STATE assoc :jup jup :term term :cljsrv cljsrv)
               (run-kernel jup term cljsrv)
               (<!! wait-ch)
               (log/debug "start-clojupyter: wait-signal received"))))

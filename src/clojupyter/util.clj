@@ -5,7 +5,8 @@
             [io.simplect.compose :refer [def- redefn]]
             [pandect.algo.sha256 :refer [sha256-hmac]]
             [clojupyter.log :as log])
-  (:import [java.util Base64]))
+  (:import [java.util Base64])
+  (:refer-clojure :exclude [uuid?]))
 
 (def- CHARSET "UTF8")
 
@@ -28,6 +29,10 @@
 (defn base64-encode
   [data]
   (.encode (Base64/getEncoder) data))
+
+(defn uuid?
+  [x]
+  (boolean (re-find #"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$" x)))
 
 ;;; ----------------------------------------------------------------------------------------------------
 ;;; EXTERNAL

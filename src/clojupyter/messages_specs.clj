@@ -83,7 +83,7 @@
 (s/def ::comm-info-request-content	::target_map)
 
 ;;; COMM-MSG
-(s/def ::comm-message-method		#{"update" "request_state"})
+(s/def ::comm-message-method		#{"update" "request_state" "custom"})
 (s/def ::comm-message-content		(s/keys :req-un [::comm_id, ::data]))
 
 ;;; COMM-OPEN

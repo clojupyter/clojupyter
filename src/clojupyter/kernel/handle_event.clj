@@ -17,7 +17,7 @@
   [ctx]
   (let [S (state/comm-state-get)
         [A S'] (comm-msg/handle-message S ctx)]
-    {:leave-action (action A (step [`state/comm-state-swap! (constantly S')]
+    {:leave-action (action A (step [`state/comm-state-swap! (if S' (constantly S') (fn [& args] (:comms @state/STATE)))]
                                    {:op :comm-state-swap :old-state S :new-state S'}))}))
 
 (defn- handle-execute-request

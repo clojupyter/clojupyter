@@ -41,7 +41,7 @@
   (close! [comm-atom]
     (let [content (msgs/comm-close-content comm-id {})
           jup (:jup @state/STATE)
-          {origin-message :req-message} (first (:cur-ctx @state/STATE))]
+          {origin-message :req-message :or {origin-message {:header {}}}} (first (:cur-ctx @state/STATE))]
       (jup/send!! jup :iopub_port origin-message msgs/COMM-CLOSE MESSAGE-METADATA content)
       (swap! state/STATE update :comms dissoc comm-id)
       nil))
@@ -118,7 +118,7 @@
   (log/debug "Sending comm-state for widget with comm_id " (.-comm-id comm-atom))
   (let [content (msgs/comm-msg-content (.-comm-id comm-atom) {:method "update" :state comm-state})
         jup (:jup @state/STATE)
-        {origin-message :req-message} (first (:cur-ctx @state/STATE))]
+        {origin-message :req-message :or {origin-message {:header {}}}} (first (:cur-ctx @state/STATE))]
     (jup/send!! jup :iopub_port origin-message msgs/COMM-MSG MESSAGE-METADATA content)))
 
 (defn- send-comm-open! [^CommAtom comm-atom, comm-state]
@@ -127,7 +127,7 @@
                                         {:state comm-state}
                                         {:target_name (.-target comm-atom)})
         jup (:jup @state/STATE)
-        {origin-message :req-message} (first (:cur-ctx @state/STATE))]
+        {origin-message :req-message :or {origin-message {:header {}}}} (first (:cur-ctx @state/STATE))]
     (log/debug "Sending comm-open for widget with comm-id " (.-comm-id comm-atom))
     (jup/send!! jup :iopub_port origin-message msgs/COMM-OPEN MESSAGE-METADATA content)))
 
@@ -210,7 +210,6 @@
       (and (map? v)
            (every? #(or (string? %) (keyword? %) (symbol? %)) (keys v))
            (every? jsonable? (vals v)))))
-
 
 (defn base-widget
   ([state] (base-widget state (u!/uuid)))

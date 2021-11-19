@@ -20,7 +20,7 @@
 (fact
  "execute-request fails without a running execute process"
  (log/with-level :error
-   (do (init/ensure-init-global-state!)
+   (do (init/init!)
        (with-open [srv (srv/make-cljsrv)]
          (let [code "(list 1 2 3)"
                jup (apply jup/make-jup (repeatedly 8 #(async/chan 25)))
@@ -87,7 +87,7 @@
           jup (jup/make-jup ctrl-in ctrl-out shell-in shell-out io-in io-out stdin-in stdin-out)]
       (async/>!! stdin-in {:req-message ((ts/s*message-header msgs/INPUT-REPLY) (msgs/input-reply-content "input-1"))})
       (async/>!! stdin-in {:req-message ((ts/s*message-header msgs/INPUT-REPLY) (msgs/input-reply-content "input-2"))})
-      (init/ensure-init-global-state!)
+      (init/init!)
       (with-open [srv (srv/make-cljsrv)]
         (let [code (code (println (list 1 2 3))
                          (println (read-line))
@@ -115,7 +115,7 @@
    (let [[ctrl-in ctrl-out shell-in shell-out io-in io-out stdin-in stdin-out]
          ,, (repeatedly 8 #(async/chan 25))
          jup (jup/make-jup ctrl-in ctrl-out shell-in shell-out io-in io-out stdin-in stdin-out)]
-     (init/ensure-init-global-state!)
+     (init/init!)
      (with-open [srv (srv/make-cljsrv)]
        (let [code (code (clojupyter.display/display 123))
              msg ((ts/s*message-header msgs/EXECUTE-REQUEST)

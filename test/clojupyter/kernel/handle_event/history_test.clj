@@ -12,7 +12,7 @@
 (fact
  "history-request yields a history-reply"
  (log/with-level :error
-   (do (init/ensure-init-global-state!)
+   (do (init/init!)
        (let [msg ((ts/s*message-header msgs/HISTORY-REQUEST) (msgs/history-request-content))
              port :shell_port
              req {:req-message msg, :req-port port}

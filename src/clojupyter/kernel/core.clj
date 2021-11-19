@@ -4,6 +4,7 @@
             [clojupyter.kernel.comm-atom :as ca]
             [clojupyter.kernel.config :as config]
             [clojupyter.kernel.handle-event-process :as hep :refer [start-handle-event-process]]
+            [clojupyter.kernel.history :as his]
             [clojupyter.kernel.init :as init]
             [clojupyter.kernel.jup-channels :refer [jup? make-jup]]
             [clojupyter.jupmsg-specs :as jsp]
@@ -31,7 +32,6 @@
 
 (defn run-kernel
   [jup term cljsrv]
-  (state/ensure-initial-state!)
   (u!/with-exception-logging
       (let [proto-ctx {:cljsrv cljsrv, :jup jup, :term term}]
         (start-handle-event-process proto-ctx))))
@@ -143,7 +143,6 @@
       (do (log/info "Clojupyter config" (log/ppstr config))
           (when-not (s/valid? ::msp/jupyter-config config)
             (log/error "Command-line arguments do not conform to specification."))
-          (init/ensure-init-global-state!)
           (let [[jup term] (start-zmq-socket-forwarding ztx config)
                 wait-ch	(shutdown/notify-on-shutdown term (chan 1))]
             (with-open [cljsrv (cljsrv/make-cljsrv)]
@@ -154,7 +153,7 @@
 
 (defn- finish-up
   []
-  (state/end-history-session))
+  (his/end-history-session!))
 
 (defn- parse-jupyter-arglist
   [arglist]
@@ -167,7 +166,7 @@
   ;; key distinction between `-main` and `start-clojupyter` which assumes that the ZMQ context has
   ;; already been created.
   [& arglist]
-  (init/ensure-init-global-state!)
+  (init/init!)
   (log/debug "-main starting" (log/ppstr {:arglist arglist}))
   (try (let [ztx (state/zmq-context)
              config (parse-jupyter-arglist arglist)]

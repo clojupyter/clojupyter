@@ -2,6 +2,7 @@
   (:require [clojupyter.kernel.cljsrv :as cljsrv]
             [clojupyter.kernel.handle-event.ops :as ops
              :refer [definterceptor s*append-enter-action s*append-leave-action]]
+            [clojupyter.kernel.history :as hist]
             [clojupyter.kernel.jup-channels :refer [receive!! send!!]]
             [clojupyter.log :as log]
             [clojupyter.messages :as msgs]
@@ -163,7 +164,7 @@
            (s*a-l (send-step req-port msgs/ERROR reply))
            (s*a-l (send-step req-port msgs/EXECUTE-REPLY reply))))
        (s*when (and store-history? final-segment?)
-         (s*a-l (step [`state/add-history! code]
+         (s*a-l (step [`hist/add-history! code]
                       {:op :add-history, :data code})))
        (s*when (and (not silent?) final-segment?)
          (s*a-l (step [`state/inc-execute-count!]
@@ -222,4 +223,3 @@
                                    (ops/set-leave-action (action nil)))
                                [ic*provide-input ops/enter-action-interceptor])))
          ctx')))))
-

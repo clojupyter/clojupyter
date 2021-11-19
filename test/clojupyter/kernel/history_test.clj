@@ -32,19 +32,19 @@
           (fact "session should record command history"
                   (let [session (sut/start-history-session db)]
                     (-> session
-                        (sut/add-history 1 "t1")
-                        (sut/add-history 2 "t2"))
+                        (sut/add-history! 1 "t1")
+                        (sut/add-history! 2 "t2"))
                     (sut/get-history session)
                     ) => [{:session 1 :line 1 :source "t1"}
                     {:session 1 :line 2 :source "t2"}])
           (fact "end ession should truncate history to max size"
                   (let [session (sut/start-history-session db)]
                     (-> session
-                        (sut/add-history 1 "t1")
-                        (sut/add-history 2 "t2")
-                        (sut/add-history 3 "t3")
-                        (sut/add-history 4 "t4")
-                        (sut/end-history-session 2)
+                        (sut/add-history! 1 "t1")
+                        (sut/add-history! 2 "t2")
+                        (sut/add-history! 3 "t3")
+                        (sut/add-history! 4 "t4")
+                        (sut/end-history-session! 2)
                         )
                     (sut/get-history session)
                     ) => [{:session 1 :line 3 :source "t3"}

@@ -78,5 +78,3 @@
   []
   (set-clojupyter-config!)
   (timbre/set-level! (cfg/log-level)))
-
-(init!) ;; avoid spurious debug messages from io.pedestal when loading with midje testing turned on

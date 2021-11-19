@@ -1,5 +1,6 @@
 (ns clojupyter.kernel.history
   (:require [clojupyter.kernel.config :as cfg]
+            [clojupyter.state :as state]
             [clojupyter.util-actions :as u!]
             [clojure.java.io :as io]
             [clojure.java.jdbc :as sql]))
@@ -44,9 +45,9 @@
    :session-id ((keyword "max(session)")
                 (first (sql/query db
                                   "select max(session) from sessions")))})
-
-(defn end-history-session
-  ([session] (end-history-session session 5000))
+(defn end-history-session!
+  ([] (end-history-session! (:history-session @state/STATE)))
+  ([session] (end-history-session! session 5000))
   ([session max-history]
    (let [db (:db session)]
      (sql/execute! db ["delete from history
@@ -55,18 +56,20 @@
                           limit ?)", max-history])
      (sql/update! db :sessions {:end (u!/java-util-data-now)}  ["session = ?" (:session-id session)]))))
 
-(defn add-history
-  [session line source]
-  (sql/execute! (:db session)
-                ["update sessions set num_cmds = num_cmds + 1
+(defn add-history!
+  ([source] (add-history! (:history-session @state/STATE) (:execute-count @state/STATE) source))
+  ([session line source]
+   (sql/execute! (:db session)
+                 ["update sessions set num_cmds = num_cmds + 1
                    where session = ?", (:session-id session)])
-  (sql/insert! (:db session) :history
-               {:session (:session-id session)
-                :line line
-                :source source})
-  session)
+   (sql/insert! (:db session) :history
+                {:session (:session-id session)
+                 :line line
+                 :source source})
+   session))
 
 (defn get-history
-  [session]
-  (sql/query (:db session)
-             ["select * from history"]))
+  ([] (get-history (:history-session @state/STATE)))
+  ([session]
+   (sql/query (:db session)
+              ["select * from history"])))

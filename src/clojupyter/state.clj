@@ -1,41 +1,13 @@
 (ns clojupyter.state
-  (:require [clojupyter.kernel.comm-global-state :as comm-global-state]
-            [clojupyter.kernel.history :as his]
-            [clojupyter.protocol.mime-convertible :as mc]
-            [clojupyter.util-actions :as u!]
-            [clojupyter.zmq-util :as zutil]
-            [io.simplect.compose :refer [c C p P >->> >>->]]))
+  (:require [io.simplect.compose :refer [p P]]))
 
-(def ^:private EMPTY-QUEUE [])
+(def STATE (atom {:execute-count 1N
+                  :history-session nil
+                  :zmq-context nil
+                  :comms {}
+                  :cur-ctx ()
+                  :cljsrv nil}))
 
-(def STATE (atom nil))
-
-(defrecord State [execute-count display-queue history-session zmq-context halt?
-                  comms cur-ctx])
-
-(u!/set-var-private! #'->State)
-
-(defn- make-state
-  ([] (make-state nil))
-  ([{:keys [:zmq-context]}]
-   ;; 2019-11-15 Klaus Harbo:
-   ;; If state is reinitialized, we keep zmq-context because JeroMQ expects
-   ;; a single context for the entire lifetime of the (OS) process
-   (let [execute-count	1N
-         display-queue	EMPTY-QUEUE
-         sess		(-> (his/init-history) his/start-history-session)
-         zmq-context	(or zmq-context (zutil/zcontext))
-         halt?		false
-         comms		(comm-global-state/initial-state)
-         cur-ctx	()]
-     (->State execute-count display-queue sess zmq-context halt? comms cur-ctx))))
-
-(defn ensure-initial-state!
-  ([]
-   (ensure-initial-state! false))
-  ([force?]
-   (when (or force? (not @STATE))
-     (reset! STATE (make-state @STATE)))))
 
 ;;; ------------------------------------------------------------------------------------------------------------------------
 ;;; EXECUTE-COUNT
@@ -132,26 +104,3 @@
   `(try (push-context! ~ctx)
         ~@body
         (finally (pop-context!))))
-
-;;; ------------------------------------------------------------------------------------------------------------------------
-;;; HISTORY
-;;; ------------------------------------------------------------------------------------------------------------------------
-
-(defn add-history!
-  [code]
-  (let [sess (:history-session @STATE)
-        exe-count (:execute-count @STATE)]
-    (assert sess "Clojupyter internal error: History session not found.")
-    (assert exe-count "Clojupyter internal error: Execute count not found.")
-    (his/add-history sess exe-count code)))
-
-(defn get-history
-  []
-  (let [sess (:history-session @STATE)]
-    (assert sess "Clojupyter internal error: History session not found.")
-    (his/get-history sess)))
-
-(defn end-history-session
-  "Returns the history session."
-  []
-  (his/end-history-session (:history-session @STATE)))

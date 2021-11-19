@@ -17,7 +17,7 @@
             [io.simplect.compose :refer [c C p P]]
             [midje.sweet :refer [=> fact]]))
 
-(state/ensure-initial-state!)
+
 
 (let [ITERS 50]
   (fact
@@ -25,7 +25,7 @@
    (log/with-level :error
      (let [term (shutdown/make-terminator 1)
            addr (str "inproc://chan-sock-test-" (gensym))]
-       (zutil/with-shadow-context [ztx (state/zmq-context)]
+       (zutil/with-shadow-context [ztx (zutil/zcontext)]
          (shutdown/initiating-shutdown-on-exit [:test term]
            (let [[inbound-1 outbound-1] (cjpzmq/start ztx :one addr term
                                                       {:zmq-socket-type :pair})
@@ -41,4 +41,3 @@
                         (assert (= (map (p into []) v2)
                                    (map (p into [])  (<!! inbound-1))))))))))))
    => ITERS))
-

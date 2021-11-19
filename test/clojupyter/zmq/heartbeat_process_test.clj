@@ -15,7 +15,6 @@
    )
   (:import [org.zeromq ZMQException]))
 
-(state/ensure-initial-state!)
 
 (defn- ^{:style/indent :defn} retry-on-ZMQException
   [max-tries f]
@@ -33,7 +32,7 @@
  (log/with-level :error
    (retry-on-ZMQException 5
      #(let [addr (str "tcp://localhost:" (+ 50000 (rand-int 15000)))
-            ztx (state/zmq-context)
+            ztx (zutil/zcontext)
             term (shutdown/make-terminator 1)
             term-sig-ch (async/chan 1)
             timeout (async/timeout 500)]
@@ -48,7 +47,7 @@
  (log/with-level :error
    (retry-on-ZMQException 5
      #(let [addr (str "tcp://localhost:" (+ 50000 (rand-int 15000)))
-            ztx (state/zmq-context)
+            ztx (zutil/zcontext)
             term (shutdown/make-terminator 1)
             term-sig-ch (async/chan 1)
             sock (doto (zutil/zsocket ztx :req) (.connect addr))]

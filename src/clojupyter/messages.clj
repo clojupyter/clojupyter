@@ -1,6 +1,7 @@
 (ns clojupyter.messages
   (:require [clojupyter.jupmsg-specs :as jsp]
             [clojupyter.specs :as sp]
+            [clojupyter.state :as state]
             [clojupyter.kernel.stacktrace :as stacktrace]
             [clojupyter]
             [clojupyter.log :as log]
@@ -13,7 +14,7 @@
             [clojure.walk :as walk]
             [io.simplect.compose :refer [C def- fmap p sdefn]]))
 
-(def PROTOCOL-VERSION "5.2")
+(def PROTOCOL-VERSION "5.3")
 
 
 ;;; ------------------------------------------------------------------------------------------------------------------------
@@ -54,7 +55,7 @@
 ,,
 (def COMM-MSG-UPDATE		"update")
 (def COMM-MSG-REQUEST-STATE	"request_state")
-
+(def COMM-MSG-CUSTOM "custom")
 
 ;;; ----------------------------------------------------------------------------------------------------
 ;;; MESSAGE ACCESSORS
@@ -341,8 +342,8 @@
     {:keys [messageid now] :as opts}]
    (let [messageid	(str (or messageid (u!/uuid)))
          now		(or now (u!/now))
-         session-id	(message-session req-message)
-         username	(message-username req-message)
+         session-id	(:kernel-id @state/STATE)
+         username	""
          header		(make-jupmsg-header messageid rsp-msgtype username session-id now PROTOCOL-VERSION)
          parent-header	(message-header req-message)
          metadata	(or rsp-metadata {})
@@ -380,23 +381,20 @@
   {:target_name target-name})
 
 (sdefn comm-msg-content
-  (s/cat :comm-id ::comm-id, :data ::data, :opts (s/? (s/keys :opt-un [::target_module ::target_name])))
-  ([comm-id data]
-   (comm-msg-content comm-id data {}))
-  ([comm-id data {:keys [target_name target_module]}]
-   (merge {:comm_id comm-id, :data data}
-          (when target_name
-            {:target_name target_name})
-          (when target_module
-            {:target_module target_module}))))
+  (s/cat :comm-id ::comm-id, :data ::data)
+  [comm-id data]
+  {:comm_id comm-id :data data})
 
 (sdefn comm-open-content
   (s/cat :comm-id ::comm-id, :data ::data, :opts (s/? (s/keys :opt-un [::target_module ::target_name])))
   ([comm-id data]
    (comm-open-content comm-id data {}))
   ([comm-id data opts]
-   ;; `comm-open` and `comm` have identical content structure:
-   (comm-msg-content comm-id data opts)))
+   (merge (comm-msg-content comm-id data)
+     (when-let [target_name (:target_name opts)]
+       {:target_name target_name})
+     (when-let [target_module (:target_module opts)]
+       {:target_module target_module}))))
 
 (sdefn complete-reply-content
   (s/cat :matches ::matches, :start ::cursor-start, :end ::cursor-end)

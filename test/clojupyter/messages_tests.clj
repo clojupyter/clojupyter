@@ -5,6 +5,7 @@
             [clojupyter.test-shared-generators :as shg]
             [clojupyter.messages-specs :as msp]
             [clojupyter.jupmsg-specs :as jsp]
+            [clojupyter.state :as state]
             [clojupyter.test-shared :as sh]
             [clojupyter.util :as u]
             [clojure.spec.alpha :as s]
@@ -101,6 +102,7 @@
                        metadata (gen/return {:val (gensym)})
                        content (gen/return {:content (gensym)})]
                (let [jupmsg (msgs/make-jupmsg envelope sig hdr phdr metadata content buffers)]
+                 (swap! state/STATE assoc :kernel-id (:session hdr))
                  (gen/return
                   (and (= (msgs/message-msg-type jupmsg) mt)
                        (= (msgs/message-session jupmsg) (:session hdr))

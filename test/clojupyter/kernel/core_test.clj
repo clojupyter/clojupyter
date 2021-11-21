@@ -7,6 +7,7 @@
             [clojupyter.messages :as msgs]
             [clojupyter.messages-specs :as msp]
             [clojupyter.messages-generators-test :as mg]
+            [clojupyter.state :as state]
             [clojupyter.test-shared :as ts]
             [clojupyter.test-shared-generators :as shg]
             [clojupyter.util :as u]
@@ -43,6 +44,7 @@
      (let [term (shutdown/make-terminator 1)
            [ctrlin ctrlout shin shout ioin ioout stdin stdout] (repeatedly 6 #(chan 1))
            jup (make-jup ctrlin ctrlout shin shout ioin ioout stdin stdout)]
+       (swap! state/STATE assoc :jup jup :term term)
        (shutdown/initiating-shutdown-on-exit [:test term]
          (with-open [cljsrv (cljsrv/make-cljsrv)]
            (core/run-kernel jup term cljsrv)

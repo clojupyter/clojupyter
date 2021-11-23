@@ -5,6 +5,7 @@
   (:require
     [nrepl.core :as nrepl]
     [nrepl.server]
+    [cider.nrepl :as cmw]
     [clojupyter.kernel.nrepl-middleware :as mw]
     [clojupyter.log :as log]
     [clojupyter.util-actions :as u!]
@@ -39,14 +40,7 @@
 
 (defn- clojupyter-nrepl-handler
   []
-  ;; dynamically load to allow cider-jack-in to work
-  ;; see https://github.com/clojure-emacs/cider-nrepl/issues/447
-  (require 'cider.nrepl)
-  (apply nrepl.server/default-handler
-         (map resolve
-              (concat (var-get (ns-resolve 'cider.nrepl 'cider-middleware))
-                      `[mw/mime-values]))))
-
+  (apply nrepl.server/default-handler (map resolve `[cmw/wrap-complete cmw/wrap-stacktrace mw/mime-values])))
 ;;; ------------------------------------------------------------------------------------------------------------------------
 ;;; MESSAGE PREDICATES
 ;;; ------------------------------------------------------------------------------------------------------------------------

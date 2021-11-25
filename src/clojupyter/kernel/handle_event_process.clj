@@ -11,7 +11,7 @@
 
 (defn- handle-error
   [msg]
-  (log/error "handle-event-process: error on input" (log/ppstr {:msg msg})))
+  (log/error "handle-event-process: error on input" (log/error {:msg msg})))
 
 (defn- handle-event-or-channel-error
   "Handles request, returns `false` iff event-handling should terminate."
@@ -28,8 +28,8 @@
              ;; continue after error:
              true)
       (not valid?)
-      ,, (throw (ex-info (str "Invalid msgtype for port " channel-port ": " msgtype)
-                  {:req-message req-message, :msgtype msgtype, :channel-port channel-port}))
+      ,, (do (log/error "Invalid msgtype for port " channel-port ": " msgtype)
+             true)     
       :else
       ,, (do (update-status! "busy")
              (he/handle-event! (assoc ctx :req-message req-message :req-port req-port))

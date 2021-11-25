@@ -8,6 +8,7 @@
             [clojupyter.kernel.handle-event.kernel-info :as kernel-info]
             [clojupyter.kernel.handle-event.ops :refer [call-interceptor]]
             [clojupyter.kernel.handle-event.shutdown :as shutdown]
+            [clojupyter.log :as log]
             [clojupyter.messages :as msgs]
             [clojupyter.state :as state]
             [clojupyter.util-actions :as u!]
@@ -17,7 +18,7 @@
   [ctx]
   (let [S (state/comm-state-get)
         [A S'] (comm-msg/handle-message S ctx)]
-    {:leave-action (action A (step [`state/comm-state-swap! (if S' (constantly S') (fn [& args] (:comms @state/STATE)))]
+    {:leave-action (action A (step [`state/comm-state-swap! (if S' (constantly S') identity)]
                                    {:op :comm-state-swap :old-state S :new-state S'}))}))
 
 (defn- handle-execute-request
@@ -28,20 +29,13 @@
 (defn- impossible
   [{:keys [req-message] :as ctx}]
   (assert req-message)
-  (throw (ex-info (str "handle-event - internal error: " (msgs/message-msg-type req-message))
-           {:ctx ctx})))
-
-(defn- unsupported
-  [{:keys [req-message] :as ctx}]
-  (assert req-message)
-  (throw (ex-info (str "handle-event - unhandled-event: " (msgs/message-msg-type req-message))
-           {:ctx ctx})))
+  (log/error "handle-event error - impossible message received: " (msgs/message-msg-type req-message)))
 
 (defmulti calc
   (fn [msgtype _] msgtype))
+
 (defmethod calc :default [msgtype ctx]
-  (throw (ex-info (str "Unhandled message type: " msgtype)
-           {:msgtype msgtype, :ctx ctx})))
+  (log/warn "Unhandled message type: " msgtype))
 
 (defmethod calc msgs/CLEAR-OUTPUT		[_ ctx]	(impossible ctx))
 (defmethod calc msgs/COMM-CLOSE			[_ ctx]	(handle-comm ctx))
@@ -67,7 +61,6 @@
 (defmethod calc msgs/IS-COMPLETE-REQUEST 	[_ ctx]	(call-interceptor ctx [complete/ic*is-complete]))
 (defmethod calc msgs/KERNEL-INFO-REPLY		[_ ctx]	(impossible ctx))
 (defmethod calc msgs/KERNEL-INFO-REQUEST 	[_ ctx]	(call-interceptor ctx [kernel-info/ic*kernel-info]))
-(defmethod calc msgs/PROTOCOL-VERSION		[_ ctx]	(unsupported ctx))
 (defmethod calc msgs/SHUTDOWN-REPLY		[_ ctx]	(impossible ctx))
 (defmethod calc msgs/SHUTDOWN-REQUEST		[_ ctx]	(call-interceptor ctx [shutdown/ic*shutdown]))
 (defmethod calc msgs/STATUS			[_ ctx]	(impossible ctx))

@@ -68,9 +68,8 @@
         (let [fl (failure evaluated-action)
               trace (when fl (binding [aviso-ex/*fonts* nil] (aviso-ex/format-exception fl)))
               logdata {:evaluated-action evaluated-action}] 
-          (log/error "Action failed:" (log/ppstr logdata)
-                     \newline "  Stacktrace:" \newline trace)
-          (throw (ex-info (str "Action failed: " evaluated-action) logdata)))))))
+          (log/error "Action failed at step " (a/failure-step evaluated-action) ": " (a/failure-string evaluated-action)
+                     \newline "  Stacktrace:" \newline trace))))))
 
 (def enter-action-interceptor
   (ic/interceptor

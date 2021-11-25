@@ -53,8 +53,8 @@
 
 (defmethod calc* :default
   [msgtype state ctx]
-  (throw (ex-info (str "Unhandled message type: " msgtype)
-           {:msgtype msgtype, :state state, :ctx ctx})))
+  (log/error "Unhandled message type: " msgtype)
+  [NO-OP-ACTION state])
 
 ;;; ------------------------------------------------------------------------------------------------------------------------
 ;;; COMM MESSAGES - HANDLED PER `:method` field
@@ -69,7 +69,7 @@
   (let [msgstr (str "HANDLE-COMM-MSG - bad method: '" method "'.")
         data {:S S, :ctx ctx}]
     (log/error msgstr data)
-    (throw (ex-info msgstr data))))
+    [NO-OP-ACTION S]))
 
 (defn handle-comm-msg-unknown
   [ctx S comm_id]
@@ -141,7 +141,8 @@
   (assert req-message)
   (let [method (msgs/message-comm-method req-message)]
     (assert method)
-    (handle-comm-msg method S ctx)))
+    (try (handle-comm-msg method S ctx)
+      (catch Exception ex (log/error "Error while handling comm-msg: " (.getMessage ex))))))
 
 ;;; ------------------------------------------------------------------------------------------------------------------------
 ;;; COMM-OPEN, COMM-CLOSE

@@ -31,8 +31,7 @@
     (let [action-result (leave-action {})]
       (if (a/success? action-result)
         (assoc result :leave-action action-result)
-        (throw (ex-info (str "Action failed: " action-result)
-                 {:action leave-action, :action-result action-result}))))
+        (log/error "Action failed at step " (a/failure-step action-result) ": " (a/failure-string action-result))))
     result))
 
 (defmacro  exiting-on-completion

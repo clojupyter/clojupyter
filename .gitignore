@@ -11,3 +11,4 @@
 pom.xml
 pom.xml.asc
 /docker.new/*/
+/.vscode

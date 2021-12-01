@@ -154,7 +154,7 @@
                       {:op :get-input})))
        (s*when (and final-segment? (not silent?))
          (if ename
-           (s*a-l (send-step :iopub_port msgs/ERROR reply))
+           (s*a-l (send-step :iopub_port msgs/ERROR (dissoc reply :status :execution_count)))
            (s*when-not hushed?
              (s*a-l (send-step :iopub_port msgs/EXECUTE-RESULT
                                (msgs/execute-result-content (u/parse-json-str (:result result) true) exe-count))))))

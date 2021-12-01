@@ -52,7 +52,7 @@
                           :source-paths ["dev"]}
 
                 :metajar {:jvm-opts ["-Dclojure.compiler.direct-linking=true"]
-                          :aot [clojupyter.kernel.core]}}
+                          :aot :all}}
 
   :main        clojupyter.kernel.core
 

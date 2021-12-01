@@ -182,12 +182,12 @@
   (insert (create comm-id target sync-keys comm-state)))
 
 (def comm-atom?
-  (p instance? CommAtom))
+  (partial instance? CommAtom))
 
 (defn open?
   [comm-atom]
   (let [id (.-comm-id comm-atom)]
-    (contains? (:comms @state/STATE)) id))
+    (contains? (:comms @state/STATE) id)))
 
 (def closed? (complement open?))
 

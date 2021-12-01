@@ -3,7 +3,7 @@
             [clojupyter.shutdown :as shutdown]
             [clojupyter.util-actions :as u!]
             [clojupyter.zmq-util :as zutil]
-            [clojure.core.async :as async :refer [>!! chan]]
+            [clojure.core.async :as async]
             [io.simplect.compose :refer [C]]))
 
 (defn start-hb

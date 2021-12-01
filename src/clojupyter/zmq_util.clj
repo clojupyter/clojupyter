@@ -1,7 +1,7 @@
 (ns clojupyter.zmq-util
   (:require [clojure.core.async :as async]
             [io.simplect.compose :refer [C]])
-  (:import [org.zeromq SocketType ZContext ZFrame ZMQ ZMQ$Error ZMQ$Poller ZMQ$Socket ZMQException]))
+  (:import [org.zeromq SocketType ZContext ZFrame ZMQ$Error ZMQ$Poller ZMQ$Socket ZMQException]))
 
 (defmacro with-new-context [[binding] & body]
   `(let [ztx# (zcontext), ~binding ztx#]

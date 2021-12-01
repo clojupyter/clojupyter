@@ -8,8 +8,6 @@
             [io.simplect.compose :refer [p P]]
             [io.simplect.compose.action :as a :refer [action failure step]]))
 
-(use 'clojure.pprint)
-
 (defn- append-action		[ctx k a]	(update-in ctx [k] (P action a)))
 (defn- get-action		[ctx k]		(get ctx k (action nil)))
 (defn- set-action		[ctx k a]	(assoc ctx k a))

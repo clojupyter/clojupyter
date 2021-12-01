@@ -8,7 +8,7 @@
             [clojure.spec.alpha :as s]
             [clojure.spec.test.alpha :refer [instrument]]
             [clojure.string :as str]
-            [io.simplect.compose :refer [C c]]))
+            [io.simplect.compose :refer [C]]))
 
 ;;; ------------------------------------------------------------------------------------------------------------------------
 ;;; INTERNAL

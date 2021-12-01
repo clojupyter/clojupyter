@@ -36,11 +36,7 @@
                       [io.pedestal/pedestal.interceptor "0.5.9"]
                       [io.simplect/compose "0.7.27"]
                       [net.cgrand/parsley "0.9.3" :exclusions [org.clojure/clojure]]
-                      [org.clojars.trptcolin/sjacket "0.1.1.1" :exclusions [org.clojure/clojure net.cgrand.parsley]]
-                      ;; Dev
-                      [net.cgrand/regex "1.1.0" :exclusions [org.clojure/clojure net.cgrand.parsley]]
-                      [slingshot "0.12.2"]
-                      [zprint "1.1.2"]]
+                      [org.clojars.trptcolin/sjacket "0.1.1.1" :exclusions [org.clojure/clojure net.cgrand.parsley]]]
 
   :profiles    {:dev     {:dependencies [[midje "1.9.9" :exclusions [org.clojure/clojure]]
                                          [org.clojure/test.check "1.1.0"]

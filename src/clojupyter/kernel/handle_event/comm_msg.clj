@@ -7,8 +7,6 @@
    [clojupyter.messages-specs :as msp]
    [clojupyter.state :as state]
    [clojupyter.util :as u]
-   [clojupyter.util-actions :as u!]
-   [clojure.pprint :as pp]
    [clojure.spec.alpha :as s]
    [clojure.spec.test.alpha :refer [instrument]]
    [clojure.string :as str]
@@ -99,7 +97,7 @@
   [_ S {:keys [req-message] :as ctx}]
   (assert req-message)
   (log/debug "Received COMM:UPDATE")
-  (let [{{:keys [comm_id] {:keys [method state buffer_paths] :as data} :data} :content buffers :buffers} req-message]
+  (let [{{:keys [comm_id] {:keys [state] :as data} :data} :content buffers :buffers} req-message]
     (assert comm_id)
     (assert state)
     (if-let [comm-atom (get S comm_id)]

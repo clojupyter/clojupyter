@@ -7,7 +7,6 @@
             [clojupyter.kernel.history :as his]
             [clojupyter.kernel.init :as init]
             [clojupyter.kernel.jup-channels :refer [jup? make-jup]]
-            [clojupyter.jupmsg-specs :as jsp]
             [clojupyter.log :as log]
             [clojupyter.messages :as msgs]
             [clojupyter.messages-specs :as msp]
@@ -21,7 +20,7 @@
             [clojure.spec.alpha :as s]
             [clojure.spec.test.alpha :refer [instrument]]
             [clojure.walk :as walk]
-            [io.simplect.compose :refer [def- curry c C p P >->> >>->]]
+            [io.simplect.compose :refer [def- curry C p]]
             ))
 
 (def- address

@@ -9,7 +9,6 @@
             [clojupyter.plan :as pl :refer [s*bind-state s*when s*when-not]]
             [clojupyter.state :as state]
             [clojupyter.util :as u]
-            [clojure.spec.alpha :as s]
             [clojure.set :as set]
             [io.pedestal.interceptor.chain :as ich]
             [io.simplect.compose :refer [C def- p P]]

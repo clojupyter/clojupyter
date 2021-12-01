@@ -11,8 +11,7 @@
    [clojure.pprint :as pp]
    [clojupyter.kernel.jup-channels :as jup]
    [clojupyter.messages :as msgs]
-   [io.simplect.compose :refer [def- c C p P >->> >>->]])
-  (:import [clojure.lang Atom]))
+   [io.simplect.compose :refer [def-]]))
 
 (def- WIDGET-VERSION-MAJOR		2)
 (def- WIDGET-VERSION-MINOR		0)

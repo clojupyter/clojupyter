@@ -5,7 +5,7 @@
   (:require
     [nrepl.core :as nrepl]
     [nrepl.server]
-    [cider.nrepl :as cmw]
+    [cider.nrepl :refer [wrap-complete wrap-stacktrace]]
     [clojupyter.kernel.nrepl-middleware :as mw]
     [clojupyter.log :as log]
     [clojupyter.util-actions :as u!]
@@ -38,10 +38,11 @@
 ;;; COLJUPYTER NREPL HANDLER
 ;;; ------------------------------------------------------------------------------------------------------------------------
 
-(defn- clojupyter-nrepl-handler
-  []
-  (apply nrepl.server/default-handler (map resolve `[cmw/wrap-complete cmw/wrap-stacktrace mw/mime-values])))
-;;; ------------------------------------------------------------------------------------------------------------------------
+(def ^:private clojupyter-nrepl-handler
+  (do (require 'cider.nrepl.middleware.complete
+               'cider.nrepl.middleware.stacktrace)
+      (apply nrepl.server/default-handler (map resolve `[wrap-complete wrap-stacktrace mw/mime-values]))))
+;;; -----------------------------------------------------------------------------------------------------------------------
 ;;; MESSAGE PREDICATES
 ;;; ------------------------------------------------------------------------------------------------------------------------
 
@@ -138,7 +139,7 @@
     nrepl-sockaddr_)
 
   (nrepl-trace
-    [{:keys [nrepl-client_]}]
+    [_]
     (-> nrepl-client_
         (nrepl/message {:op :stacktrace})
         nrepl/combine-responses
@@ -164,7 +165,7 @@
 
 (defn make-cljsrv ^CljSrv
   []
-  (let [nrepl-server		(nrepl.server/start-server :handler (clojupyter-nrepl-handler))
+  (let [nrepl-server		(nrepl.server/start-server :handler clojupyter-nrepl-handler)
         nrepl-transport		(nrepl/connect :port (:port nrepl-server))
         nrepl-base-client	(nrepl/client nrepl-transport Integer/MAX_VALUE)
         nrepl-client		(nrepl/client-session nrepl-base-client)

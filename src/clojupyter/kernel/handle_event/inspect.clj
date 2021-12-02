@@ -35,7 +35,7 @@
   [req-message]
   (let [code		(msgs/message-code req-message)
         cursor-pos	(msgs/message-cursor-pos req-message)
-        inspect-string	(token-at code cursor-pos)]
+        inspect-string	(when (seq code) (token-at code cursor-pos))]
     {:code code, :cursor-pos cursor-pos, :inspect-string inspect-string}))
 
 (definterceptor ic*inspect msgs/INSPECT-REQUEST

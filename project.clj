@@ -14,7 +14,6 @@
                       [org.clojure/core.async "1.4.627"]
                       [cider/cider-nrepl "0.27.2"]
                       ;; Extra
-                      [camel-snake-kebab "0.4.2"]
                       [cheshire "5.10.1"]
                       [com.grammarly/omniconf "0.4.3"]
                       [clojure.java-time "0.3.3"]

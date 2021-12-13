@@ -71,29 +71,26 @@
       false))
   (reset [comm-atom v]
     (assert (jsonable? (select-keys v sync-keys)))
-    (send-comm-state! comm-atom (select-keys v sync-keys))
     (reset! comm-state_ v)
+    (send-comm-state! comm-atom (select-keys v sync-keys))
     v)
+
   (swap [comm-atom f]
-    (let [state @comm-atom
-          n-state (f state)]
-      (when (compare-and-set! comm-atom state n-state)
-        n-state)))
+    (let [state (.swap comm-state_ f)]
+      (send-comm-state! comm-atom (select-keys state sync-keys))
+      state))
   (swap [comm-atom f arg]
-    (let [state @comm-atom
-          n-state (f state arg)]
-      (when (compare-and-set! comm-atom state n-state)
-        n-state)))
+    (let [state (.swap comm-state_ f arg)]
+      (send-comm-state! comm-atom (select-keys state sync-keys))
+      state))
   (swap [comm-atom f arg1 arg2]
-    (let [state @comm-atom
-          n-state (f state arg1 arg2)]
-      (when (compare-and-set! comm-atom state n-state)
-          n-state)))
+    (let [state (.swap comm-state_ f arg1 arg2)]
+      (send-comm-state! comm-atom (select-keys state sync-keys))
+      state))
   (swap [comm-atom f arg1 arg2 args]
-    (let [state @comm-atom
-          n-state (apply f (cons state (cons arg1 (cons arg2 args))))]
-      (when (compare-and-set! comm-atom state n-state)
-        n-state)))
+    (let [state (.swap comm-state_ f arg1 arg2 args)]
+      (send-comm-state! comm-atom (select-keys state sync-keys))
+      state))
 
   clojure.lang.IDeref
   (deref [_]

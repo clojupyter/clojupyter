@@ -1,0 +1,37 @@
+name: Build with tools.deps https://github.com/clojure/tools.deps.alpha
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+
+  build:
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Prepare java
+        uses: actions/setup-java@v2
+        with:
+          distribution: 'adopt'
+          java-version: '16'
+
+      - name: Install clojure tools
+        uses: DeLaGuardo/setup-clojure@3.6
+        with:
+          # Install just one or all simultaneously
+          cli: 1.10.3.1040 # Clojure CLI based on tools.deps
+          lein: 2.9.1     # or use 'latest' to always provision latest version of leiningen
+
+      - name: Execute clojure code on Linux and MacOS
+        run: clojure -e "(+ 1 1)"
+        shell: bash

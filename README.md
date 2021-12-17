@@ -130,8 +130,10 @@ wish list for clojupyter development looks something like this:
 * [ ] Clarify/simplify external access to rendering - eliminate dependency from Oz to clojupyter
 * [ ] Support interactive Jupyter Widgets
 
-Feed-back on development priorities is welcome, use the [issue
-list](https://github.com/clojupyter/clojupyter/issues) for input and suggestions.
+Feed-back is welcomed, use the [discussions
+page](https://github.com/clojupyter/clojupyter/discussions) to ask questions, give suggestions or just to say hi 👋.
+If you have issues with Clojupyter, check the [issues
+page](https://github.com/clojupyter/clojupyter/issues) to see if your problem is already reported and open a new issue if needed. 
 
 
 ## Collaboration

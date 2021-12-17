@@ -132,6 +132,7 @@ wish list for clojupyter development looks something like this:
 
 Feed-back is welcomed, use the [discussions
 page](https://github.com/clojupyter/clojupyter/discussions) to ask questions, give suggestions or just to say hi 👋.
+
 If you have issues with Clojupyter, check the [issues
 page](https://github.com/clojupyter/clojupyter/issues) to see if your problem is already reported and open a new issue if needed. 
 

@@ -48,7 +48,7 @@
           ,, (log/debug (str "handle-event-process received nil - terminating: " sock-kw))
           (shutdown/is-token? inmsg-or-token)
           ,, (log/debug (str "handle-event-process received shutdown - terminating: " sock-kw))
-          :else 
+          :else
           ,, (when (handle-event-or-channel-error ctx sock-kw port-msgtype-pred inmsg-or-token)
                (recur)))))))
 
@@ -61,10 +61,16 @@
               (run-dispatch-loop sock-kw valid-msgtype-pred ctx))
         (log/debug (str "handle-event-process terminating: "  sock-kw))))))
 
-(def valid-control-port-msgtype? (p contains? #{msgs/SHUTDOWN-REQUEST msgs/INTERRUPT-REQUEST}))
+(def valid-control-port-msgtype? (p contains? #{msgs/SHUTDOWN-REQUEST msgs/INTERRUPT-REQUEST msgs/KERNEL-INFO-REQUEST}))
+
+(defn valid-shell-port-msgtype?
+  [msg]
+  (or
+   (not (valid-control-port-msgtype? msg))
+   (contains? #{msgs/KERNEL-INFO-REQUEST} msg)))
 
 (defn start-handle-event-process
   [ctx]
   (doseq [[sock-kw pred] [[:control_port 	valid-control-port-msgtype?]
-                          [:shell_port		(complement valid-control-port-msgtype?)]]]
+                          [:shell_port		valid-shell-port-msgtype?]]]
     (start-channel-thread sock-kw pred ctx)))

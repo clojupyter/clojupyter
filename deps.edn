@@ -1,11 +1,13 @@
 {:paths ["src" "resources"]
  :deps {
 	cheshire			{:mvn/version "5.11.0"}
+	cider/cider-nrepl  {:mvn/version "0.26.0"}
 	clojure.java-time		{:mvn/version "1.1.0"}
 	com.cemerick/pomegranate	{:mvn/version "1.1.0"}
 	com.grammarly/omniconf	{:mvn/version "0.4.3"}
 	com.taoensso/timbre		{:mvn/version "5.1.2"}
 	hiccup				{:mvn/version "2.0.0-alpha2"}
+        io.forward/yaml                 {:mvn/version "1.0.11" :exclusions [org.flatland/ordered]}
 	io.pedestal/pedestal.interceptor {:mvn/version "0.5.10"}
 	io.simplect/compose		{:mvn/version "0.7.27"}
 	me.raynes/fs			{:mvn/version "1.4.6"}
@@ -28,5 +30,5 @@
         com.fzakaria/slf4j-timbre	{:mvn/version "0.3.21"}
         org.slf4j/log4j-over-slf4j	{:mvn/version "2.0.3"}
         org.slf4j/jul-to-slf4j		{:mvn/version "2.0.3"}
-        org.slf4j/jcl-over-slf4j	{:mvn/version "2.0.3"}
-	}}
+        org.slf4j/jcl-over-slf4j	{:mvn/version "2.0.3"}}
+ }

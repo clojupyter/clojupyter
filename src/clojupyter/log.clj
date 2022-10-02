@@ -57,6 +57,7 @@
 
 (def CONFIG {:timestamp-opts {:pattern "HH:mm:ss.SSS", :locale :jvm-default, :timezone :utc}
              :ns-blacklist ["io.pedestal.*"]
+
              :output-fn output-fn})
 
 (defn- set-clojupyter-config!

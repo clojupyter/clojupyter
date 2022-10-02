@@ -13,7 +13,7 @@
             [clojure.walk :as walk]
             [io.simplect.compose :refer [C def- fmap p P sdefn >->> >>->]]))
 
-(def PROTOCOL-VERSION "5.2")
+(def PROTOCOL-VERSION "5.3")
 
 
 ;;; ------------------------------------------------------------------------------------------------------------------------

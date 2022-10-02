@@ -120,9 +120,20 @@
 (defmethod calc* msgs/COMM-MSG
   [_ S {:keys [req-message] :as ctx}]
   (assert req-message)
-  (let [method (msgs/message-comm-method req-message)]
+  (log/debug "received COMM:MSG")
+  (let [{{:keys [comm_id] {:keys [method]} :data} :content} req-message]
+    (assert comm_id)
     (assert method)
-    (handle-comm-msg method S ctx)))
+    (log/debug "received COMM:MSG: " comm_id ":" method)
+    (try
+      (handle-comm-msg method S ctx)
+      (catch RuntimeException e
+        (log/debug "default handler failed" comm_id ":" method (class e))
+        (if-let [comm-atom (comm-global-state/comm-atom-get S comm_id)]
+          (do
+            (log/debug @comm-atom)
+            (log/debug "Comm method: " method)
+            (handle-comm-msg-unknown ctx S comm_id)))))))
 
 ;;; ------------------------------------------------------------------------------------------------------------------------
 ;;; COMM-OPEN, COMM-CLOSE
@@ -131,16 +142,17 @@
 (defmethod calc* msgs/COMM-OPEN
   [_ S {:keys [req-message jup] :as ctx}]
   (assert (and req-message jup ctx))
+  (log/debug "received COMM:OPEN")
   (let [{{:keys [comm_id target_module target_name]
           {:keys [state buffer_paths] :as data} :data :as content} :content}
         ,, req-message]
     (assert S)
     (assert (s/valid? ::msp/target_name target_name))
     (assert (s/valid? ::msp/target_module target_module))
-    (assert (map? state))
     (assert (string? comm_id))
-    (assert (vector? buffer_paths))
-    (let [present? (comm-global-state/known-comm-id? S comm_id)]
+    (let [present? (comm-global-state/known-comm-id? S comm_id)
+          state (or state {})
+          buffer_paths (or buffer_paths [])]
     (if present?
         (do (log/debug "COMM-OPEN - already present")
             (return ctx S))
@@ -214,4 +226,5 @@
   State)."
   [state {:keys [req-message] :as ctx}]
   (let [msgtype (msgs/message-msg-type req-message)]
+    (log/debug "handling message: " msgtype "with req-message:" req-message)
     (calc msgtype state ctx )))

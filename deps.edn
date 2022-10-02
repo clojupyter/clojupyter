@@ -5,9 +5,11 @@
 	clojure.java-time/clojure.java-time		{:mvn/version "1.1.0"}
 	com.cemerick/pomegranate	{:mvn/version "1.1.0"}
 	com.grammarly/omniconf	{:mvn/version "0.4.3"}
-	com.taoensso/timbre		{:mvn/version "5.1.2"}
+	com.taoensso/timbre		{:mvn/version "5.2.1"}
+	io.aviso/pretty 		{:mvn/version "1.1.1"}
 	hiccup/hiccup				{:mvn/version "2.0.0-alpha2"}
         io.forward/yaml                 {:mvn/version "1.0.11" :exclusions [org.flatland/ordered]}
+	org.flatland/ordered {:mvn/version "1.15.10"}
 	io.pedestal/pedestal.interceptor {:mvn/version "0.5.10"}
 	io.simplect/compose		{:mvn/version "0.7.27"}
 	me.raynes/fs			{:mvn/version "1.4.6"}

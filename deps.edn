@@ -1,37 +1,35 @@
 {:paths ["src" "resources"]
- :deps {
-	cheshire/cheshire			{:mvn/version "5.11.0"}
-	cider/cider-nrepl  {:mvn/version "0.26.0"}
-	clojure.java-time/clojure.java-time		{:mvn/version "1.1.0"}
-	com.cemerick/pomegranate	{:mvn/version "1.1.0"}
-	com.grammarly/omniconf	{:mvn/version "0.4.3"}
-	com.taoensso/timbre		{:mvn/version "5.2.1"}
-	io.aviso/pretty 		{:mvn/version "1.1.1"}
-	hiccup/hiccup				{:mvn/version "2.0.0-alpha2"}
+ :deps {cheshire/cheshire			{:mvn/version "5.11.0"}
+        cider/cider-nrepl  {:mvn/version "0.26.0"}
+        clojure.java-time/clojure.java-time		{:mvn/version "1.1.0"}
+        com.cemerick/pomegranate	{:mvn/version "1.1.0"}
+        com.grammarly/omniconf	{:mvn/version "0.4.3"}
+        com.taoensso/timbre		{:mvn/version "5.2.1"}
+        io.aviso/pretty 		{:mvn/version "1.1.1"}
+        hiccup/hiccup				{:mvn/version "2.0.0-alpha2"}
         io.forward/yaml                 {:mvn/version "1.0.11" :exclusions [org.flatland/ordered]}
-	org.flatland/ordered {:mvn/version "1.15.10"}
-	io.pedestal/pedestal.interceptor {:mvn/version "0.5.10"}
-	io.simplect/compose		{:mvn/version "0.7.27"}
-	me.raynes/fs			{:mvn/version "1.4.6"}
-	net.cgrand/parsley		{:mvn/version "0.9.3" :exclusions [org.clojure/clojure]}
-	net.cgrand/regex		{:mvn/version "1.1.0" :exclusions [org.clojure/clojure]}
-	net.cgrand/sjacket		{:mvn/version "0.1.1" :exclusions [org.clojure/clojure net.cgrand/parsley]}
-	nrepl/nrepl				{:mvn/version "1.0.0"}
-	org.clojure/clojure		{:mvn/version "1.11.1"}
-	org.clojure/data.codec		{:mvn/version "0.1.1"}
-	org.clojure/data.json		{:mvn/version "2.4.0"}
-	org.clojure/java.jdbc		{:mvn/version "0.7.12"}
-	org.clojure/test.check		{:mvn/version "1.1.1"}
-	org.clojure/tools.cli		{:mvn/version "1.0.206"}
-	org.xerial/sqlite-jdbc		{:mvn/version "3.39.3.0"}
-	org.zeromq/jeromq		{:mvn/version "0.5.2"}
-	pandect/pandect				{:mvn/version "1.0.2"}
+        org.flatland/ordered {:mvn/version "1.15.10"}
+        io.pedestal/pedestal.interceptor {:mvn/version "0.5.10"}
+        io.simplect/compose		{:mvn/version "0.7.27"}
+        me.raynes/fs			{:mvn/version "1.4.6"}
+        net.cgrand/parsley		{:mvn/version "0.9.3" :exclusions [org.clojure/clojure]}
+        net.cgrand/regex		{:mvn/version "1.1.0" :exclusions [org.clojure/clojure]}
+        net.cgrand/sjacket		{:mvn/version "0.1.1" :exclusions [org.clojure/clojure net.cgrand/parsley]}
+        nrepl/nrepl				{:mvn/version "1.0.0"}
+        org.clojure/clojure		{:mvn/version "1.11.1"}
+        org.clojure/data.codec		{:mvn/version "0.1.1"}
+        org.clojure/data.json		{:mvn/version "2.4.0"}
+        org.clojure/java.jdbc		{:mvn/version "0.7.12"}
+        org.clojure/test.check		{:mvn/version "1.1.1"}
+        org.clojure/tools.cli		{:mvn/version "1.0.214"}
+        org.xerial/sqlite-jdbc		{:mvn/version "3.39.3.0"}
+        org.zeromq/jeromq		{:mvn/version "0.5.2"}
+        pandect/pandect				{:mvn/version "1.0.2"}
         org.clojure/tools.analyzer      {:mvn/version "1.1.0"}
-	slingshot/slingshot			{:mvn/version "0.12.2"}
-	zprint/zprint				{:mvn/version "1.2.4"}
+        slingshot/slingshot			{:mvn/version "0.12.2"}
+        zprint/zprint				{:mvn/version "1.2.4"}
         org.clojure/core.async		{:mvn/version "1.5.648"}
         com.fzakaria/slf4j-timbre	{:mvn/version "0.3.21"}
         org.slf4j/log4j-over-slf4j	{:mvn/version "2.0.3"}
         org.slf4j/jul-to-slf4j		{:mvn/version "2.0.3"}
-        org.slf4j/jcl-over-slf4j	{:mvn/version "2.0.3"}}
- }
+        org.slf4j/jcl-over-slf4j	{:mvn/version "2.0.3"}}}

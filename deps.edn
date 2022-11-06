@@ -33,4 +33,9 @@
         com.fzakaria/slf4j-timbre	{:mvn/version "0.3.21"}
         org.slf4j/log4j-over-slf4j	{:mvn/version "2.0.3"}
         org.slf4j/jul-to-slf4j		{:mvn/version "2.0.3"}
-        org.slf4j/jcl-over-slf4j	{:mvn/version "2.0.3"}}}
+        org.slf4j/jcl-over-slf4j	{:mvn/version "2.0.3"}}
+ :aliases
+ {:build
+  {:deps
+   {io.github.clojure/tools.build {:git/tag "v0.8.4" :git/sha "8c3cd69"}}
+   :ns-default build}}}

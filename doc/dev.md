@@ -34,3 +34,20 @@ Run everything (all Midje tests)
 ```
 clj -X:test
 ```
+
+
+## Build
+
+
+Building a jar:
+
+```
+clj -T:build jar
+```
+
+
+Building an uberjar:
+
+```
+clj -T:build uber
+```

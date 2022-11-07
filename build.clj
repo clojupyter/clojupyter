@@ -1,7 +1,6 @@
 (ns build
   (:require [clojure.tools.build.api :as b]
-            [clojure.java.io :as io]
-            [cheshire.core :as json]))
+            [clojure.java.io :as io]))
 
 (def lib 'clojupyter/clojupyter)
 (def version (format "0.4.%s" (b/git-count-revs nil)))
@@ -19,6 +18,26 @@
     (binding [*print-length* false
               *out* w]
       (pr {:version version, :raw-version (b/git-count-revs nil)}))))
+
+(defn jar [_]
+  (clean nil)
+  (update-version nil)
+  (b/copy-dir {:src-dirs ["resources"]
+               :target-dir class-dir})
+
+  (b/write-pom {:class-dir class-dir
+                :lib lib
+                :version version
+                :basis basis
+                :src-dirs ["src"]})
+
+  (b/compile-clj {:basis basis
+                  :src-dirs ["src"]
+                  :class-dir class-dir})
+  (b/jar {:class-dir class-dir
+          :jar-file jar-file
+          :basis basis})
+  (println jar-file))
 
 (defn uber [_]
   (clean nil)

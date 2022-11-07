@@ -38,4 +38,8 @@
  {:build
   {:deps
    {io.github.clojure/tools.build {:git/tag "v0.8.4" :git/sha "8c3cd69"}}
-   :ns-default build}}}
+   :ns-default build}
+
+  :test {:extra-paths ["test"]
+         :extra-deps {midje/midje {:mvn/version "1.10.6"}}
+         :exec-fn clojupyter.run-tests/run-tests}}}

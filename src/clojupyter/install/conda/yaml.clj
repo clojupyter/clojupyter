@@ -12,8 +12,8 @@
 (def DEPEND [csp/DEPEND-DUMMY])
 
 (def- JUP-DEPS ["ipywidgets" "jupyterlab" "notebook" "qtconsole" "widgetsnbextension"])
-(def- BUILD-DEPS ["openjdk=8" "maven"])
-(def- RUN-DEPS	(vec (concat BUILD-DEPS JUP-DEPS)))
+(def- BUILD-DEPS ["openjdk"])
+(def- RUN-DEPS (vec (concat BUILD-DEPS JUP-DEPS)))
 
 (def unqualify-kws (p walk/postwalk (u/call-if keyword? (C name keyword))))
 

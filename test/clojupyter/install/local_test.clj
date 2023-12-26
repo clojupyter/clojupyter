@@ -248,7 +248,7 @@
                   (local/s*generate-install-effects spec)) {})
           aspec (pl/get-action-spec res)
           aspec-ops (->> aspec (map first) (into #{}))
-          ok!	(pl/executing? res)
+          ok!   (pl/executing? res)
           stop! (not ok!)]
       (and (s/valid? :local/user-opts opts)
            (s/valid? :local/install-env env)

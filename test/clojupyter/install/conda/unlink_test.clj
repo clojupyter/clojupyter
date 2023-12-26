@@ -31,9 +31,9 @@
         :conda-unlink/kernel-dir kdir
         :local/filemap filemap})))
 
-(s/def ::unlink-op		#{`fs/delete-dir})
-(s/def ::unlink-step		(s/tuple ::unlink-op :local/file))
-(s/def ::unlink-spec		(s/coll-of ::unlink-step :kind vector? :min-count 0 :max-count 1))
+(s/def ::unlink-op      #{`fs/delete-dir})
+(s/def ::unlink-step        (s/tuple ::unlink-op :local/file))
+(s/def ::unlink-spec        (s/coll-of ::unlink-step :kind vector? :min-count 0 :max-count 1))
 
 (def prop--unlink-only-kerneldir
   (prop/for-all [env g-unlink-env]

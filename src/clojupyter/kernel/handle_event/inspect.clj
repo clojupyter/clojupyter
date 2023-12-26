@@ -1,12 +1,12 @@
 (ns clojupyter.kernel.handle-event.inspect
   (:require
-   [clojure.string			:as str]
-   [io.simplect.compose.action				:refer [step]]
+   [clojure.string          :as str]
+   [io.simplect.compose.action              :refer [step]]
    ,,
-   [clojupyter.kernel.cljsrv				:refer [nrepl-doc]]
-   [clojupyter.kernel.handle-event.ops			:refer [definterceptor s*append-enter-action s*set-response]]
-   [clojupyter.messages		:as msgs]
-   [clojupyter.plan					:refer [s*bind-state]]
+   [clojupyter.kernel.cljsrv                :refer [nrepl-doc]]
+   [clojupyter.kernel.handle-event.ops          :refer [definterceptor s*append-enter-action s*set-response]]
+   [clojupyter.messages     :as msgs]
+   [clojupyter.plan                 :refer [s*bind-state]]
    ))
 
 (defn- re-index
@@ -33,9 +33,9 @@
 
 (defn inspect-info
   [req-message]
-  (let [code		(msgs/message-code req-message)
-        cursor-pos	(msgs/message-cursor-pos req-message)
-        inspect-string	(token-at code cursor-pos)]
+  (let [code        (msgs/message-code req-message)
+        cursor-pos  (msgs/message-cursor-pos req-message)
+        inspect-string  (token-at code cursor-pos)]
     {:code code, :cursor-pos cursor-pos, :inspect-string inspect-string}))
 
 (definterceptor ic*inspect msgs/INSPECT-REQUEST
@@ -45,8 +45,8 @@
                                                (assoc ::inspect-result (nrepl-doc cljsrv inspect-string))))
                                    {:nrepl :inspect :data inspect-info}))))
   (s*bind-state {:keys [::inspect-result] {:keys [code]} ::inspect-info}
-    (let [doc		inspect-result
-          result-str	(when (string? doc)
+    (let [doc       inspect-result
+          result-str    (when (string? doc)
                           (if-let [i (str/index-of doc \newline)]
                             (subs doc (inc i) (count doc))
                             doc))]

@@ -1,19 +1,19 @@
 (ns clojupyter.misc.mime-convertible-test
   (:require
    [clojupyter.misc.mime-convertible]
-   [clojupyter.protocol.mime-convertible			:refer [to-mime]]
-   [clojupyter.test-shared			:as ts]
-   [midje.sweet							:refer [fact]]
-   [clojure.java.io				:as io])
+   [clojupyter.protocol.mime-convertible            :refer [to-mime]]
+   [clojupyter.test-shared          :as ts]
+   [midje.sweet                         :refer [fact]]
+   [clojure.java.io             :as io])
   (:import [javax.imageio ImageIO]
            [java.awt.image BufferedImage]))
 
 (fact "Should render strings, keywords, and numbers"
-  (to-mime 1)	=> "{\"text/plain\":\"1\"}"
-  (to-mime "2")	=> "{\"text/plain\":\"\\\"2\\\"\"}"
-  (to-mime :1)	=> "{\"text/plain\":\":1\"}"
-  (to-mime ::1)	=> "{\"text/plain\":\":clojupyter.misc.mime-convertible-test/1\"}"
-  (to-mime nil)	=> "{\"text/plain\":\"nil\"}")
+  (to-mime 1)   => "{\"text/plain\":\"1\"}"
+  (to-mime "2") => "{\"text/plain\":\"\\\"2\\\"\"}"
+  (to-mime :1)  => "{\"text/plain\":\":1\"}"
+  (to-mime ::1) => "{\"text/plain\":\":clojupyter.misc.mime-convertible-test/1\"}"
+  (to-mime nil) => "{\"text/plain\":\"nil\"}")
 
 (fact "Should render lazy sequences"
   (to-mime (map inc [1 2 3])) => "{\"text/plain\":\"(2 3 4)\"}"

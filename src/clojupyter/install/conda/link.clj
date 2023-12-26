@@ -18,7 +18,7 @@
   Clojupyter kernel directory."
   [item-filemap destdir]
   (case (fm/exists item-filemap destdir)
-    :filetype/file	
+    :filetype/file  
     ,, (pl/s*log-error {:message (str "Destination directory is a file: " destdir)
                      :type :destdir-is-a-file})
     :filetype/directory

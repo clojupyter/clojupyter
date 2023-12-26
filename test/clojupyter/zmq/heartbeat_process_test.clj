@@ -1,17 +1,17 @@
 (ns clojupyter.zmq.heartbeat-process-test
   (:require
-   [clojure.core.async			:as async]
-   [midje.sweet				:as midje		:refer [fact =>]]
+   [clojure.core.async          :as async]
+   [midje.sweet             :as midje       :refer [fact =>]]
    ,,
    [clojupyter.log :as log]
-   [clojupyter.test-shared		:as ts]
-   [clojupyter.shutdown			:as shutdown]
-   [clojupyter.state			:as state]
-   [clojupyter.util			:as u]
-   [clojupyter.util-actions		:as u!]
-   [clojupyter.zmq			:as cjpzmq]
-   [clojupyter.zmq-util			:as zutil]
-   [clojupyter.zmq.heartbeat-process	:as hb]
+   [clojupyter.test-shared      :as ts]
+   [clojupyter.shutdown         :as shutdown]
+   [clojupyter.state            :as state]
+   [clojupyter.util         :as u]
+   [clojupyter.util-actions     :as u!]
+   [clojupyter.zmq          :as cjpzmq]
+   [clojupyter.zmq-util         :as zutil]
+   [clojupyter.zmq.heartbeat-process    :as hb]
    )
   (:import [org.zeromq ZMQException]))
 

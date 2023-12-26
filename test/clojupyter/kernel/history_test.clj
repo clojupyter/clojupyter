@@ -1,9 +1,9 @@
 (ns clojupyter.kernel.history-test
-  (:require [clojupyter.kernel.history		:as sut]
-            [clojupyter.test-shared		:as ts]
-            [midje.sweet					:refer [against-background after around before
+  (:require [clojupyter.kernel.history      :as sut]
+            [clojupyter.test-shared     :as ts]
+            [midje.sweet                    :refer [against-background after around before
                                                                         fact facts =>]]
-            [clojure.java.io			:as io])
+            [clojure.java.io            :as io])
   (:import (java.nio.file Files Paths)))
 
 (def test-db (str (Files/createTempDirectory

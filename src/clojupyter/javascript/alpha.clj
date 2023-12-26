@@ -20,11 +20,11 @@
 ;;; REQUIREJS - ASYNCHRONUOUS MODULE DEFINITIONS (AMDs)
 ;;; ----------------------------------------------------------------------------------------------------
 
-(s/def ::ident		keyword?)
-(s/def ::exports	string?)
-(s/def ::url		(s/and string? (partial re-find #"^https?://")))
-(s/def ::jsdef		(s/keys :req-un [::ident ::exports ::url]))
-(s/def ::jsdefs		(s/coll-of ::jsdef :kind vector?))
+(s/def ::ident      keyword?)
+(s/def ::exports    string?)
+(s/def ::url        (s/and string? (partial re-find #"^https?://")))
+(s/def ::jsdef      (s/keys :req-un [::ident ::exports ::url]))
+(s/def ::jsdefs     (s/coll-of ::jsdef :kind vector?))
 
 (defn amd-wrap-config
   "Returns a string represeting the call if `requirejs.config()` with

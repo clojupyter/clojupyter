@@ -205,8 +205,8 @@
         :content (->> (msgs/inspect-request-content code pos)
                       (s/assert ::msp/inspect-request-content))})))
 
-;;(def g-interrupt-reply-content)	;; NOT IMPLEMENTED
-;;(def g-interrupt-request-content)	;; NOT IMPLEMENTED
+;;(def g-interrupt-reply-content)   ;; NOT IMPLEMENTED
+;;(def g-interrupt-request-content) ;; NOT IMPLEMENTED
 
 (def g-is-complete-reply-content
   (gen/let [status g-reply-status]

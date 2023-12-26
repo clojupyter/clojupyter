@@ -44,16 +44,16 @@
   "Returns the EDN equivalent of the `meta.yaml` file needed to Conda-build Clojupyter."
   [version-map buildnum kernel-dir build-reqs run-reqs]
   (let [version-string (ver/version-string version-map)]
-    {:conda-config/about	{:conda-config-about/description "Clojupyter - Run Clojure in Jupyter"
+    {:conda-config/about    {:conda-config-about/description "Clojupyter - Run Clojure in Jupyter"
                                  :conda-config-about/home "https://github.com/clojupyter/clojupyter"
                                  :conda-config-about/license "MIT"}
-     :conda-config/build 	{:conda-config-build/number buildnum
+     :conda-config/build    {:conda-config-build/number buildnum
                                  :conda-config-build/string (str buildnum)}
-     :conda-config/package	{:conda-config-package/name "clojupyter"
+     :conda-config/package  {:conda-config-package/name "clojupyter"
                                  :conda-config-package/version (sanitize-ver version-string)}
-     :conda-config/requirements	{:conda-config-requirements/build build-reqs
+     :conda-config/requirements {:conda-config-requirements/build build-reqs
                                  :conda-config-requirements/run run-reqs}
-     :conda-config/source	{:conda-config-source/folder kernel-dir}}))
+     :conda-config/source   {:conda-config-source/folder kernel-dir}}))
 
 (sdefn yaml-string (s/cat :opts (s/? (s/keys :opt-un [::build-deps ::run-deps]))
                           :ver :version/version-map

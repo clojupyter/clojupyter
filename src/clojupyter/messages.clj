@@ -20,82 +20,82 @@
 ;;; JUPYTER MESSAGE TYPES
 ;;; ------------------------------------------------------------------------------------------------------------------------
 
-(def CLEAR-OUTPUT		"clear_output")
-(def COMM-CLOSE			"comm_close")
-(def COMM-INFO-REPLY		"comm_info_reply")
-(def COMM-INFO-REQUEST		"comm_info_request")
-(def COMM-MSG			"comm_msg")
-(def COMM-OPEN			"comm_open")
-(def COMPLETE-REPLY		"complete_reply")
-(def COMPLETE-REQUEST		"complete_request")
-(def DISPLAY-DATA		"display_data")
-(def ERROR			"error")
-(def EXECUTE-INPUT		"execute_input")
-(def EXECUTE-REPLY		"execute_reply")
-(def EXECUTE-REQUEST		"execute_request")
-(def EXECUTE-RESULT		"execute_result")
-(def HISTORY-REPLY		"history_reply")
-(def HISTORY-REQUEST		"history_request")
-(def INPUT-REQUEST		"input_request")
-(def INPUT-REPLY		"input_reply")
-(def INSPECT-REPLY		"inspect_reply")
-(def INSPECT-REQUEST		"inspect_request")
-(def INTERRUPT-REPLY		"interrupt_reply")
-(def INTERRUPT-REQUEST		"interrupt_request")
-(def IS-COMPLETE-REPLY		"is_complete_reply")
-(def IS-COMPLETE-REQUEST	"is_complete_request")
-(def KERNEL-INFO-REPLY		"kernel_info_reply")
-(def KERNEL-INFO-REQUEST	"kernel_info_request")
-(def SHUTDOWN-REPLY		"shutdown_reply")
-(def SHUTDOWN-REQUEST		"shutdown_request")
-(def STATUS			"status")
-(def STREAM			"stream")
-(def UPDATE-DISPLAY-DATA	"update_display_data")
+(def CLEAR-OUTPUT       "clear_output")
+(def COMM-CLOSE         "comm_close")
+(def COMM-INFO-REPLY        "comm_info_reply")
+(def COMM-INFO-REQUEST      "comm_info_request")
+(def COMM-MSG           "comm_msg")
+(def COMM-OPEN          "comm_open")
+(def COMPLETE-REPLY     "complete_reply")
+(def COMPLETE-REQUEST       "complete_request")
+(def DISPLAY-DATA       "display_data")
+(def ERROR          "error")
+(def EXECUTE-INPUT      "execute_input")
+(def EXECUTE-REPLY      "execute_reply")
+(def EXECUTE-REQUEST        "execute_request")
+(def EXECUTE-RESULT     "execute_result")
+(def HISTORY-REPLY      "history_reply")
+(def HISTORY-REQUEST        "history_request")
+(def INPUT-REQUEST      "input_request")
+(def INPUT-REPLY        "input_reply")
+(def INSPECT-REPLY      "inspect_reply")
+(def INSPECT-REQUEST        "inspect_request")
+(def INTERRUPT-REPLY        "interrupt_reply")
+(def INTERRUPT-REQUEST      "interrupt_request")
+(def IS-COMPLETE-REPLY      "is_complete_reply")
+(def IS-COMPLETE-REQUEST    "is_complete_request")
+(def KERNEL-INFO-REPLY      "kernel_info_reply")
+(def KERNEL-INFO-REQUEST    "kernel_info_request")
+(def SHUTDOWN-REPLY     "shutdown_reply")
+(def SHUTDOWN-REQUEST       "shutdown_request")
+(def STATUS         "status")
+(def STREAM         "stream")
+(def UPDATE-DISPLAY-DATA    "update_display_data")
 ,,
-(def COMM-MSG-UPDATE		"update")
-(def COMM-MSG-REQUEST-STATE	"request_state")
+(def COMM-MSG-UPDATE        "update")
+(def COMM-MSG-REQUEST-STATE "request_state")
 
 
 ;;; ----------------------------------------------------------------------------------------------------
 ;;; MESSAGE ACCESSORS
 ;;; ----------------------------------------------------------------------------------------------------
 
-(defn message-content		[message]	(get-in message [:content]))
-(defn message-allow-stdin	[message]	(get-in message [:content :allow_stdin]))
-(defn message-code		[message]	(get-in message [:content :code] ""))
-(defn message-comm-id		[message]	(get-in message [:content :comm_id]))
-(defn message-comm-data		[message]	(get-in message [:content :data]))
-(defn message-comm-method	[message]	(get-in message [:content :data :method]))
-(defn message-comm-state	[message]	(get-in message [:content :data :state]))
-(defn message-cursor-pos	[message]	(get-in message [:content :cursor_pos] 0))
-(defn message-restart		[message]	(boolean (get-in message [:content :restart])))
-(defn message-silent		[message]	(get-in message [:content :silent]))
-(defn message-stop-on-error?	[message]	(get-in message [:content :stop_on_error]))
-(defn message-store-history?	[message]	(if-let [[_ store?] (find (get message :content) :store_history)] store? true))
-(defn message-user-expressions	[message]	(get-in message [:content :user_expressions]))
-(defn message-value		[message]	(get-in message [:content :value]))
+(defn message-content       [message]   (get-in message [:content]))
+(defn message-allow-stdin   [message]   (get-in message [:content :allow_stdin]))
+(defn message-code      [message]   (get-in message [:content :code] ""))
+(defn message-comm-id       [message]   (get-in message [:content :comm_id]))
+(defn message-comm-data     [message]   (get-in message [:content :data]))
+(defn message-comm-method   [message]   (get-in message [:content :data :method]))
+(defn message-comm-state    [message]   (get-in message [:content :data :state]))
+(defn message-cursor-pos    [message]   (get-in message [:content :cursor_pos] 0))
+(defn message-restart       [message]   (boolean (get-in message [:content :restart])))
+(defn message-silent        [message]   (get-in message [:content :silent]))
+(defn message-stop-on-error?    [message]   (get-in message [:content :stop_on_error]))
+(defn message-store-history?    [message]   (if-let [[_ store?] (find (get message :content) :store_history)] store? true))
+(defn message-user-expressions  [message]   (get-in message [:content :user_expressions]))
+(defn message-value     [message]   (get-in message [:content :value]))
 ,,
-(defn message-header		[message]	(get-in message [:header]))
-(defn message-date		[message]	(get-in message [:header :date]))
-(defn message-msg-id		[message]	(get-in message [:header :msg_id]))
-(defn message-msg-type		[message]	(get-in message [:header :msg_type]))
-(defn message-session		[message]	(get-in message [:header :session]))
-(defn message-username		[message]	(get-in message [:header :username]))
-(defn message-version		[message]	(get-in message [:header :version]))
+(defn message-header        [message]   (get-in message [:header]))
+(defn message-date      [message]   (get-in message [:header :date]))
+(defn message-msg-id        [message]   (get-in message [:header :msg_id]))
+(defn message-msg-type      [message]   (get-in message [:header :msg_type]))
+(defn message-session       [message]   (get-in message [:header :session]))
+(defn message-username      [message]   (get-in message [:header :username]))
+(defn message-version       [message]   (get-in message [:header :version]))
 ,,
-(defn message-buffers		[message]	(.-buffers (get-in message [:buffers])))
-(defn message-delimiter		[message]	(get-in message [:delimiter]))
-(defn message-envelope		[message]	(.-envelope (get message :preframes)))
-(defn message-metadata		[message]	(get-in message [:metadata]))
-(defn message-signature		[message]	(.-signature (get message :preframes)))
+(defn message-buffers       [message]   (.-buffers (get-in message [:buffers])))
+(defn message-delimiter     [message]   (get-in message [:delimiter]))
+(defn message-envelope      [message]   (.-envelope (get message :preframes)))
+(defn message-metadata      [message]   (get-in message [:metadata]))
+(defn message-signature     [message]   (.-signature (get message :preframes)))
 ,,
-(defn message-parent-header	[message]	(get-in message [:parent-header]))
-(defn message-parent-date	[message]	(get-in message [:parent-header :date]))
-(defn message-parent-msg-id	[message]	(get-in message [:parent-header :msg_id]))
-(defn message-parent-msg-type	[message]	(get-in message [:parent-header :msg_type]))
-(defn message-parent-session	[message]	(get-in message [:parent-header :session]))
-(defn message-parent-username	[message]	(get-in message [:parent-header :username]))
-(defn message-parent-version	[message]	(get-in message [:parent-header :version]))
+(defn message-parent-header [message]   (get-in message [:parent-header]))
+(defn message-parent-date   [message]   (get-in message [:parent-header :date]))
+(defn message-parent-msg-id [message]   (get-in message [:parent-header :msg_id]))
+(defn message-parent-msg-type   [message]   (get-in message [:parent-header :msg_type]))
+(defn message-parent-session    [message]   (get-in message [:parent-header :session]))
+(defn message-parent-username   [message]   (get-in message [:parent-header :username]))
+(defn message-parent-version    [message]   (get-in message [:parent-header :version]))
 
 ;;; ------------------------------------------------------------------------------------------------------------------------
 ;;; JupMsgPreframes
@@ -300,13 +300,13 @@
   (defn jupmsg->frames
     [signer {:keys [header parent-header metadata content preframes buffers] :as jupmsg}]
     (assert (every? (complement nil?) (vals (select-keys jupmsg jupmsg-keys))))
-    (let [envelope	(.-envelope preframes)
-      ;;    signature	(.-signature preframes)
-          _		(assert envelope)
-          payload-vec	(mapv u/json-str [header parent-header metadata content])
+    (let [envelope  (.-envelope preframes)
+      ;;    signature   (.-signature preframes)
+          _     (assert envelope)
+          payload-vec   (mapv u/json-str [header parent-header metadata content])
           signature (signer payload-vec)
-          _		(assert signature)
-          byte-buffers	(when buffers
+          _     (assert signature)
+          byte-buffers  (when buffers
                           (.-buffers buffers))]
         (assert (s/valid? ::sp/byte-arrays envelope))
         (->> (concat envelope
@@ -339,18 +339,18 @@
   ([port
     {:keys [rsp-content rsp-msgtype rsp-socket rsp-metadata rsp-buffers req-message]}
     {:keys [messageid now] :as opts}]
-   (let [messageid	(str (or messageid (u!/uuid)))
-         now		(or now (u!/now))
-         session-id	(message-session req-message)
-         username	(message-username req-message)
-         header		(make-jupmsg-header messageid rsp-msgtype username session-id now PROTOCOL-VERSION)
-         parent-header	(message-header req-message)
-         metadata	(or rsp-metadata {})
-         rsp-buffers	(or rsp-buffers [])
-         envelope	(if (= rsp-socket :iopub_port)
+   (let [messageid  (str (or messageid (u!/uuid)))
+         now        (or now (u!/now))
+         session-id (message-session req-message)
+         username   (message-username req-message)
+         header     (make-jupmsg-header messageid rsp-msgtype username session-id now PROTOCOL-VERSION)
+         parent-header  (message-header req-message)
+         metadata   (or rsp-metadata {})
+         rsp-buffers    (or rsp-buffers [])
+         envelope   (if (= rsp-socket :iopub_port)
                           [(u/get-bytes rsp-msgtype)]
                           (message-envelope req-message))
-         signature	(u/get-bytes "")]
+         signature  (u/get-bytes "")]
      (make-jupmsg envelope signature header parent-header metadata rsp-content rsp-buffers))))
 
 ;;; ------------------------------------------------------------------------------------------------------------------------
@@ -436,8 +436,8 @@
          traceback (or traceback ["(no stacktrace)"])]
      (merge {:status status, :execution_count execution-count}
             (case status
-              "ok"	{:user_expressions {}}
-              "error"	(merge {:ename ename, :evalue evalue}
+              "ok"  {:user_expressions {}}
+              "error"   (merge {:ename ename, :evalue evalue}
                                (when (stacktrace/printing-stacktraces?)
                                  {:traceback traceback}))
               (throw (ex-info (str "execute-reply-content - unknown status: " status)
@@ -540,11 +540,11 @@
   (s/cat :opts (s/? map?))
   ([protocol-version] (kernel-info-reply-content protocol-version {}))
   ([protocol-version {:keys [banner clj-ver help-links implementation version-string]}]
-   (let [version-string		(or version-string (ver/version-string) "clojupyter-0.0.0")
-         banner			(or banner (str "Clojupyter (" version-string ")"))
-         clj-ver		(or clj-ver (clojure-version))
-         help-links		(or help-links [])
-         implementation		(or implementation "clojupyter")]
+   (let [version-string     (or version-string (ver/version-string) "clojupyter-0.0.0")
+         banner         (or banner (str "Clojupyter (" version-string ")"))
+         clj-ver        (or clj-ver (clojure-version))
+         help-links     (or help-links [])
+         implementation     (or implementation "clojupyter")]
      {:status "ok"
       :protocol_version (str protocol-version)
       :implementation (str implementation)

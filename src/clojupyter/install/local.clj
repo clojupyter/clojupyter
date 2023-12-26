@@ -80,19 +80,19 @@
           file-copyspec (into {} (map vector src-jars (repeat lsp/DEFAULT-TARGET-JARNAME)))
           resource-copyspec {lsp/LOGO-ASSET (-> lsp/LOGO-ASSET io/file .getName)}
           convert-exe (E :local/convert-exe)
-          res (merge {:local/allow-deletions?		(U :local/allow-deletions?)
-                      :local/allow-destdir?		(U :local/allow-destdir?)
-                      :local/destdir			destdir
-                      :local/filemap			(fm/filemap (E :local/filemap) (U :local/filemap))
-                      :local/file-copyspec		file-copyspec
-                      :local/generate-kernel-json?	(U :local/generate-kernel-json?)
-                      :local/ident			ident
-                      :local/installed-kernels		(E :local/installed-kernels)
-                      :local/logo-resource		(E :local/logo-resource)
-                      :local/resource-copyspec		resource-copyspec
-                      :local/resource-map		(E :local/resource-map)
-                      :local/source-jarfiles		src-jars
-                      :version/version-map		(E :version/version-map)}
+          res (merge {:local/allow-deletions?       (U :local/allow-deletions?)
+                      :local/allow-destdir?     (U :local/allow-destdir?)
+                      :local/destdir            destdir
+                      :local/filemap            (fm/filemap (E :local/filemap) (U :local/filemap))
+                      :local/file-copyspec      file-copyspec
+                      :local/generate-kernel-json?  (U :local/generate-kernel-json?)
+                      :local/ident          ident
+                      :local/installed-kernels      (E :local/installed-kernels)
+                      :local/logo-resource      (E :local/logo-resource)
+                      :local/resource-copyspec      resource-copyspec
+                      :local/resource-map       (E :local/resource-map)
+                      :local/source-jarfiles        src-jars
+                      :version/version-map      (E :version/version-map)}
                      (when convert-exe
                        {:local/convert-exe convert-exe}))]
       (when-not (s/valid? :local/install-spec res)
@@ -194,9 +194,9 @@
          (cmdline/outputs [""
                            (str "Status: "
                             (cond
-                              (pl/halted? S)	"Execution skipped."
-                              success?		"Removals successfully completed."
-                              :else		"Error(s) occurred during removal (log messages above)."))])))))
+                              (pl/halted? S)    "Execution skipped."
+                              success?      "Removals successfully completed."
+                              :else     "Error(s) occurred during removal (log messages above)."))])))))
 
 ;;; ----------------------------------------------------------------------------------------------------
 ;;; USED FROM CLOJUPYTER.CMDLINE

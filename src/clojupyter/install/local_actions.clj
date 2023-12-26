@@ -22,14 +22,14 @@
 (def resources->resourcemap (C (p map (juxt identity io/resource)) (p into {})))
 
 (defmulti  kernels-dir (fn [loc] [loc (os/operating-system)]))
-(defmethod kernels-dir [:user :linux] [_] 	(fs/expand-home "~/.local/share/jupyter/kernels"))
-(defmethod kernels-dir [:host :linux] [_] 	(io/file "/usr/local/share/jupyter/kernels"))
-(defmethod kernels-dir [:user :macos] [_] 	(fs/expand-home "~/Library/Jupyter/kernels"))
-(defmethod kernels-dir [:host :macos] [_]	(io/file "/usr/local/share/jupyter/kernels"))
+(defmethod kernels-dir [:user :linux] [_]   (fs/expand-home "~/.local/share/jupyter/kernels"))
+(defmethod kernels-dir [:host :linux] [_]   (io/file "/usr/local/share/jupyter/kernels"))
+(defmethod kernels-dir [:user :macos] [_]   (fs/expand-home "~/Library/Jupyter/kernels"))
+(defmethod kernels-dir [:host :macos] [_]   (io/file "/usr/local/share/jupyter/kernels"))
 (letfn [(getenv! [nm] (or (System/getenv nm)
                          (throw (Exception. (str "Could not retrieve '" nm "' env variable.")))))]
-  (defmethod kernels-dir [:user :windows] [_] 	(io/file (str (getenv! "APPDATA") "/jupyter")))
-  (defmethod kernels-dir [:host :windows] [_] 	(io/file (str (getenv! "PROGRAMDATA") "/jupyter"))))
+  (defmethod kernels-dir [:user :windows] [_]   (io/file (str (getenv! "APPDATA") "/jupyter")))
+  (defmethod kernels-dir [:host :windows] [_]   (io/file (str (getenv! "PROGRAMDATA") "/jupyter"))))
 (u!/set-var-private! #'kernels-dir)
 
 (def- find-imagemagick-convert #(u!/find-executable "convert"))

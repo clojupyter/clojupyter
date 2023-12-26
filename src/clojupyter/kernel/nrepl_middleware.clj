@@ -1,10 +1,10 @@
 (ns clojupyter.kernel.nrepl-middleware
   (:require
-   [nrepl.middleware.print				:refer [wrap-print]]
-   [nrepl.middleware					:refer [set-descriptor!]]
+   [nrepl.middleware.print              :refer [wrap-print]]
+   [nrepl.middleware                    :refer [set-descriptor!]]
    ,,
    [clojupyter.misc.mime-convertible]
-   [clojupyter.protocol.mime-convertible	:as mc])
+   [clojupyter.protocol.mime-convertible    :as mc])
   (:import [nrepl.transport Transport]))
 
 (defn mime-values

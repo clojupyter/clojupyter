@@ -44,12 +44,12 @@
      (let [{:keys [no-stacktrace?]} opts
            {:keys [level ?err msg_ ?ns-str ?file hostname_
                    timestamp_ ?line]} data]
-       (str					"["
-        (fmt-level level)			" "
-        (force timestamp_)			" "
-        "Clojupyter"				"] "
+       (str                 "["
+        (fmt-level level)           " "
+        (force timestamp_)          " "
+        "Clojupyter"                "] "
         (str (fmt-origin ?ns-str ?file)
-             (when ?line (str ":" ?line)))	" -- "
+             (when ?line (str ":" ?line)))  " -- "
         (force msg_)
         (when-not no-stacktrace?
           (when-let [err ?err]

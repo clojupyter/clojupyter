@@ -18,23 +18,23 @@
 ;;; STATE OPS
 ;;; ------------------------------------------------------------------------------------------------------------------------
 
-(defn- s*append-output		[stream s]	(pl/s*append-value :output {:stream stream :string s}))
+(defn- s*append-output      [stream s]  (pl/s*append-value :output {:stream stream :string s}))
 
-(defn- s*update-interrupted	[f]		(pl/s*update-value :interrupted? f))
-(def-  s*set-interrupted!			(s*update-interrupted (constantly true)))
-(def-  s*clear-interrupted!			(s*update-interrupted (constantly false)))
-(def-  interrupted?				(pl/get-value :interrupted? false))
+(defn- s*update-interrupted [f]     (pl/s*update-value :interrupted? f))
+(def-  s*set-interrupted!           (s*update-interrupted (constantly true)))
+(def-  s*clear-interrupted!         (s*update-interrupted (constantly false)))
+(def-  interrupted?             (pl/get-value :interrupted? false))
 
-(defn- s*update-ns		[f]		(pl/s*update-value :ns f))
-(defn- s*set-ns			[v]		(s*update-ns (constantly v)))
-(def-  get-ns					(pl/get-value :ns))
+(defn- s*update-ns      [f]     (pl/s*update-value :ns f))
+(defn- s*set-ns         [v]     (s*update-ns (constantly v)))
+(def-  get-ns                   (pl/get-value :ns))
 
-(defn- s*set-need-stacktrace	[v]		(pl/s*set-value :need-stacktrace? (boolean v)))
-(def-  need-stacktrace?				(pl/get-value :need-stacktrace?))
+(defn- s*set-need-stacktrace    [v]     (pl/s*set-value :need-stacktrace? (boolean v)))
+(def-  need-stacktrace?             (pl/get-value :need-stacktrace?))
 
-(defn- s*update-result		[f]		(pl/s*update-value :result (fnil f {})))
-(defn- s*set-result		[v]		(s*update-result (constantly v)))
-(def-  get-result				(pl/get-value :result))
+(defn- s*update-result      [f]     (pl/s*update-value :result (fnil f {})))
+(defn- s*set-result     [v]     (s*update-result (constantly v)))
+(def-  get-result               (pl/get-value :result))
 
 ;;; ------------------------------------------------------------------------------------------------------------------------
 ;;; STACKTRACE
@@ -44,14 +44,14 @@
   "Return a nicely formatted string."
   [{:keys [stacktrace]}]
   (when stacktrace
-    (let [skip-tags	#{"dup" "tooling" "repl"}
-          relevant	(filter (C :flags
+    (let [skip-tags #{"dup" "tooling" "repl"}
+          relevant  (filter (C :flags
                                    (p into #{})
                                    (p set/intersection skip-tags)
                                    (p = #{}))
                                 stacktrace)
-          maxlen	(fn [k] (reduce max 1 (map (C k count) relevant)))
-          format-str	(str "%" (maxlen :file) "s: %5d %-" (maxlen :file) "s")]
+          maxlen    (fn [k] (reduce max 1 (map (C k count) relevant)))
+          format-str    (str "%" (maxlen :file) "s: %5d %-" (maxlen :file) "s")]
       (vec (for [{:keys [file line name]} relevant]
              (format format-str file line name))))))
 
@@ -107,29 +107,29 @@
   (let [{:keys [nrepl-messages
                 need-input
                 delayed-msgseq
-                trace-result]}	nrepl-eval-result
-        _			(when need-input
+                trace-result]}  nrepl-eval-result
+        _           (when need-input
                                   (assert delayed-msgseq))
-        code 			(msgs/message-code req-message)
-        exe-count		(state/execute-count)
-        eval-interpretation	((s*interpret-nrepl-eval-results nrepl-messages) {})
+        code            (msgs/message-code req-message)
+        exe-count       (state/execute-count)
+        eval-interpretation ((s*interpret-nrepl-eval-results nrepl-messages) {})
         {:keys [interrupted?
-                result output]}	eval-interpretation
-        {:keys [ename]}		result
-        silent?			(silent-eval? ctx)
-        hushed?			(u/code-hushed? code)
-        store-history?		(if silent? false (msgs/message-store-history? req-message))
-        halting?		(or interrupted? ename)
-        first-segment?		(not continuing?)
-        final-segment?		(or halting? (not need-input))
-        reply			(if ename
+                result output]} eval-interpretation
+        {:keys [ename]}     result
+        silent?         (silent-eval? ctx)
+        hushed?         (u/code-hushed? code)
+        store-history?      (if silent? false (msgs/message-store-history? req-message))
+        halting?        (or interrupted? ename)
+        first-segment?      (not continuing?)
+        final-segment?      (or halting? (not need-input))
+        reply           (if ename
                                   (msgs/execute-reply-content "error" exe-count
                                                               {:traceback (collect-stacktrace-strings trace-result),
                                                                :ename ename})
                                   (msgs/execute-reply-content "ok" exe-count))
-        nrepl-ctx		(state/current-context)
-        nrepl-leave-action	(:leave-action nrepl-ctx)
-        send-step		(fn [sock-kw msgtype message]
+        nrepl-ctx       (state/current-context)
+        nrepl-leave-action  (:leave-action nrepl-ctx)
+        send-step       (fn [sock-kw msgtype message]
                                   (step (fn [S] (send!! jup sock-kw req-message msgtype message) S)
                                         {:message-to sock-kw :msgtype msgtype :message message}))]
     (C (s*a-l (step identity

@@ -1,8 +1,8 @@
 (ns clojupyter.misc.helper-test
-  (:require [clojupyter.misc.display		:as display]
-            [clojupyter.misc.helper		:as helper]
-            [clojupyter.test-shared		:as ts]
-            [midje.sweet					:refer [facts =>]]))
+  (:require [clojupyter.misc.display        :as display]
+            [clojupyter.misc.helper     :as helper]
+            [clojupyter.test-shared     :as ts]
+            [midje.sweet                    :refer [facts =>]]))
 
 (facts
  "add-javascript should generate correct hiccup HTML"

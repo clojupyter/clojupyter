@@ -2,8 +2,8 @@
   (:require [clojupyter.kernel.logo :as logo]
             [clojupyter.kernel.version :as ver]))
 
-(def ^:dynamic *logo*		(logo/logo-image))
-(def ^:dynamic *license*	(logo/render-license))
+(def ^:dynamic *logo*       (logo/logo-image))
+(def ^:dynamic *license*    (logo/render-license))
 
 (def ^:dynamic *version*
   "Value is a map representing the version of clojupyter as a map with the keys `:version/major`,

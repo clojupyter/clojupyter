@@ -1,12 +1,12 @@
 (ns clojupyter.misc.display-test
   (:require
-   [cheshire.core				:as cheshire]
-   [midje.sweet							:refer [facts =>]]
+   [cheshire.core               :as cheshire]
+   [midje.sweet                         :refer [facts =>]]
    ,,
-   [clojupyter.misc.display			:as display]
+   [clojupyter.misc.display         :as display]
    [clojupyter.misc.mime-convertible]
-   [clojupyter.test-shared			:as ts]
-   [clojupyter.protocol.mime-convertible	:as mc]
+   [clojupyter.test-shared          :as ts]
+   [clojupyter.protocol.mime-convertible    :as mc]
    ))
 
 (defn pretty-maker [maker]

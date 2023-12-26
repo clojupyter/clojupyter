@@ -5,17 +5,17 @@
             [io.simplect.compose :refer [def- c C p P]]))
 
 (cfg/define
-  {:log-level			{:description	"Default log level as defined by com.taoensso/timbre."
-                                 :type		:keyword
-                                 :one-of	[:trace :debug :info :warn :error :fatal :report]
-                                 :default	:error}
-   :print-stacktraces?		{:description	(str "Print stacktrace on error. "
+  {:log-level           {:description   "Default log level as defined by com.taoensso/timbre."
+                                 :type      :keyword
+                                 :one-of    [:trace :debug :info :warn :error :fatal :report]
+                                 :default   :error}
+   :print-stacktraces?      {:description   (str "Print stacktrace on error. "
                                                      "Temporary workaround for issue with uncaught exceptions in nrepl.")
-                                 :type		:boolean
-                                 :default	true}
-   :log-traffic?		{:description	"Use log/debug to print messages going to/from Jupyter."
-                                 :type		:boolean
-                                 :default	false}})
+                                 :type      :boolean
+                                 :default   true}
+   :log-traffic?        {:description   "Use log/debug to print messages going to/from Jupyter."
+                                 :type      :boolean
+                                 :default   false}})
 
 ;;; ----------------------------------------------------------------------------------------------------
 ;;; OS SUPPORT
@@ -24,9 +24,9 @@
 (defn- osname [] (-> (System/getProperty "os.name") str/lower-case str/trim))
 (defn- os? [idstr] (fn [] (not (neg? (.indexOf ^String (osname) ^String idstr)))))
 
-(def- mac?	(os? "mac"))
-(def- linux?	(os? "linux"))
-(def- windows?	(os? "windows"))
+(def- mac?  (os? "mac"))
+(def- linux?    (os? "linux"))
+(def- windows?  (os? "windows"))
 
 (defn- user-homedir
   []
@@ -39,16 +39,16 @@
 ;;; DATA DIRECTORY
 ;;; ----------------------------------------------------------------------------------------------------
 
-(def- CLOJUPYTER-DATADIR	"clojupyter")
-(def- XDG_CONFIG_HOME		"XDG_CONFIG_HOME")
-(def- XDG_DATA_HOME		"XDG_DATA_HOME")
-(def- LOCALAPPDATA		"LOCALAPPDATA")
+(def- CLOJUPYTER-DATADIR    "clojupyter")
+(def- XDG_CONFIG_HOME       "XDG_CONFIG_HOME")
+(def- XDG_DATA_HOME     "XDG_DATA_HOME")
+(def- LOCALAPPDATA      "LOCALAPPDATA")
 
 (defn- default-datahome-relative
   []
   (cond
-    (mac?)	"Library/Caches"
-    (linux?)	".local/share"))
+    (mac?)  "Library/Caches"
+    (linux?)    ".local/share"))
 
 (defn- default-datahome
   []
@@ -78,13 +78,13 @@
 ;;; CONFIGURATION FILE
 ;;; ----------------------------------------------------------------------------------------------------
 
-(def ^:private CONFIG-FILE		"clojupyter.edn")
+(def ^:private CONFIG-FILE      "clojupyter.edn")
 
 (defn- default-config-dir-relative
   []
   (cond
-    (mac?)	"Library/Preferences"
-    (linux?)	".config"))
+    (mac?)  "Library/Preferences"
+    (linux?)    ".config"))
 
 (defn- default-config-dir
   []

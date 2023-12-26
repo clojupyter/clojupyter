@@ -5,13 +5,13 @@
             [clojure.spec.alpha :as s]
             [io.simplect.compose :refer [C def- p]]))
 
-(s/def :version/major			int?)
-(s/def :version/minor			int?)
-(s/def :version/incremental		int?)
-(s/def :version/qualifier		string?)
-(s/def :version/lein-v-raw		string?)
+(s/def :version/major           int?)
+(s/def :version/minor           int?)
+(s/def :version/incremental     int?)
+(s/def :version/qualifier       string?)
+(s/def :version/lein-v-raw      string?)
 
-(s/def :version/version-map		(s/keys :req [:version/major :version/minor :version/incremental]
+(s/def :version/version-map     (s/keys :req [:version/major :version/minor :version/incremental]
                                                 :opt [:version/qualifier :version/lein-v-raw]))
 
 (def NO-VERSION  {:version/major 0, :version/minor 0, :version/incremental 0, :version/qualifier ""})

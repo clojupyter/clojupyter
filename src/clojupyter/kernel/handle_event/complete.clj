@@ -1,12 +1,12 @@
 (ns clojupyter.kernel.handle-event.complete
   (:require
-   [io.simplect.compose.action				:refer [step]]
-   [net.cgrand.sjacket.parser		:as p]
+   [io.simplect.compose.action              :refer [step]]
+   [net.cgrand.sjacket.parser       :as p]
    ,,
-   [clojupyter.kernel.cljsrv				:refer [nrepl-complete]]
-   [clojupyter.kernel.handle-event.ops			:refer [definterceptor s*append-enter-action s*set-response]]
-   [clojupyter.messages		:as msgs]
-   [clojupyter.plan					:refer [s*bind-state]]
+   [clojupyter.kernel.cljsrv                :refer [nrepl-complete]]
+   [clojupyter.kernel.handle-event.ops          :refer [definterceptor s*append-enter-action s*set-response]]
+   [clojupyter.messages     :as msgs]
+   [clojupyter.plan                 :refer [s*bind-state]]
    ))
 
 ;;; ------------------------------------------------------------------------------------------------------------------------

@@ -1,11 +1,11 @@
 (ns clojupyter.kernel.jupyter-test
   (:require
-   [clojure.spec.alpha			:as s]
-   [midje.sweet				:as midje	:refer [fact =>]]
+   [clojure.spec.alpha          :as s]
+   [midje.sweet             :as midje   :refer [fact =>]]
    ,,
-   [clojupyter.messages			:as msgs]
-   [clojupyter.messages-specs		:as msp]
-   [clojupyter.test-shared 		:as ts]))
+   [clojupyter.messages         :as msgs]
+   [clojupyter.messages-specs       :as msp]
+   [clojupyter.test-shared      :as ts]))
 
 (fact
  "comm-close-content conforms"

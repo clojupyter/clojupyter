@@ -14,11 +14,11 @@
    [io.simplect.compose :refer [def- c C p P >->> >>->]])
   (:import [clojure.lang Atom]))
 
-(def- WIDGET-VERSION-MAJOR		2)
-(def- WIDGET-VERSION-MINOR		0)
-(def- WIDGET-VERSION-INCR		0)
-(def- WIDGET-MESSAGING-PROTO-VERSION	(format "%d.%d.%d" WIDGET-VERSION-MAJOR WIDGET-VERSION-MINOR WIDGET-VERSION-INCR))
-(def  MESSAGE-METADATA			{:version WIDGET-MESSAGING-PROTO-VERSION})
+(def- WIDGET-VERSION-MAJOR      2)
+(def- WIDGET-VERSION-MINOR      0)
+(def- WIDGET-VERSION-INCR       0)
+(def- WIDGET-MESSAGING-PROTO-VERSION    (format "%d.%d.%d" WIDGET-VERSION-MAJOR WIDGET-VERSION-MINOR WIDGET-VERSION-INCR))
+(def  MESSAGE-METADATA          {:version WIDGET-MESSAGING-PROTO-VERSION})
 
 ;;; ------------------------------------------------------------------------------------------------------------------------
 ;;; COMM-ATOM

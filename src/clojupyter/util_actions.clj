@@ -118,9 +118,9 @@
 (defn file-filetype
   [f]
   (cond
-    (fs/file? f)		:filetype/file
-    (fs/directory? f)		:filetype/directory
-    :else			nil))
+    (fs/file? f)        :filetype/file
+    (fs/directory? f)       :filetype/directory
+    :else           nil))
 
 (defmulti  find-executable (fn [_] (os/operating-system)))
 (letfn [(find-exe [exe]

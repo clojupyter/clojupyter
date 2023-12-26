@@ -71,6 +71,6 @@
 
 (defn start-handle-event-process
   [ctx]
-  (doseq [[sock-kw pred] [[:control_port 	valid-control-port-msgtype?]
-                          [:shell_port		valid-shell-port-msgtype?]]]
+  (doseq [[sock-kw pred] [[:control_port    valid-control-port-msgtype?]
+                          [:shell_port      valid-shell-port-msgtype?]]]
     (start-channel-thread sock-kw pred ctx)))

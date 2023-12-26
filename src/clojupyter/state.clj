@@ -21,13 +21,13 @@
    ;; 2019-11-15 Klaus Harbo:
    ;; If state is reinitialized, we keep zmq-context because JeroMQ expects
    ;; a single context for the entire lifetime of the (OS) process
-   (let [execute-count	1N
-         display-queue	EMPTY-QUEUE
-         sess		(-> (his/init-history) his/start-history-session)
-         zmq-context	(or zmq-context (zutil/zcontext))
-         halt?		false
-         comms		(comm-global-state/initial-state)
-         cur-ctx	()]
+   (let [execute-count  1N
+         display-queue  EMPTY-QUEUE
+         sess       (-> (his/init-history) his/start-history-session)
+         zmq-context    (or zmq-context (zutil/zcontext))
+         halt?      false
+         comms      (comm-global-state/initial-state)
+         cur-ctx    ()]
      (->State execute-count display-queue sess zmq-context halt? comms cur-ctx))))
 
 (defn ensure-initial-state!

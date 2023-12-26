@@ -11,8 +11,8 @@
 
 (def DEPEND [csp/DEPEND-DUMMY])
 
-(def- bat-file?		(C str (p re-find #"\.bat$") boolean))
-(def- nl->crnl		(C str/split-lines (p str/join "\r\n")))
+(def- bat-file?     (C str (p re-find #"\.bat$") boolean))
+(def- nl->crnl      (C str/split-lines (p str/join "\r\n")))
 
 ;;; ----------------------------------------------------------------------------------------------------
 ;;; EXTERNAL

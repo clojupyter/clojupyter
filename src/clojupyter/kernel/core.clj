@@ -120,15 +120,15 @@
                   (cjpzmq/start ztx port addr term
                                 {:inbound-ch (in-ch port), :outbound-ch (out-ch port),
                                  :zmq-socket-type sock-type}))]
-          (let [[ctrl-in ctrl-out]	(let [port :control_port]
+          (let [[ctrl-in ctrl-out]  (let [port :control_port]
                                           (start-fwd port (address config port) :router))
-                [shell-in shell-out]	(let [port :shell_port]
+                [shell-in shell-out]    (let [port :shell_port]
                                           (start-fwd port (address config port) :router))
-                [iopub-in iopub-out]	(let [port :iopub_port]
+                [iopub-in iopub-out]    (let [port :iopub_port]
                                           (start-fwd port (address config port) :pub))
-                [stdin-in stdin-out]	(let [port :stdin_port]
+                [stdin-in stdin-out]    (let [port :stdin_port]
                                           (start-fwd port (address config port) :dealer))
-                jup			(make-jup ctrl-in  ctrl-out
+                jup         (make-jup ctrl-in  ctrl-out
                                                   shell-in shell-out
                                                   iopub-in iopub-out
                                                   stdin-in stdin-out)]
@@ -145,7 +145,7 @@
             (log/error "Command-line arguments do not conform to specification."))
           (init/ensure-init-global-state!)
           (let [[jup term] (start-zmq-socket-forwarding ztx config)
-                wait-ch	(shutdown/notify-on-shutdown term (chan 1))]
+                wait-ch (shutdown/notify-on-shutdown term (chan 1))]
             (with-open [cljsrv (cljsrv/make-cljsrv)]
               (run-kernel jup term cljsrv)
               (<!! wait-ch)

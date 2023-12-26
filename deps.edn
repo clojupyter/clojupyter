@@ -1,9 +1,10 @@
 {:paths ["src" "resources"]
  :deps {cheshire/cheshire           {:mvn/version "5.11.0"}
-        cider/cider-nrepl  {:mvn/version "0.26.0"}
+        cider/cider-nrepl  {:mvn/version "0.44.0"}
         clojure.java-time/clojure.java-time     {:mvn/version "1.1.0"}
         com.cemerick/pomegranate    {:mvn/version "1.1.0"}
-        com.grammarly/omniconf  {:mvn/version "0.4.3"}
+        ;;com.grammarly/omniconf  {:mvn/version "0.4.3"}
+        io.github.grammarly/omniconf  {:git/sha "d71662749c6b2e5baf80e9e059351a343674330e"}
         com.taoensso/timbre     {:mvn/version "5.2.1"}
         io.aviso/pretty         {:mvn/version "1.1.1"}
         hiccup/hiccup               {:mvn/version "2.0.0-alpha2"}
@@ -22,24 +23,24 @@
         org.clojure/java.jdbc       {:mvn/version "0.7.12"}
         org.clojure/test.check      {:mvn/version "1.1.1"}
         org.clojure/tools.cli       {:mvn/version "1.0.214"}
-        org.clojure/tools.build {:mvn/version "0.8.4"}
+        org.clojure/tools.build     {:mvn/version "0.8.4"}
         org.xerial/sqlite-jdbc      {:mvn/version "3.39.3.0"}
-        org.zeromq/jeromq       {:mvn/version "0.5.2"}
+        org.zeromq/jeromq           {:mvn/version "0.5.2"}
         pandect/pandect             {:mvn/version "1.0.2"}
-        org.clojure/tools.analyzer      {:mvn/version "1.1.0"}
+        org.clojure/tools.analyzer  {:mvn/version "1.1.0"}
         slingshot/slingshot         {:mvn/version "0.12.2"}
         zprint/zprint               {:mvn/version "1.2.4"}
-        org.clojure/core.async      {:mvn/version "1.5.648"}
-        com.fzakaria/slf4j-timbre   {:mvn/version "0.3.21"}
-        org.slf4j/log4j-over-slf4j  {:mvn/version "2.0.3"}
-        org.slf4j/jul-to-slf4j      {:mvn/version "2.0.3"}
-        org.slf4j/jcl-over-slf4j    {:mvn/version "2.0.3"}}
+        org.clojure/core.async      {:mvn/version "1.6.681"}
+        com.fzakaria/slf4j-timbre   {:mvn/version "0.4.1"}
+        org.slf4j/log4j-over-slf4j  {:mvn/version "2.0.9"}
+        org.slf4j/jul-to-slf4j      {:mvn/version "2.0.9"}
+        org.slf4j/jcl-over-slf4j    {:mvn/version "2.0.9"}}
  :aliases
  {:build
   {:deps
-   {io.github.clojure/tools.build {:git/tag "v0.8.4" :git/sha "8c3cd69"}}
+   {io.github.clojure/tools.build {:git/tag "v0.9.6" :git/sha "8e78bcc"}}
    :ns-default build}
 
   :test {:extra-paths ["test"]
-         :extra-deps {midje/midje {:mvn/version "1.10.6"}}
+         :extra-deps {midje/midje {:mvn/version "1.10.9"}}
          :exec-fn clojupyter.run-tests/run-tests}}}

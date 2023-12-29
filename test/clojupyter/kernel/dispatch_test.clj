@@ -5,8 +5,7 @@
    ,,
    [clojupyter.kernel.handle-event  :as he]
    [clojupyter.messages         :as msgs]
-   [clojupyter.test-shared      :as ts]
-   ))
+   [clojupyter.test-shared      :as ts]))
 
 ;;; ------------------------------------------------------------------------------------------------------------------------
 ;;; GENERATE ERRORS FOR MESSAGES WE EXPECT TO NEVER RECEIVE

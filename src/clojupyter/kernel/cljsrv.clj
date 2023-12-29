@@ -99,7 +99,7 @@
           :else
           ,, (recur (rest ms) msgs' result (dec iter))))
       (throw (ex-info (str "messages-result - internal error: we should not get to end of nrepl stream without 'done' msg")
-               {:msgs msgs, :result result})))))
+                      {:msgs msgs, :result result})))))
 
 (defrecord CljSrv [nrepl-server_ nrepl-client_ nrepl-sockaddr_ pending-input?_]
   nrepl-server-proto

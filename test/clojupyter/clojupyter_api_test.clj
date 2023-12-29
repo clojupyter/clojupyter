@@ -26,21 +26,19 @@
         rsp))))
 
 (fact
-   "Evaluating an expression yields result tagged as `text/plain`."
-   (let [{:keys [leave-action] :as rsp} (eval-code "(list 1 2 3)")
-         specs (a/step-specs leave-action)
-         [result-spec & result-rest] (->> specs (filter (C :msgtype (p = msgs/EXECUTE-RESULT))))
-         {:keys [message-to msgtype message]} result-spec
-         {:keys [:data :metadata]} message
-         {:keys [:text/plain :text/html]} data
-         ]
-     (and (boolean result-spec)
-          (nil? result-rest)
-          (= {} metadata)
-          (= plain "(1 2 3)")
-          (nil? html)))
-   => true)
-
+ "Evaluating an expression yields result tagged as `text/plain`."
+ (let [{:keys [leave-action] :as rsp} (eval-code "(list 1 2 3)")
+       specs (a/step-specs leave-action)
+       [result-spec & result-rest] (->> specs (filter (C :msgtype (p = msgs/EXECUTE-RESULT))))
+       {:keys [message-to msgtype message]} result-spec
+       {:keys [:data :metadata]} message
+       {:keys [:text/plain :text/html]} data]
+   (and (boolean result-spec)
+        (nil? result-rest)
+        (= {} metadata)
+        (= plain "(1 2 3)")
+        (nil? html)))
+ => true)
 
 (fact
  "Using `hiccup-html` yields result tagged as `text/html`."
@@ -66,8 +64,7 @@
        [result-spec & _] (->> specs (filter (C :msgtype (p = msgs/EXECUTE-RESULT))))
        {:keys [message]}  result-spec
        {:keys [:data]} message
-       {:keys [:text/plain :text/html :text/some-mimetype]} data
-       ]
+       {:keys [:text/plain :text/html :text/some-mimetype]} data]
    (and (nil? plain)
         (nil? html)
         (= "somestring" some-mimetype)))
@@ -82,8 +79,8 @@
        result-specs (->> leave-specs (filter (C :msgtype (p = msgs/EXECUTE-RESULT))))
        reply-specs (->> leave-specs (filter (C :msgtype (p = msgs/EXECUTE-REPLY))))]
    (and (-> result-specs count zero?)
-         (-> reply-specs count pos?)
-         (-> input-specs count pos?)))
+        (-> reply-specs count pos?)
+        (-> input-specs count pos?)))
  => true)
 
 (fact

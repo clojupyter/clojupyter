@@ -5,8 +5,8 @@
 
 (defmacro with-new-context [[binding] & body]
   `(let [ztx# (zcontext), ~binding ztx#]
-    (try ~@body
-         (finally (.destroy ztx#)))))
+     (try ~@body
+          (finally (.destroy ztx#)))))
 
 (defmacro with-shadow-context [[binding context] & body]
   (if (and (symbol? binding) context)

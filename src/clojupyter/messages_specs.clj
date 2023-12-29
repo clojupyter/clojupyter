@@ -24,7 +24,7 @@
 (s/def ::target_module          (s/nilable string?))
 (s/def ::target_name            string?)
 (s/def ::target_map         (s/keys :req-un [::target_name]
-                                                :req-opt [::target_module]))
+                                    :req-opt [::target_module]))
 (s/def ::transient          map?)
 
 ;;; ------------------------------------------------------------------------------------------------------------------------
@@ -43,7 +43,7 @@
 (s/def ::transport          (s/and string? (p = "tcp")))
 (s/def ::signature_scheme       (s/and string? (p = "hmac-sha256")))
 (s/def ::jupyter-config         (s/keys :req-un [::control_port ::shell_port ::stdin_port ::iopub_port ::hb_port
-                                                         ::ip ::transport ::key ::signature_scheme]))
+                                                 ::ip ::transport ::key ::signature_scheme]))
 
 (s/def ::socket             #{:control_port :shell_port :stdin_port :iopub_port :hb_port})
 
@@ -61,8 +61,8 @@
   (- (count frames) (delimiter-index frames) 1))
 
 (s/def ::frames             (s/and ::sp/byte-arrays
-                                               (p some u/delimiter-frame?)
-                                               (C post-delimiter-frame-count #(>= % 5))))
+                                   (p some u/delimiter-frame?)
+                                   (C post-delimiter-frame-count #(>= % 5))))
 
 ;;; ------------------------------------------------------------------------------------------------------------------------
 ;;; ---------------------------------------- JUPYTER PROTOCOL MESSAGES CONTENT ---------------------------------------------
@@ -94,7 +94,7 @@
 (s/def ::cursor_end         ::nonneg-int)
 (s/def ::matches            (s/coll-of string? :kind sequential?))
 (s/def ::complete-reply-content     (s/merge (s/keys :req-un [::matches, ::cursor_start, ::cursor_end, ::metadata])
-                                                 ::reply-message))
+                                             ::reply-message))
 ;;; COMPLETE-REQUEST
 (s/def ::cursor_pos         ::nonneg-int)
 (s/def ::complete-request-content   (s/keys :req-un [::code, ::cursor_pos]))
@@ -118,14 +118,14 @@
 (s/def ::allow_stdin            boolean?)
 (s/def ::stop_on_error          boolean?)
 (s/def ::execute-request-content    (s/keys :req-un [::code, ::silent, ::store_history, ::user_expressions,
-                                                         ::allow_stdin, ::stop_on_error]))
+                                                     ::allow_stdin, ::stop_on_error]))
 
 ;;; EXECUTE-RESULT
 (s/def ::execute-result-content     (s/keys :req-un [::execution_count, ::data, ::metadata]))
 
 ;;; HISTORY-REPLY
 (s/def ::history            (s/coll-of (s/tuple int? int? (s/or :string string?,
-                                                                            :pair (s/tuple string? string?)))))
+                                                                :pair (s/tuple string? string?)))))
 (s/def ::history-reply-content      (s/merge (s/keys :req-un [::history]), ::reply-message))
 
 ;;; HISTORY-REQUEST
@@ -138,7 +138,7 @@
 (s/def ::pattern            string?)
 (s/def ::unique             boolean?)
 (s/def ::history-request-content    (s/keys :req-opt [::output, ::raw, ::hist_access_type, ::session,
-                                                          ::start, ::stop, ::n, ::pattern, ::unique]))
+                                                      ::start, ::stop, ::n, ::pattern, ::unique]))
 
 ;;; INPUT-REQUEST
 (s/def ::prompt             string?)
@@ -179,12 +179,12 @@
 (s/def ::codemirror_mode        (s/or :string string? :map map?))
 (s/def ::nbconvert_exporter     string?)
 (s/def ::language_info          (s/keys :req-un  [::name, ::version, ::mimetype, ::file_extension]
-                                                :req-opt [::pygments_lexer, ::codemirror_mode, ::nbconvert_exporter]))
+                                        :req-opt [::pygments_lexer, ::codemirror_mode, ::nbconvert_exporter]))
 (s/def ::kernel-info-reply-content  (s/merge (s/keys :req-un  [::protocol_version, ::implementation,
-                                                                   ::implementation_version, ::language_info,
-                                                                   ::banner]
-                                                         :req-opt [::banner, ::help_links])
-                                                 ::reply-message))
+                                                               ::implementation_version, ::language_info,
+                                                               ::banner]
+                                                     :req-opt [::banner, ::help_links])
+                                             ::reply-message))
 
 ;;; KERNEL-INFO-REQUEST
 (s/def ::kernel-info-request-content    ::empty-map)

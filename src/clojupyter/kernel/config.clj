@@ -6,16 +6,16 @@
 
 (cfg/define
   {:log-level           {:description   "Default log level as defined by com.taoensso/timbre."
-                                 :type      :keyword
-                                 :one-of    [:trace :debug :info :warn :error :fatal :report]
-                                 :default   :error}
+                         :type      :keyword
+                         :one-of    [:trace :debug :info :warn :error :fatal :report]
+                         :default   :error}
    :print-stacktraces?      {:description   (str "Print stacktrace on error. "
-                                                     "Temporary workaround for issue with uncaught exceptions in nrepl.")
-                                 :type      :boolean
-                                 :default   true}
+                                                 "Temporary workaround for issue with uncaught exceptions in nrepl.")
+                             :type      :boolean
+                             :default   true}
    :log-traffic?        {:description   "Use log/debug to print messages going to/from Jupyter."
-                                 :type      :boolean
-                                 :default   false}})
+                         :type      :boolean
+                         :default   false}})
 
 ;;; ----------------------------------------------------------------------------------------------------
 ;;; OS SUPPORT
@@ -72,7 +72,6 @@
         (.mkdirs dir))
       dir)
     (user-homedir)))
-
 
 ;;; ----------------------------------------------------------------------------------------------------
 ;;; CONFIGURATION FILE

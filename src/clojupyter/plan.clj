@@ -66,14 +66,14 @@
 (defn s*when-executing
   [s*fn]
   (s*bind-state S
-    (s*when (executing? S)
-      s*fn)))
+                (s*when (executing? S)
+                        s*fn)))
 
 (defn s*when-halted
   [s*fn]
   (s*bind-state S
-    (s*when (halted? S)
-      s*fn)))
+                (s*when (halted? S)
+                        s*fn)))
 
 (u!/set-defn-indent! #'s*bind-state #'s*when #'s*when-executing #'s*when-halted #'s*when-not)
 
@@ -90,22 +90,22 @@
   Note that execute only occurs if state is not `halted?`, which is the default.  Use
   `s*set-do-execute` to enable invocation."
   (s*bind-state S
-    (let [action ^Action (get-action S)]
-      (if (halted? S)
-    (C (s*log-info {:message "Execute: Not executing, skipping action."})
-           (s*set-values :plan/execute-status :not-started)
-           (s*set-execute-success! false))
-        (let [res (invoke action)]
-          (C (s*set-action-result res)
-             (s*remove-value :plan/action)
-             (s*set-value :plan/execute-status (if (action/completed? res) :complete :incomplete))
-             (s*set-execute-success! (action/success? res))))))))
+                (let [action ^Action (get-action S)]
+                  (if (halted? S)
+                    (C (s*log-info {:message "Execute: Not executing, skipping action."})
+                       (s*set-values :plan/execute-status :not-started)
+                       (s*set-execute-success! false))
+                    (let [res (invoke action)]
+                      (C (s*set-action-result res)
+                         (s*remove-value :plan/action)
+                         (s*set-value :plan/execute-status (if (action/completed? res) :complete :incomplete))
+                         (s*set-execute-success! (action/success? res))))))))
 
 (def s*report
   (s*bind-state S
-    (if (executing? S)
-      (get-reporter S)
-      (s*log-info {:message "Report: Not executing action, skipping status report."}))))
+                (if (executing? S)
+                  (get-reporter S)
+                  (s*log-info {:message "Report: Not executing action, skipping status report."}))))
 
 (def s*execute-and-report
   (C s*execute s*report))

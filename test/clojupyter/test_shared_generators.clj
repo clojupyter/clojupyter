@@ -178,7 +178,7 @@
   (gen/one-of [(gen/elements [nil]) g]))
 
 (redefn g-path
-  g-path*)
+        g-path*)
 
 (def g-resource
   (gen/fmap (C (p str "file://") #(java.net.URL. %)) g-path))
@@ -191,7 +191,7 @@
   (gen/fmap str g-safe-code))
 
 (redefn g-string
-  g-string*)
+        g-string*)
 
 (def g-uuid
   (gen/let [uuid gen/uuid]
@@ -200,6 +200,5 @@
 (def g-version
   (gen/let [major g-digits*
             minor g-digits*
-            incr  g-digits*
-            ]
+            incr  g-digits*]
     (R (str major "." minor "." incr))))

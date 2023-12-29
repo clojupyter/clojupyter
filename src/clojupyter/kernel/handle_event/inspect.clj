@@ -6,8 +6,7 @@
    [clojupyter.kernel.cljsrv                :refer [nrepl-doc]]
    [clojupyter.kernel.handle-event.ops          :refer [definterceptor s*append-enter-action s*set-response]]
    [clojupyter.messages     :as msgs]
-   [clojupyter.plan                 :refer [s*bind-state]]
-   ))
+   [clojupyter.plan                 :refer [s*bind-state]]))
 
 (defn- re-index
   "Returns a sorted-map of indicies to matches."
@@ -40,14 +39,14 @@
 
 (definterceptor ic*inspect msgs/INSPECT-REQUEST
   (s*bind-state {:keys [cljsrv req-message] :as ctx}
-    (let [{:keys [inspect-string] :as inspect-info} (inspect-info req-message)]
-      (s*append-enter-action (step (fn [S] (-> (assoc S ::inspect-info inspect-info)
-                                               (assoc ::inspect-result (nrepl-doc cljsrv inspect-string))))
-                                   {:nrepl :inspect :data inspect-info}))))
+                (let [{:keys [inspect-string] :as inspect-info} (inspect-info req-message)]
+                  (s*append-enter-action (step (fn [S] (-> (assoc S ::inspect-info inspect-info)
+                                                           (assoc ::inspect-result (nrepl-doc cljsrv inspect-string))))
+                                               {:nrepl :inspect :data inspect-info}))))
   (s*bind-state {:keys [::inspect-result] {:keys [code]} ::inspect-info}
-    (let [doc       inspect-result
-          result-str    (when (string? doc)
-                          (if-let [i (str/index-of doc \newline)]
-                            (subs doc (inc i) (count doc))
-                            doc))]
-      (s*set-response msgs/INSPECT-REPLY (msgs/inspect-reply-content code result-str)))))
+                (let [doc       inspect-result
+                      result-str    (when (string? doc)
+                                      (if-let [i (str/index-of doc \newline)]
+                                        (subs doc (inc i) (count doc))
+                                        doc))]
+                  (s*set-response msgs/INSPECT-REPLY (msgs/inspect-reply-content code result-str)))))

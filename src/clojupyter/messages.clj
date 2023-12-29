@@ -15,7 +15,6 @@
 
 (def PROTOCOL-VERSION "5.3")
 
-
 ;;; ------------------------------------------------------------------------------------------------------------------------
 ;;; JUPYTER MESSAGE TYPES
 ;;; ------------------------------------------------------------------------------------------------------------------------
@@ -54,7 +53,6 @@
 ,,
 (def COMM-MSG-UPDATE        "update")
 (def COMM-MSG-REQUEST-STATE "request_state")
-
 
 ;;; ----------------------------------------------------------------------------------------------------
 ;;; MESSAGE ACCESSORS
@@ -111,7 +109,7 @@
                      (->> pf .-signature fmtpf-entry)]))
 
 (defrecord ^:private JupMsgPreframes
-    [envelope delimiter signature]
+           [envelope delimiter signature]
   Object
   (toString [pf] (fmtpf pf)))
 
@@ -138,7 +136,7 @@
   (str "#Buffers" (mapv count (.-buffers rec)) ""))
 
 (defrecord ^:private JupMsgBuffers
-    [buffers]
+           [buffers]
   Object
   (toString [b] (prbufs b)))
 
@@ -286,7 +284,7 @@
         (let [msg "Invalid message signature"]
           (log/debug msg ": " (String. signature "UTF-8") ". jupmsg: " orig-body)
           (log/error msg)
-         (throw (Exception. msg))))
+          (throw (Exception. msg))))
       (s/assert ::jsp/jupmsg (assoc (parse-json-and-build-jupmsg orig-body) :preframes preframes :buffers buffers)))))
 
 (s/fdef frames->jupmsg
@@ -308,13 +306,13 @@
           _     (assert signature)
           byte-buffers  (when buffers
                           (.-buffers buffers))]
-        (assert (s/valid? ::sp/byte-arrays envelope))
-        (->> (concat envelope
-                     [u/IDSMSG-BYTES (u/get-bytes signature)]
-                     (mapv u/get-bytes payload-vec)
-                     byte-buffers)
-             vec
-             (s/assert ::msp/frames)))))
+      (assert (s/valid? ::sp/byte-arrays envelope))
+      (->> (concat envelope
+                   [u/IDSMSG-BYTES (u/get-bytes signature)]
+                   (mapv u/get-bytes payload-vec)
+                   byte-buffers)
+           vec
+           (s/assert ::msp/frames)))))
 
 (s/fdef jupmsg->frames
   :args (s/cat :signer fn? :jupmsg ::jsp/jupmsg)
@@ -348,8 +346,8 @@
          metadata   (or rsp-metadata {})
          rsp-buffers    (or rsp-buffers [])
          envelope   (if (= rsp-socket :iopub_port)
-                          [(u/get-bytes rsp-msgtype)]
-                          (message-envelope req-message))
+                      [(u/get-bytes rsp-msgtype)]
+                      (message-envelope req-message))
          signature  (u/get-bytes "")]
      (make-jupmsg envelope signature header parent-header metadata rsp-content rsp-buffers))))
 
@@ -358,165 +356,165 @@
 ;;; ------------------------------------------------------------------------------------------------------------------------
 
 (sdefn clear-output-content
-  (s/cat :wait ::wait)
-  [wait?]
-  {:wait (boolean wait?)})
+       (s/cat :wait ::wait)
+       [wait?]
+       {:wait (boolean wait?)})
 
 (sdefn comm-close-content
-  (s/cat :comm-id ::uuid, :data ::data)
-  [comm-id data]
-  {:comm_id comm-id, :data data})
+       (s/cat :comm-id ::uuid, :data ::data)
+       [comm-id data]
+       {:comm_id comm-id, :data data})
 
 (sdefn comm-info-reply-content
-  (s/cat :comm-id-target-name-map (s/map-of ::comm-id ::target_name))
-  [comm-id-target-name-map]
-  {:status "ok" :comms (->> (for [[comm-id target-name] comm-id-target-name-map]
-                              [comm-id {:target_name target-name}])
-                            (into {}))})
+       (s/cat :comm-id-target-name-map (s/map-of ::comm-id ::target_name))
+       [comm-id-target-name-map]
+       {:status "ok" :comms (->> (for [[comm-id target-name] comm-id-target-name-map]
+                                   [comm-id {:target_name target-name}])
+                                 (into {}))})
 
 (sdefn comm-info-request-content
-  (s/cat :target-name ::target_name)
-  [target-name]
-  {:target_name target-name})
+       (s/cat :target-name ::target_name)
+       [target-name]
+       {:target_name target-name})
 
 (sdefn comm-msg-content
-  (s/cat :comm-id ::comm-id, :data ::data, :opts (s/? (s/keys :opt-un [::target_module ::target_name])))
-  ([comm-id data]
-   (comm-msg-content comm-id data {}))
-  ([comm-id data {:keys [target_name target_module]}]
-   (merge {:comm_id comm-id, :data data}
-          (when target_name
-            {:target_name target_name})
-          (when target_module
-            {:target_module target_module}))))
+       (s/cat :comm-id ::comm-id, :data ::data, :opts (s/? (s/keys :opt-un [::target_module ::target_name])))
+       ([comm-id data]
+        (comm-msg-content comm-id data {}))
+       ([comm-id data {:keys [target_name target_module]}]
+        (merge {:comm_id comm-id, :data data}
+               (when target_name
+                 {:target_name target_name})
+               (when target_module
+                 {:target_module target_module}))))
 
 (sdefn comm-open-content
-  (s/cat :comm-id ::comm-id, :data ::data, :opts (s/? (s/keys :opt-un [::target_module ::target_name])))
-  ([comm-id data]
-   (comm-open-content comm-id data {}))
-  ([comm-id data opts]
+       (s/cat :comm-id ::comm-id, :data ::data, :opts (s/? (s/keys :opt-un [::target_module ::target_name])))
+       ([comm-id data]
+        (comm-open-content comm-id data {}))
+       ([comm-id data opts]
    ;; `comm-open` and `comm` have identical content structure:
-   (comm-msg-content comm-id data opts)))
+        (comm-msg-content comm-id data opts)))
 
 (sdefn complete-reply-content
-  (s/cat :matches ::matches, :start ::cursor-start, :end ::cursor-end)
-  [matches cursor-start cursor-end]
-  {:matches matches
-   :metadata {}
-   :cursor_start cursor-start
-   :cursor_end cursor-end
-   :status "ok"})
+       (s/cat :matches ::matches, :start ::cursor-start, :end ::cursor-end)
+       [matches cursor-start cursor-end]
+       {:matches matches
+        :metadata {}
+        :cursor_start cursor-start
+        :cursor_end cursor-end
+        :status "ok"})
 
 (sdefn complete-request-content
-  (s/cat :code ::code, :cursor-pos ::cursor-pos)
-  [code cursor-pos]
-  {:code code, :cursor_pos cursor-pos})
+       (s/cat :code ::code, :cursor-pos ::cursor-pos)
+       [code cursor-pos]
+       {:code code, :cursor_pos cursor-pos})
 
 (sdefn display-data-content
-  (s/cat :data map?, :metadata map?, :transient map?)
-  [data metadata transients-map]
-  {:data data, :metadata metadata, :transient transients-map})
+       (s/cat :data map?, :metadata map?, :transient map?)
+       [data metadata transients-map]
+       {:data data, :metadata metadata, :transient transients-map})
 
 (sdefn error-message-content
-  (s/cat :exe-count ::msp/execution_count)
-  [execution-count]
-  {:execution_count execution-count})
+       (s/cat :exe-count ::msp/execution_count)
+       [execution-count]
+       {:execution_count execution-count})
 
 (sdefn execute-input-msg-content
-  (s/cat :exe-count ::nonneg-int, :code ::code)
-  [exe-count code]
-  {:execution_count exe-count :code code})
+       (s/cat :exe-count ::nonneg-int, :code ::code)
+       [exe-count code]
+       {:execution_count exe-count :code code})
 
 (sdefn execute-reply-content
-  (s/cat :status ::status, :exe-count ::nonneg-int :opts (s/? map?))
-  ([status execution-count] (execute-reply-content status execution-count {}))
-  ([status execution-count {:keys [ename evalue traceback] :as opts}]
-   (let [ename (or ename "Error name not available.")
-         evalue (or evalue "")
-         traceback (or traceback ["(no stacktrace)"])]
-     (merge {:status status, :execution_count execution-count}
-            (case status
-              "ok"  {:user_expressions {}}
-              "error"   (merge {:ename ename, :evalue evalue}
-                               (when (stacktrace/printing-stacktraces?)
-                                 {:traceback traceback}))
-              (throw (ex-info (str "execute-reply-content - unknown status: " status)
-                       {:opts opts})))))))
+       (s/cat :status ::status, :exe-count ::nonneg-int :opts (s/? map?))
+       ([status execution-count] (execute-reply-content status execution-count {}))
+       ([status execution-count {:keys [ename evalue traceback] :as opts}]
+        (let [ename (or ename "Error name not available.")
+              evalue (or evalue "")
+              traceback (or traceback ["(no stacktrace)"])]
+          (merge {:status status, :execution_count execution-count}
+                 (case status
+                   "ok"  {:user_expressions {}}
+                   "error"   (merge {:ename ename, :evalue evalue}
+                                    (when (stacktrace/printing-stacktraces?)
+                                      {:traceback traceback}))
+                   (throw (ex-info (str "execute-reply-content - unknown status: " status)
+                                   {:opts opts})))))))
 
 (sdefn execute-request-content
-  (s/cat :code string?, :allow-stdin? boolean, :silent? boolean?,
-         :stop-on-error? boolean, :store-history? boolean?)
-  [code allow-stdin? silent? stop-on-error? store-history?]
-  {:code code,
-   :silent (boolean silent?)
-   :store_history (boolean store-history?)
-   :user_expressions {}
-   :allow_stdin (boolean allow-stdin?)
-   :stop_on_error (boolean stop-on-error?)})
+       (s/cat :code string?, :allow-stdin? boolean, :silent? boolean?,
+              :stop-on-error? boolean, :store-history? boolean?)
+       [code allow-stdin? silent? stop-on-error? store-history?]
+       {:code code,
+        :silent (boolean silent?)
+        :store_history (boolean store-history?)
+        :user_expressions {}
+        :allow_stdin (boolean allow-stdin?)
+        :stop_on_error (boolean stop-on-error?)})
 
 (sdefn execute-result-content
-  (s/cat :data ::data, :exe-count ::nonneg-int, :opts (s/? map?))
-  ([data execution-count] (execute-result-content data execution-count {}))
-  ([data execution-count {:keys [metadata]}]
-   (let [metadata (or metadata {})]
-     {:execution_count execution-count
-      :data data
-      :metadata metadata})))
+       (s/cat :data ::data, :exe-count ::nonneg-int, :opts (s/? map?))
+       ([data execution-count] (execute-result-content data execution-count {}))
+       ([data execution-count {:keys [metadata]}]
+        (let [metadata (or metadata {})]
+          {:execution_count execution-count
+           :data data
+           :metadata metadata})))
 
 (sdefn history-reply-content
-  (s/cat :hist-map map?)
-  [history-maps]
-  {:status "ok", :history (map (juxt :session :line :source) history-maps)})
+       (s/cat :hist-map map?)
+       [history-maps]
+       {:status "ok", :history (map (juxt :session :line :source) history-maps)})
 
 (sdefn history-request-content
-  (s/cat :opts (s/? map?))
-  ([] (history-request-content {}))
-  ([{:keys [output? raw? hist-access-type session start stop pattern unique?]}]
-   (let [output? (or output? true)
-         raw? (or raw? false)
-         hist-access-type (or hist-access-type "search")
-         session (or session 1)
-         start (or start 1)
-         stop (or stop 1)
-         pattern (or pattern "")
-         unique? (or unique? true)]
-     {:output output?
-      :raw raw?
-      :hist_access_type hist-access-type
-      :session session
-      :start start
-      :stop stop
-      :pattern pattern
-      :unique unique?})))
+       (s/cat :opts (s/? map?))
+       ([] (history-request-content {}))
+       ([{:keys [output? raw? hist-access-type session start stop pattern unique?]}]
+        (let [output? (or output? true)
+              raw? (or raw? false)
+              hist-access-type (or hist-access-type "search")
+              session (or session 1)
+              start (or start 1)
+              stop (or stop 1)
+              pattern (or pattern "")
+              unique? (or unique? true)]
+          {:output output?
+           :raw raw?
+           :hist_access_type hist-access-type
+           :session session
+           :start start
+           :stop stop
+           :pattern pattern
+           :unique unique?})))
 
 (sdefn input-reply-content
-  (s/cat :value ::msp/value)
-  [val]
-  {:value val})
+       (s/cat :value ::msp/value)
+       [val]
+       {:value val})
 
 (sdefn input-request-content
-  (s/cat :prompt ::prompt :password (s/? string?))
-  ([prompt]
-   (input-request-content prompt false))
-  ([prompt password?]
-   {:prompt (str prompt)
-    :password (boolean password?)}))
+       (s/cat :prompt ::prompt :password (s/? string?))
+       ([prompt]
+        (input-request-content prompt false))
+       ([prompt password?]
+        {:prompt (str prompt)
+         :password (boolean password?)}))
 
 (sdefn inspect-reply-content
-  (s/cat :code ::code, :result-str string?)
-  [code result-str]
-  (let [found? (not (str/blank? (str result-str)))]
-    {:status "ok", :found found?, :code code, :metadata {},
-     :data (if found?
-             {:text/html (str "<pre>" result-str "</pre>"), :text/plain (str result-str)}
-             {})}))
+       (s/cat :code ::code, :result-str string?)
+       [code result-str]
+       (let [found? (not (str/blank? (str result-str)))]
+         {:status "ok", :found found?, :code code, :metadata {},
+          :data (if found?
+                  {:text/html (str "<pre>" result-str "</pre>"), :text/plain (str result-str)}
+                  {})}))
 
 (sdefn inspect-request-content
-  (s/cat :code ::code, :cursor-pos ::cursor-pos :opts map?)
-  ([code cursor-pos] (inspect-request-content code cursor-pos {}))
-  ([code cursor-pos {:keys [details?]}]
-   (merge {:code code, :cursor_pos cursor-pos}
-          (when details? {:detail_level 1}))))
+       (s/cat :code ::code, :cursor-pos ::cursor-pos :opts map?)
+       ([code cursor-pos] (inspect-request-content code cursor-pos {}))
+       ([code cursor-pos {:keys [details?]}]
+        (merge {:code code, :cursor_pos cursor-pos}
+               (when details? {:detail_level 1}))))
 
 (defn interrupt-reply-content
   []
@@ -527,91 +525,91 @@
   {})
 
 (sdefn is-complete-reply-content
-  (s/cat :status ::status)
-  [status]
-  {:status status})
+       (s/cat :status ::status)
+       [status]
+       {:status status})
 
 (sdefn is-complete-request-content
-  (s/cat :code ::code)
-  [code]
-  {:code (str code)})
+       (s/cat :code ::code)
+       [code]
+       {:code (str code)})
 
 (sdefn kernel-info-reply-content
-  (s/cat :opts (s/? map?))
-  ([protocol-version] (kernel-info-reply-content protocol-version {}))
-  ([protocol-version {:keys [banner clj-ver help-links implementation version-string]}]
-   (let [version-string     (or version-string (ver/version-string) "clojupyter-0.0.0")
-         banner         (or banner (str "Clojupyter (" version-string ")"))
-         clj-ver        (or clj-ver (clojure-version))
-         help-links     (or help-links [])
-         implementation     (or implementation "clojupyter")]
-     {:status "ok"
-      :protocol_version (str protocol-version)
-      :implementation (str implementation)
-      :implementation_version (str version-string)
-      :language_info {:name "clojure"
-                      :version (str clj-ver)
-                      :mimetype "text/x-clojure"
-                      :file_extension ".clj"}
-      :banner (str banner)
-      :help_links help-links})))
+       (s/cat :opts (s/? map?))
+       ([protocol-version] (kernel-info-reply-content protocol-version {}))
+       ([protocol-version {:keys [banner clj-ver help-links implementation version-string]}]
+        (let [version-string     (or version-string (ver/version-string) "clojupyter-0.0.0")
+              banner         (or banner (str "Clojupyter (" version-string ")"))
+              clj-ver        (or clj-ver (clojure-version))
+              help-links     (or help-links [])
+              implementation     (or implementation "clojupyter")]
+          {:status "ok"
+           :protocol_version (str protocol-version)
+           :implementation (str implementation)
+           :implementation_version (str version-string)
+           :language_info {:name "clojure"
+                           :version (str clj-ver)
+                           :mimetype "text/x-clojure"
+                           :file_extension ".clj"}
+           :banner (str banner)
+           :help_links help-links})))
 
 (sdefn kernel-info-request-content
-  (s/cat)
-  []
-  {})
+       (s/cat)
+       []
+       {})
 
 (declare update-comm-msg)
 (sdefn output-set-msgid-content
-  (s/cat :comm-id ::comm-id :msgid string?)
-  [comm-id msgid]
-  (let [state {:msg_id msgid}]
-    (comm-msg-content comm-id state)))
+       (s/cat :comm-id ::comm-id :msgid string?)
+       [comm-id msgid]
+       (let [state {:msg_id msgid}]
+         (comm-msg-content comm-id state)))
 
 (sdefn output-update-content
-  (s/cat :comm-id ::comm-id
-         :target-name ::target_name
-         :stream-name #{"stdout" "stderr"}
-         :strings (s/coll-of string? :kind vector?))
-  [comm-id method target-name stream-name strings]
-  (let [state {:outputs (vec (for [s strings]
-                               {:name stream-name,
-                                :text s,
-                                :output_type "stream"}))}]
-    (update-comm-msg comm-id method target-name state)))
+       (s/cat :comm-id ::comm-id
+              :target-name ::target_name
+              :stream-name #{"stdout" "stderr"}
+              :strings (s/coll-of string? :kind vector?))
+       [comm-id method target-name stream-name strings]
+       (let [state {:outputs (vec (for [s strings]
+                                    {:name stream-name,
+                                     :text s,
+                                     :output_type "stream"}))}]
+         (update-comm-msg comm-id method target-name state)))
 
 (sdefn shutdown-reply-content
-  (s/cat :restart? boolean?)
-  [restart?]
-  {:restart (boolean restart?) :status "ok"})
+       (s/cat :restart? boolean?)
+       [restart?]
+       {:restart (boolean restart?) :status "ok"})
 
 (sdefn shutdown-request-content
-  (s/cat :restart? (s/? boolean?))
-  ([] (shutdown-request-content false))
-  ([restart?]
-   {:restart (boolean restart?)}))
+       (s/cat :restart? (s/? boolean?))
+       ([] (shutdown-request-content false))
+       ([restart?]
+        {:restart (boolean restart?)}))
 
 (sdefn status-message-content
-  (s/cat :state ::msp/execution-state)
-  [execution-state]
-  {:execution_state execution-state})
+       (s/cat :state ::msp/execution-state)
+       [execution-state]
+       {:execution_state execution-state})
 
 (sdefn stream-message-content
-  (s/cat :stream-name string?, :text string?)
-  [stream-name s]
-  {:name stream-name, :text s})
+       (s/cat :stream-name string?, :text string?)
+       [stream-name s]
+       {:name stream-name, :text s})
 
 (sdefn update-comm-msg
-  (s/cat :comm-id ::comm-id, :method ::msp/comm-message-method,
-         :target-name ::msp/target_name,
-         :state map?, :buffer-paths (s/? vector?))
-  ([comm-id method target-name state]
-   (update-comm-msg comm-id method target-name state []))
-  ([comm-id method target-name state buffer-paths]
-   (comm-msg-content comm-id {:method method, :state state, :buffer_paths buffer-paths}
-                     {:target_name target-name})))
+       (s/cat :comm-id ::comm-id, :method ::msp/comm-message-method,
+              :target-name ::msp/target_name,
+              :state map?, :buffer-paths (s/? vector?))
+       ([comm-id method target-name state]
+        (update-comm-msg comm-id method target-name state []))
+       ([comm-id method target-name state buffer-paths]
+        (comm-msg-content comm-id {:method method, :state state, :buffer_paths buffer-paths}
+                          {:target_name target-name})))
 
 (sdefn update-display-data
-  (s/cat :data ::data, :metadata ::metadata, :transient ::transient)
-  [data metadata tsient]
-  {:data data, :metadata metadata, :transient tsient})
+       (s/cat :data ::data, :metadata ::metadata, :transient ::transient)
+       [data metadata tsient]
+       {:data data, :metadata metadata, :transient tsient})

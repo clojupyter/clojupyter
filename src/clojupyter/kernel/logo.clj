@@ -29,7 +29,6 @@
   []
   (ImageIO/read ^java.net.URL (logo-resource)))
 
-
 (defn render-license
   []
   (dis/render-mime :text/plain (-> (license-resource) slurp)))

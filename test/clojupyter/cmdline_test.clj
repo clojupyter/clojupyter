@@ -59,18 +59,18 @@
                    shuffle
                    (apply concat)
                    vec)
-     :host-flag host-flag, :host host, 
+     :host-flag host-flag, :host host,
      :ident ident, :identval identval, :jar jar, :jarval jarval, :random-flag random-flag, :random random}))
 
 (def prop--local-install-cmdline
   (prop/for-all [{:keys [random-flag host-flag cmdline ident identval jar jarval]} g-local-install-cmdline]
-    (let [{:keys [options errors] :as res}
-          ,,(cmdline/parse-install-local-cmdline cmdline)
-          {:keys [host jarfile]} options
-          ok? (not errors)
-          opts (when ok? (cmdline/build-user-opts res))]
-      (pprint {:errors errors, :options options})
-      (==> random-flag errors)
-      (==> (and ok? (-> ident count pos?)) (= identval ident))
-      (==> (and ok? (-> jar count pos?)) (= jarval (str jarfile)))
-      (==> ok? (s/valid? :local/user-opts opts)))))
+                (let [{:keys [options errors] :as res}
+                      ,,(cmdline/parse-install-local-cmdline cmdline)
+                      {:keys [host jarfile]} options
+                      ok? (not errors)
+                      opts (when ok? (cmdline/build-user-opts res))]
+                  (pprint {:errors errors, :options options})
+                  (==> random-flag errors)
+                  (==> (and ok? (-> ident count pos?)) (= identval ident))
+                  (==> (and ok? (-> jar count pos?)) (= jarval (str jarfile)))
+                  (==> ok? (s/valid? :local/user-opts opts)))))

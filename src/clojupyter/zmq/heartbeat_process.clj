@@ -26,33 +26,33 @@
          fmterr (C fmtmsg #(log/error %))]
      (zutil/zmq-thread
       (shutdown/initiating-shutdown-on-exit [:hb term]
-        (fmtdbg "Starting")
-        (u!/with-exception-logging
-            (u!/closing-channels-on-exit! [term-ch]
-              (try (zutil/rebind-context-shadowing [ztx]
-                     (let [continue? (atom true)
-                           terminate! #(reset! continue? false)
-                           terminate-with (fn [f] (terminate!) (f))
-                           socket (doto (zutil/zsocket ztx :rep) (.bind hb-socket-addr))
-                           poller (.createPoller ztx 1)
-                           p (.register poller socket (zutil/poll-events :pollin :pollerr))]
-                       (loop []
-                         (let [poll (.poll poller timeout)]
-                           (if (neg? poll)
-                             (terminate-with #(fmterr "Polling ZeroMQ socket returned negative value - terminating"))
-                             (do (when (.pollin poller p)
+                                            (fmtdbg "Starting")
+                                            (u!/with-exception-logging
+                                              (u!/closing-channels-on-exit! [term-ch]
+                                                                            (try (zutil/rebind-context-shadowing [ztx]
+                                                                                                                 (let [continue? (atom true)
+                                                                                                                       terminate! #(reset! continue? false)
+                                                                                                                       terminate-with (fn [f] (terminate!) (f))
+                                                                                                                       socket (doto (zutil/zsocket ztx :rep) (.bind hb-socket-addr))
+                                                                                                                       poller (.createPoller ztx 1)
+                                                                                                                       p (.register poller socket (zutil/poll-events :pollin :pollerr))]
+                                                                                                                   (loop []
+                                                                                                                     (let [poll (.poll poller timeout)]
+                                                                                                                       (if (neg? poll)
+                                                                                                                         (terminate-with #(fmterr "Polling ZeroMQ socket returned negative value - terminating"))
+                                                                                                                         (do (when (.pollin poller p)
                                    ;; heartbeat arrived
-                                   (.send socket (.recv socket)))
-                                 (when (.pollerr poller p)
+                                                                                                                               (.send socket (.recv socket)))
+                                                                                                                             (when (.pollerr poller p)
                                    ;; error on socket
-                                   (terminate-with #(fmterr "Error on ZeroMQ heartbeat socket - terminating")))
-                                 (when-let [sign (async/poll! term-ch)]
+                                                                                                                               (terminate-with #(fmterr "Error on ZeroMQ heartbeat socket - terminating")))
+                                                                                                                             (when-let [sign (async/poll! term-ch)]
                                    ;; term signal arrived
-                                   (terminate-with #(do (fmtdbg (str "Received term signal (" sign ") - terminating"))
-                                                        (Thread/sleep 10))))))
-                           (when @continue?
-                             (recur))))))
-                   (finally
-                     (fmtdbg "Terminating")
-                     (when term-signal-ch
-                       (async/>!! term-signal-ch :hb-terminating)))))))))))
+                                                                                                                               (terminate-with #(do (fmtdbg (str "Received term signal (" sign ") - terminating"))
+                                                                                                                                                    (Thread/sleep 10))))))
+                                                                                                                       (when @continue?
+                                                                                                                         (recur))))))
+                                                                                 (finally
+                                                                                   (fmtdbg "Terminating")
+                                                                                   (when term-signal-ch
+                                                                                     (async/>!! term-signal-ch :hb-terminating)))))))))))

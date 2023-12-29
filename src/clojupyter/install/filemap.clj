@@ -29,22 +29,22 @@
 (deftype FileMap [_m]
   filemap-proto
   (dir      [fm nm]     (when-let [typ (exists fm nm)]
-                                  (when (= typ :filetype/directory)
-                                    nm)))
+                          (when (= typ :filetype/directory)
+                            nm)))
   (entity   [fm nm]     (when (exists fm nm)
-                                  nm))
+                          nm))
   (exists   [fm nm]     (exists fm nm nil))
   (exists   [_ nm default]  (clojure.core/get _m nm default))
   (file     [fm nm]     (when-let [typ (exists fm nm)]
-                                  (when (= typ :filetype/file)
-                                    nm)))
+                          (when (= typ :filetype/file)
+                            nm)))
   (get-map  [_]     _m)
   (names    [_]     (keys _m))
   Object
   (toString [_]     (str "#filemap" (with-out-str (print _m)) ""))
   (equals   [fm v]      (boolean
-                                 (when (filemap? v)
-                                   (= _m (get-map v))))))
+                         (when (filemap? v)
+                           (= _m (get-map v))))))
 
 (alter-meta! #'->FileMap (P assoc :private true))
 

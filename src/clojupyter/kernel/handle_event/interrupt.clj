@@ -8,6 +8,6 @@
 
 (definterceptor ic*interrupt msgs/INTERRUPT-REQUEST
   (s*bind-state {:keys [cljsrv]}
-    (ops/s*append-enter-action (action (step [`cljsrv/nrepl-interrupt cljsrv]
-                                             {:op :nrepl-interrupt}))))
+                (ops/s*append-enter-action (action (step [`cljsrv/nrepl-interrupt cljsrv]
+                                                         {:op :nrepl-interrupt}))))
   (ops/s*set-response msgs/INTERRUPT-REPLY (msgs/interrupt-reply-content)))

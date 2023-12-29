@@ -228,9 +228,9 @@
             clj-ver (shg/g-nilable (gen/elements ["1.2.3"]))
             impl (shg/g-nilable (gen/elements ["some-other-impl"]))
             proto-ver (shg/g-nilable (gen/frequency [[10 (gen/elements [msgs/PROTOCOL-VERSION])]
-                                                    [1 (gen/elements ["5.1" "5.2" "5.3 " "4.0" "5.8" "7.0" "99.1"])]]))
+                                                     [1 (gen/elements ["5.1" "5.2" "5.3 " "4.0" "5.8" "7.0" "99.1"])]]))
             version-str (shg/g-nilable (gen/frequency [[10 (gen/elements [(ver/version-string)])]
-                                                      [1 (gen/elements ["0.0.0" "1.2.3" "2.3.4" "5.6.0"])]]))]
+                                                       [1 (gen/elements ["0.0.0" "1.2.3" "2.3.4" "5.6.0"])]]))]
     (R {:msgtype msgs/KERNEL-INFO-REPLY
         :content (->> (msgs/kernel-info-reply-content msgs/PROTOCOL-VERSION
                                                       {:banner banner
@@ -275,8 +275,7 @@
 ;;; ------------------------------------------------------------------------------------------------------------------------
 
 (def g-jupmsg-content-any
-  (gen/one-of [
-               g-comm-close-content
+  (gen/one-of [g-comm-close-content
                g-comm-info-reply-content
                g-comm-info-request-content
                g-comm-message-content
@@ -300,8 +299,7 @@
                g-shutdown-reply
                g-shutdown-request
                g-status-message-content
-               g-stream-message-content
-               ]))
+               g-stream-message-content]))
 
 (def g-jupmsg-any
   (gen/let [{:keys [content msgtype]} g-jupmsg-content-any
@@ -311,4 +309,4 @@
             phdr (g-message-header msgtype)
             metadata (R {})
             buffers (R [])]
-    (R (msgs/make-jupmsg envelope signature hdr phdr metadata content buffers ))))
+    (R (msgs/make-jupmsg envelope signature hdr phdr metadata content buffers))))

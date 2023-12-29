@@ -11,7 +11,7 @@
             [clojupyter.test-shared :as ts]
             [clojure.core.async :as async]
             [clojure.spec.alpha :as s]
-            [io.simplect.compose :refer [def- c C p P ]]
+            [io.simplect.compose :refer [def- c C p P]]
             [io.simplect.compose.action :as a]
             [midje.sweet :as midje :refer [=> fact]]
             [nrepl.core :as nrepl :refer [code]]))
@@ -81,31 +81,31 @@
 (fact
  "read-line works and is correctly ordered wrt other side-effects"
  (log/with-level :error
-    (let [[ctrl-in ctrl-out shell-in shell-out io-in io-out stdin-in stdin-out]
-          ,, (repeatedly 8 #(async/chan 25))
-          jup (jup/make-jup ctrl-in ctrl-out shell-in shell-out io-in io-out stdin-in stdin-out)]
-      (async/>!! stdin-in {:req-message ((ts/s*message-header msgs/INPUT-REPLY) (msgs/input-reply-content "input-1"))})
-      (async/>!! stdin-in {:req-message ((ts/s*message-header msgs/INPUT-REPLY) (msgs/input-reply-content "input-2"))})
-      (init/ensure-init-global-state!)
-      (with-open [srv (srv/make-cljsrv)]
-        (let [code (code (println (list 1 2 3))
-                         (println (read-line))
-                         (println 123)
-                         (println (str "Read from stdin: " (read-line)))
-                         14717)
-              msg ((ts/s*message-header msgs/EXECUTE-REQUEST)
-                   (merge (ts/default-execute-request-content) {:code code}))
-              port :shell_port
-              req {:req-message msg, :req-port port, :cljsrv srv, :jup jup}
-              {:keys [leave-action]} (execute/eval-request req)
-              specs (a/step-specs leave-action)]
-          (.invoke leave-action)
-          (= ["(1 2 3)\n" "input-1\n" "123\n" "Read from stdin: input-2\n"]
-             (->> (core-test/on-outbound-channels jup)
-                  (map (P dissoc :req-message))
-                  (filter (C :rsp-msgtype (P = "stream")))
-                  (filter (C :rsp-content :name (P = "stdout")))
-                  (mapv (C :rsp-content :text))))))))
+   (let [[ctrl-in ctrl-out shell-in shell-out io-in io-out stdin-in stdin-out]
+         ,, (repeatedly 8 #(async/chan 25))
+         jup (jup/make-jup ctrl-in ctrl-out shell-in shell-out io-in io-out stdin-in stdin-out)]
+     (async/>!! stdin-in {:req-message ((ts/s*message-header msgs/INPUT-REPLY) (msgs/input-reply-content "input-1"))})
+     (async/>!! stdin-in {:req-message ((ts/s*message-header msgs/INPUT-REPLY) (msgs/input-reply-content "input-2"))})
+     (init/ensure-init-global-state!)
+     (with-open [srv (srv/make-cljsrv)]
+       (let [code (code (println (list 1 2 3))
+                        (println (read-line))
+                        (println 123)
+                        (println (str "Read from stdin: " (read-line)))
+                        14717)
+             msg ((ts/s*message-header msgs/EXECUTE-REQUEST)
+                  (merge (ts/default-execute-request-content) {:code code}))
+             port :shell_port
+             req {:req-message msg, :req-port port, :cljsrv srv, :jup jup}
+             {:keys [leave-action]} (execute/eval-request req)
+             specs (a/step-specs leave-action)]
+         (.invoke leave-action)
+         (= ["(1 2 3)\n" "input-1\n" "123\n" "Read from stdin: input-2\n"]
+            (->> (core-test/on-outbound-channels jup)
+                 (map (P dissoc :req-message))
+                 (filter (C :rsp-msgtype (P = "stream")))
+                 (filter (C :rsp-content :name (P = "stdout")))
+                 (mapv (C :rsp-content :text))))))))
  => true)
 
 (fact
@@ -125,7 +125,7 @@
                                       (execute/eval-request ctx))
              specs (a/step-specs leave-action)
              interpr-spec (first specs)
-             display-specs (->> specs (filter (C :msgtype (p = msgs/DISPLAY-DATA))) )
+             display-specs (->> specs (filter (C :msgtype (p = msgs/DISPLAY-DATA))))
              display-spec (first display-specs)]
          (and (= "ok" (-> interpr-spec :interpretation :reply :status))
               (= 1 (count display-specs))

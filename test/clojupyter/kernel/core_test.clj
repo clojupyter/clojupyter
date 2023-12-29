@@ -44,27 +44,27 @@
            [ctrlin ctrlout shin shout ioin ioout stdin stdout] (repeatedly 6 #(chan 1))
            jup (make-jup ctrlin ctrlout shin shout ioin ioout stdin stdout)]
        (shutdown/initiating-shutdown-on-exit [:test term]
-         (with-open [cljsrv (cljsrv/make-cljsrv)]
-           (core/run-kernel jup term cljsrv)
-           (let [{:keys [msgtype content]} (last (gen/sample mg/g-kernel-info-request-content N))
-                 _ (assert (= msgtype msgs/KERNEL-INFO-REQUEST))
-                 hdr (last (gen/sample (mg/g-message-header msgtype) N))
-                 phdr (last (gen/sample (mg/g-message-header msgs/COMM-MSG) N))
-                 envelope []
-                 signature (byte-array [])
-                 metadata {}
-                 buffers []
-                 reqmsg (msgs/make-jupmsg envelope signature hdr phdr metadata content buffers)
-                 inbound-msg (msgs/jupmsg->kernelreq :shell_port reqmsg)
-                 rspmsgs (do (>!! shin inbound-msg)
-                             (Thread/sleep 10)
-                             (on-outbound-channels jup))
-                 _ (assert (= (count rspmsgs) 3))
-                 non-status-msgs (->> rspmsgs (remove (C :rsp-msgtype (p = "status"))))
-                 _ (assert (= (count non-status-msgs) 1))
-                 {:keys [rsp-msgtype rsp-content rsp-socket req-message] :as rspmsg} (first non-status-msgs)]
-             (and (= req-message reqmsg)
-                  (= rsp-msgtype msgs/KERNEL-INFO-REPLY)
-                  (= rsp-socket :shell_port)
-                  (s/valid? ::msp/kernel-info-reply-content rsp-content))))))))
+                                             (with-open [cljsrv (cljsrv/make-cljsrv)]
+                                               (core/run-kernel jup term cljsrv)
+                                               (let [{:keys [msgtype content]} (last (gen/sample mg/g-kernel-info-request-content N))
+                                                     _ (assert (= msgtype msgs/KERNEL-INFO-REQUEST))
+                                                     hdr (last (gen/sample (mg/g-message-header msgtype) N))
+                                                     phdr (last (gen/sample (mg/g-message-header msgs/COMM-MSG) N))
+                                                     envelope []
+                                                     signature (byte-array [])
+                                                     metadata {}
+                                                     buffers []
+                                                     reqmsg (msgs/make-jupmsg envelope signature hdr phdr metadata content buffers)
+                                                     inbound-msg (msgs/jupmsg->kernelreq :shell_port reqmsg)
+                                                     rspmsgs (do (>!! shin inbound-msg)
+                                                                 (Thread/sleep 10)
+                                                                 (on-outbound-channels jup))
+                                                     _ (assert (= (count rspmsgs) 3))
+                                                     non-status-msgs (->> rspmsgs (remove (C :rsp-msgtype (p = "status"))))
+                                                     _ (assert (= (count non-status-msgs) 1))
+                                                     {:keys [rsp-msgtype rsp-content rsp-socket req-message] :as rspmsg} (first non-status-msgs)]
+                                                 (and (= req-message reqmsg)
+                                                      (= rsp-msgtype msgs/KERNEL-INFO-REPLY)
+                                                      (= rsp-socket :shell_port)
+                                                      (s/valid? ::msp/kernel-info-reply-content rsp-content))))))))
  => true)

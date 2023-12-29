@@ -41,34 +41,34 @@
                      :version/qualifier "SNAPSHOT", :version/lein-v-raw "abcd-DIRTY"})
 
 (facts "version-string"
- (ver/version-string VER1)
- => "1.2.3-SNAPSHOT"
- (ver/version-string (dissoc VER1 :version/lein-v-raw))
- => "1.2.3-SNAPSHOT"
- (ver/version-string (dissoc VER1 :version/qualifier))
- => "1.2.3"
- (ver/version-string (dissoc VER1 :version/major :version/qualifier :version/lein-v-raw))
- => "0.2.3"
- (ver/version-string (dissoc VER1 :version/minor :version/qualifier :version/lein-v-raw))
- => "1.0.3"
- (ver/version-string (dissoc VER1 :version/incremental :version/qualifier :version/lein-v-raw))
- => "1.2.0"
-  (ver/version-string (dissoc VER1 :version/qualifier :version/lein-v-raw))
- => "1.2.3")
+       (ver/version-string VER1)
+       => "1.2.3-SNAPSHOT"
+       (ver/version-string (dissoc VER1 :version/lein-v-raw))
+       => "1.2.3-SNAPSHOT"
+       (ver/version-string (dissoc VER1 :version/qualifier))
+       => "1.2.3"
+       (ver/version-string (dissoc VER1 :version/major :version/qualifier :version/lein-v-raw))
+       => "0.2.3"
+       (ver/version-string (dissoc VER1 :version/minor :version/qualifier :version/lein-v-raw))
+       => "1.0.3"
+       (ver/version-string (dissoc VER1 :version/incremental :version/qualifier :version/lein-v-raw))
+       => "1.2.0"
+       (ver/version-string (dissoc VER1 :version/qualifier :version/lein-v-raw))
+       => "1.2.3")
 
 (facts "version-string-long"
- (ver/version-string-long VER1)
- => "1.2.3-SNAPSHOT@abcd-DIRTY")
+       (ver/version-string-long VER1)
+       => "1.2.3-SNAPSHOT@abcd-DIRTY")
 
 (facts "version-string-short"
- (ver/version-string-short VER1)
- => "1.2.3*"
- (ver/version-string-short (dissoc VER1 :version/lein-v-raw))
- => "1.2.3*"
- (ver/version-string-short (dissoc VER1 :version/qualifier))
- => "1.2.3*"
- (ver/version-string-short (dissoc VER1 :version/qualifier :version/lein-v-raw))
- => "1.2.3")
+       (ver/version-string-short VER1)
+       => "1.2.3*"
+       (ver/version-string-short (dissoc VER1 :version/lein-v-raw))
+       => "1.2.3*"
+       (ver/version-string-short (dissoc VER1 :version/qualifier))
+       => "1.2.3*"
+       (ver/version-string-short (dissoc VER1 :version/qualifier :version/lein-v-raw))
+       => "1.2.3")
 
 ;;; ----------------------------------------------------------------------------------------------------
 ;;; TEST.CHECK TESTS
@@ -102,12 +102,12 @@
 
 (def prop--version-basic
   (prop/for-all [v g-version]
-    (and ((every-pred :version/major :version/minor :version/incremental) v)
-         (let [qual (:version/qualifier v)]
-           (==> qual (string? qual)))
-         (let [lein-v (:version/lein-v-raw v)]
-           (==> lein-v (and (string? lein-v)
-                            (re-find #"^[\dabcdef]+(-DIRTY)?$" lein-v)))))))
+                (and ((every-pred :version/major :version/minor :version/incremental) v)
+                     (let [qual (:version/qualifier v)]
+                       (==> qual (string? qual)))
+                     (let [lein-v (:version/lein-v-raw v)]
+                       (==> lein-v (and (string? lein-v)
+                                        (re-find #"^[\dabcdef]+(-DIRTY)?$" lein-v)))))))
 
 (facts
  "version-basic"

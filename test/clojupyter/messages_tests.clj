@@ -19,9 +19,9 @@
 
 (def prop--jupyter-protocol-frames-can-be-generated
   (prop/for-all [{:keys [msgtype content]} mg/g-jupmsg-content-any]
-    (let [jupmsg (merge ((sh/s*message-header msgtype) content))]
-      (and (s/valid? ::jsp/jupmsg jupmsg)
-           (s/valid? ::msp/frames (msgs/jupmsg->frames (constantly "-SIGNED-") jupmsg))))))
+                (let [jupmsg (merge ((sh/s*message-header msgtype) content))]
+                  (and (s/valid? ::jsp/jupmsg jupmsg)
+                       (s/valid? ::msp/frames (msgs/jupmsg->frames (constantly "-SIGNED-") jupmsg))))))
 
 (fact
  "Jupyter protocol frames can be generated from jupmsgs"
@@ -31,17 +31,17 @@
 (def prop--jupmsgs-can-be-round-tripped
   (let [sig (u/get-bytes "-SIGNATURE-")]
     (prop/for-all [{:keys [msgtype content]} mg/g-jupmsg-content-any]
-      (let [checker (constantly true)
-            jupmsg (merge ((sh/s*message-header msgtype {:signature sig}) content))
-            frames(msgs/jupmsg->frames (constantly "-SIGNATURE-") jupmsg)
-            jupmsg' (msgs/frames->jupmsg checker frames)]
-        (and (apply = (mapv (P dissoc :preframes :buffers) [jupmsg jupmsg']))
-             (= [(into [] (-> jupmsg :preframes .-envelope))
-                 (into [] (-> jupmsg :preframes .-signature))
-                 (into [] (-> jupmsg :preframes .-delimiter))]
-                [(into [] (-> jupmsg' :preframes .-envelope))
-                 (into [] (-> jupmsg' :preframes .-signature))
-                 (into [] (-> jupmsg' :preframes .-delimiter))]))))))
+                  (let [checker (constantly true)
+                        jupmsg (merge ((sh/s*message-header msgtype {:signature sig}) content))
+                        frames (msgs/jupmsg->frames (constantly "-SIGNATURE-") jupmsg)
+                        jupmsg' (msgs/frames->jupmsg checker frames)]
+                    (and (apply = (mapv (P dissoc :preframes :buffers) [jupmsg jupmsg']))
+                         (= [(into [] (-> jupmsg :preframes .-envelope))
+                             (into [] (-> jupmsg :preframes .-signature))
+                             (into [] (-> jupmsg :preframes .-delimiter))]
+                            [(into [] (-> jupmsg' :preframes .-envelope))
+                             (into [] (-> jupmsg' :preframes .-signature))
+                             (into [] (-> jupmsg' :preframes .-delimiter))]))))))
 
 (fact
  "jupmsgs can be round-tripped to frames and back without loss"
@@ -50,12 +50,12 @@
 
 (def prop--message-accessors-for-execute-requests-appear-to-work
   (prop/for-all [m mg/g-execute-request-content]
-    (and (string? (msgs/message-code m))
-         (boolean? (msgs/message-allow-stdin m))
-         (boolean? (msgs/message-silent m))
-         (boolean? (msgs/message-store-history? m))
-         (boolean? (msgs/message-stop-on-error? m))
-         (map? (msgs/message-user-expressions m)))))
+                (and (string? (msgs/message-code m))
+                     (boolean? (msgs/message-allow-stdin m))
+                     (boolean? (msgs/message-silent m))
+                     (boolean? (msgs/message-store-history? m))
+                     (boolean? (msgs/message-stop-on-error? m))
+                     (map? (msgs/message-user-expressions m)))))
 
 (fact
  "Message accessors for execute-request content appear to work"
@@ -64,7 +64,7 @@
 
 (def prop--message-accessors-for-comm-messages-appear-to-work
   (prop/for-all [m mg/g-comm-message-content]
-    (string? (msgs/message-comm-id m))))
+                (string? (msgs/message-comm-id m))))
 
 (fact
  "Message accessors for comm-messages content appear to work"
@@ -73,7 +73,7 @@
 
 (def prop--message-accessors-for-input-reply-appear-to-work
   (prop/for-all [m mg/g-input-reply-content]
-    (string? (msgs/message-value m))))
+                (string? (msgs/message-value m))))
 
 (fact
  "Message accessors for input-reply content appear to work"
@@ -82,7 +82,7 @@
 
 (def prop--message-accessors-for-is-complete-appear-to-work
   (prop/for-all [m mg/g-is-complete-request-content]
-    (integer? (msgs/message-cursor-pos m))))
+                (integer? (msgs/message-cursor-pos m))))
 
 (fact
  "Message accessors for is-complete request content appear to work"
@@ -124,11 +124,11 @@
 
 (def prop--values-can-be-extracted-as-paths-and-reinserted-correctly
   (prop/for-all [msg mg/g-jupmsg-any]
-    (let [msg (-> msg (dissoc :preframes :buffers))
-          [res paths] (msgs/leaf-paths (every-pred (complement map?) (complement vector?)) (constantly :replaced) msg)]
-      (and (-> paths count pos?)
-           (not= res msg)
-           (= msg (msgs/insert-paths res paths))))))
+                (let [msg (-> msg (dissoc :preframes :buffers))
+                      [res paths] (msgs/leaf-paths (every-pred (complement map?) (complement vector?)) (constantly :replaced) msg)]
+                  (and (-> paths count pos?)
+                       (not= res msg)
+                       (= msg (msgs/insert-paths res paths))))))
 
 (fact
  "Values can be extracted from messages as paths and reinserted correctly"

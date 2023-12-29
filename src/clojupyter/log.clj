@@ -39,21 +39,21 @@
   (str/replace (or ?ns-str ?file "?") #"^clojupyter\." "c8r."))
 
 (defn output-fn
-    ([     data] (output-fn nil data))
-    ([opts data]
-     (let [{:keys [no-stacktrace?]} opts
-           {:keys [level ?err msg_ ?ns-str ?file hostname_
-                   timestamp_ ?line]} data]
-       (str                 "["
-        (fmt-level level)           " "
-        (force timestamp_)          " "
-        "Clojupyter"                "] "
-        (str (fmt-origin ?ns-str ?file)
-             (when ?line (str ":" ?line)))  " -- "
-        (force msg_)
-        (when-not no-stacktrace?
-          (when-let [err ?err]
-            (str "\n" (timbre/stacktrace err opts))))))))
+  ([data] (output-fn nil data))
+  ([opts data]
+   (let [{:keys [no-stacktrace?]} opts
+         {:keys [level ?err msg_ ?ns-str ?file hostname_
+                 timestamp_ ?line]} data]
+     (str                 "["
+                          (fmt-level level)           " "
+                          (force timestamp_)          " "
+                          "Clojupyter"                "] "
+                          (str (fmt-origin ?ns-str ?file)
+                               (when ?line (str ":" ?line)))  " -- "
+                          (force msg_)
+                          (when-not no-stacktrace?
+                            (when-let [err ?err]
+                              (str "\n" (timbre/stacktrace err opts))))))))
 
 (def CONFIG {:timestamp-opts {:pattern "HH:mm:ss.SSS", :locale :jvm-default, :timezone :utc}
              :ns-blacklist ["io.pedestal.*"]

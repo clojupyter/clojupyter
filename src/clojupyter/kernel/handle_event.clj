@@ -31,19 +31,19 @@
   [{:keys [req-message] :as ctx}]
   (assert req-message)
   (throw (ex-info (str "handle-event - internal error: " (msgs/message-msg-type req-message))
-           {:ctx ctx})))
+                  {:ctx ctx})))
 
 (defn- unsupported
   [{:keys [req-message] :as ctx}]
   (assert req-message)
   (throw (ex-info (str "handle-event - unhandled-event: " (msgs/message-msg-type req-message))
-           {:ctx ctx})))
+                  {:ctx ctx})))
 
 (defmulti calc
   (fn [msgtype _] msgtype))
 (defmethod calc :default [msgtype ctx]
   (throw (ex-info (str "Unhandled message type: " msgtype)
-           {:msgtype msgtype, :ctx ctx})))
+                  {:msgtype msgtype, :ctx ctx})))
 
 (defmethod calc msgs/CLEAR-OUTPUT       [_ ctx] (impossible ctx))
 (defmethod calc msgs/COMM-CLOSE         [_ ctx] (handle-comm ctx))

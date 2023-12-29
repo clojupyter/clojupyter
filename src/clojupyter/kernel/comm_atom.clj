@@ -49,7 +49,7 @@
 (declare agentfld comm-atom? send-comm-msg! send-comm-open! simple-fmt update-agent!)
 
 (deftype CommAtom
-    [comm-state_ jup_ target-name_ reqmsg_ cid_ agent_]
+         [comm-state_ jup_ target-name_ reqmsg_ cid_ agent_]
 
   comm-atom-proto
   (target [_]
@@ -74,7 +74,6 @@
     (add-watch (agentfld comm-atom) key f))
   (unwatch [comm-atom key]
     (remove-watch (agentfld comm-atom) key))
-
 
   mc/PMimeConvertible
   (to-mime [_]
@@ -167,9 +166,9 @@
     (pp/pprint-logical-block
      (print "#<")
      (pp/pprint-logical-block
-       (print (prefix comm-atom))
-       (pp/pprint-newline :linear)
-       (pp/pprint-logical-block (pp/write @comm-atom)))
+      (print (prefix comm-atom))
+      (pp/pprint-newline :linear)
+      (pp/pprint-logical-block (pp/write @comm-atom)))
      (print ">"))))
 
 (defmethod print-method CommAtom

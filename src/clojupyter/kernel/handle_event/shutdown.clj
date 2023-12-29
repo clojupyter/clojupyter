@@ -8,5 +8,5 @@
   (s*bind-state {:keys [req-message]}
     ;; Termination of Clojupyter itself commences because the handle-event loop terminates when it
     ;; handles a SHUTDOWN-REQUEST message, cf. `handle_event_process.clj`
-    (s*set-response msgs/SHUTDOWN-REPLY
-                    (msgs/shutdown-reply-content (msgs/message-restart req-message)))))
+                (s*set-response msgs/SHUTDOWN-REPLY
+                                (msgs/shutdown-reply-content (msgs/message-restart req-message)))))

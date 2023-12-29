@@ -28,8 +28,8 @@
   "Unescape all single quote characters (\\')."
   (p walk/postwalk
      (u/call-if string?
-        (C (P str/replace "%37" "%")
-           (P str/replace "%39" "'")))))
+                (C (P str/replace "%37" "%")
+                   (P str/replace "%39" "'")))))
 
 (def escaped-yaml-string
   "Encode a value as YAML escaping certain characters in strings."
@@ -45,12 +45,12 @@
   [version-map buildnum kernel-dir build-reqs run-reqs]
   (let [version-string (ver/version-string version-map)]
     {:conda-config/about    {:conda-config-about/description "Clojupyter - Run Clojure in Jupyter"
-                                 :conda-config-about/home "https://github.com/clojupyter/clojupyter"
-                                 :conda-config-about/license "MIT"}
+                             :conda-config-about/home "https://github.com/clojupyter/clojupyter"
+                             :conda-config-about/license "MIT"}
      :conda-config/build    {:conda-config-build/number buildnum
-                                 :conda-config-build/string (str buildnum)}
+                             :conda-config-build/string (str buildnum)}
      :conda-config/package  {:conda-config-package/name "clojupyter"
-                                 :conda-config-package/version (sanitize-ver version-string)}
+                             :conda-config-package/version (sanitize-ver version-string)}
      :conda-config/requirements {:conda-config-requirements/build build-reqs
                                  :conda-config-requirements/run run-reqs}
      :conda-config/source   {:conda-config-source/folder kernel-dir}}))
@@ -59,13 +59,13 @@
                           :ver :version/version-map
                           :build-num :conda-config-build/number
                           :kernel-dir :conda-config-source/folder)
-  "Returns the string to be written to the `meta.yaml` needed to Conda-build Clojupyter."
-  ([version-map build-num kernel-dir] (yaml-string {} version-map build-num kernel-dir))
-  ([{:keys [build-deps run-deps]} version-map build-num kernel-dir]
-   (let [build-deps (or build-deps BUILD-DEPS)
-         run-deps (or run-deps RUN-DEPS)]
-     (->> (conda-configuration version-map build-num kernel-dir build-deps run-deps)
-          unqualify-kws
-          escaped-yaml-string))))
+       "Returns the string to be written to the `meta.yaml` needed to Conda-build Clojupyter."
+       ([version-map build-num kernel-dir] (yaml-string {} version-map build-num kernel-dir))
+       ([{:keys [build-deps run-deps]} version-map build-num kernel-dir]
+        (let [build-deps (or build-deps BUILD-DEPS)
+              run-deps (or run-deps RUN-DEPS)]
+          (->> (conda-configuration version-map build-num kernel-dir build-deps run-deps)
+               unqualify-kws
+               escaped-yaml-string))))
 
 (instrument `yaml-string)

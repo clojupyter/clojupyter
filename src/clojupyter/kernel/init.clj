@@ -12,7 +12,7 @@
 (defn- shutdown-hook
   []
   (try (u!/with-exception-logging
-           (.close (state/zmq-context))
+         (.close (state/zmq-context))
          (log/info "Shutdown-hook terminating."))
        (finally
          (Thread/sleep 10)

@@ -65,8 +65,8 @@
  "history-reply-content conforms"
  (s/valid? ::msp/history-reply-content
            (msgs/history-reply-content [{:session 1, :line 1, :source "(list 1 2 3)"}
-                               {:session 3, :line 1, :source "(list 4 5 6)"}
-                               {:session 4, :line 1, :source "(list 7 8 9)"}]))
+                                        {:session 3, :line 1, :source "(list 4 5 6)"}
+                                        {:session 4, :line 1, :source "(list 7 8 9)"}]))
  => true)
 
 (fact

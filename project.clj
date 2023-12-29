@@ -3,7 +3,6 @@
   :license          {:name "MIT"}
   :url              "https://github.com/clojupyter/clojupyter"
 
-
   :scm                          {:name "git" :url "https://github.com/clojupyter/clojupyter"}
   :source-paths                 [] ;; provided by lein-tools-deps
   :resource-paths               [] ;; provided by lein-tools-deps

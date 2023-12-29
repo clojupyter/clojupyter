@@ -16,12 +16,11 @@
 (def CONDA-JARNAME-RE       (re-pattern (str (str/replace DEFAULT-TARGET-JARNAME "." "\\.") "$")))
 (def LOGO-ASSET         "clojupyter/assets/logo-64x64.png")
 (def SCRIPT-ASSETS      ["clojupyter/assets/conda-build/build.sh"
-                                 "clojupyter/assets/conda-build/post-link.sh"
-                                 "clojupyter/assets/conda-build/pre-unlink.sh"
-                                 "clojupyter/assets/conda-build/bld.bat"
-                                 "clojupyter/assets/conda-build/post-link.bat"
-                                 "clojupyter/assets/conda-build/pre-unlink.bat"
-                                 ])
+                         "clojupyter/assets/conda-build/post-link.sh"
+                         "clojupyter/assets/conda-build/pre-unlink.sh"
+                         "clojupyter/assets/conda-build/bld.bat"
+                         "clojupyter/assets/conda-build/post-link.bat"
+                         "clojupyter/assets/conda-build/pre-unlink.bat"])
 
 (s/def :local/file              (p instance? java.io.File))
 (s/def :local/filetype              (s/nilable #{:filetype/file :filetype/directory}))
@@ -49,47 +48,39 @@
 (s/def :local/user-homedir          :local/file)
 (s/def :local/user-kernel-dir           :local/file)
 
-(s/def :local/install-env           (s/keys :req [
-                                                              :local/default-ident
-                                                              :local/filemap
-                                                              :local/host-kernel-dir
-                                                              :local/installed-kernels
-                                                              :local/resource-map
-                                                              :local/jarfiles
-                                                              :local/logo-resource
-                                                              :local/user-homedir
-                                                              :local/user-kernel-dir
-                                                              :version/version-map
-                                                              ]
-                                                        :opt [:local/convert-exe]))
-(s/def :local/user-opts             (s/keys :req [
-                                                              :local/allow-deletions?
-                                                              :local/allow-destdir?
-                                                              :local/filemap
-                                                              :local/generate-kernel-json?
-                                                              :local/loc
-                                                              :local/source-jarfiles
-                                                              :local/target-jarname
-                                                              ]
-                                                        :opt [
-                                                              :local/destdir
-                                                              ]))
+(s/def :local/install-env           (s/keys :req [:local/default-ident
+                                                  :local/filemap
+                                                  :local/host-kernel-dir
+                                                  :local/installed-kernels
+                                                  :local/resource-map
+                                                  :local/jarfiles
+                                                  :local/logo-resource
+                                                  :local/user-homedir
+                                                  :local/user-kernel-dir
+                                                  :version/version-map]
+                                            :opt [:local/convert-exe]))
+(s/def :local/user-opts             (s/keys :req [:local/allow-deletions?
+                                                  :local/allow-destdir?
+                                                  :local/filemap
+                                                  :local/generate-kernel-json?
+                                                  :local/loc
+                                                  :local/source-jarfiles
+                                                  :local/target-jarname]
+                                            :opt [:local/destdir]))
 
-(s/def :local/install-spec          (s/keys :req [
-                                                              :local/allow-deletions?
-                                                              :local/allow-destdir?
-                                                              :local/destdir
-                                                              :local/filemap
-                                                              :local/file-copyspec
-                                                              :local/ident
-                                                              :local/installed-kernels
-                                                              :local/generate-kernel-json?
-                                                              :local/logo-resource
-                                                              :local/resource-copyspec
-                                                              :local/resource-map
-                                                              :version/version-map
-                                                              ]
-                                                        :opt [:local/convert-exe]))
+(s/def :local/install-spec          (s/keys :req [:local/allow-deletions?
+                                                  :local/allow-destdir?
+                                                  :local/destdir
+                                                  :local/filemap
+                                                  :local/file-copyspec
+                                                  :local/ident
+                                                  :local/installed-kernels
+                                                  :local/generate-kernel-json?
+                                                  :local/logo-resource
+                                                  :local/resource-copyspec
+                                                  :local/resource-map
+                                                  :version/version-map]
+                                            :opt [:local/convert-exe]))
 
 (def DEFAULT-USER-OPTS
   {:local/allow-deletions?      false
@@ -104,11 +95,11 @@
 (s/def :kernel-json/display_name    string?)
 (s/def :kernel-json/language        string?)
 (s/def :kernel-json/info        (s/keys :req-unq [:kernel-json/argv
-                                                          :kernel-json/display_name
-                                                          :kernel-json/language]))
+                                                  :kernel-json/display_name
+                                                  :kernel-json/language]))
 
 (s/def :local/kerneldir-parents     (s/coll-of :local/file))
 (s/def :local/kernelmap         (s/map-of :local/file :kernel-json/info))
 (s/def :local/remove-env        (s/keys :req [:local/kernelmap
-                                                      :local/kerneldir-parents
-                                                      :local/filemap]))
+                                              :local/kerneldir-parents
+                                              :local/filemap]))

@@ -9,4 +9,4 @@
   (s*append-enter-action (step (fn [S] (assoc S ::history-result (state/get-history)))
                                {:local :get-history}))
   (s*bind-state {:keys [::history-result]}
-    (s*set-response msgs/HISTORY-REPLY (msgs/history-reply-content history-result))))
+                (s*set-response msgs/HISTORY-REPLY (msgs/history-reply-content history-result))))

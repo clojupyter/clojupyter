@@ -2,9 +2,8 @@
  :deps {cheshire/cheshire           {:mvn/version "5.11.0"}
         cider/cider-nrepl  {:mvn/version "0.44.0"}
         clojure.java-time/clojure.java-time     {:mvn/version "1.1.0"}
-        com.cemerick/pomegranate    {:mvn/version "1.1.0"}
-        ;;com.grammarly/omniconf  {:mvn/version "0.4.3"}
-        io.github.grammarly/omniconf  {:git/sha "d71662749c6b2e5baf80e9e059351a343674330e"}
+        clj-commons/pomegranate {:mvn/version "1.2.23"}
+        com.grammarly/omniconf  {:mvn/version "0.4.3"}
         com.taoensso/timbre     {:mvn/version "5.2.1"}
         io.aviso/pretty         {:mvn/version "1.1.1"}
         hiccup/hiccup               {:mvn/version "2.0.0-RC2"}

@@ -34,4 +34,4 @@ jobs:
           cljfmt: 0.12.0
 
       - name: Run tests
-        run: clj -X:test
+        run: clojure -X:test

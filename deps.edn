@@ -42,4 +42,9 @@
 
   :test {:extra-paths ["test"]
          :extra-deps {midje/midje {:mvn/version "1.10.9"}}
-         :exec-fn clojupyter.run-tests/run-tests}}}
+         :exec-fn clojupyter.run-tests/run-tests}
+
+  :deploy {:extra-deps {slipset/deps-deploy {:mvn/version "0.2.2"}}
+           :exec-fn deps-deploy.deps-deploy/deploy
+           :exec-args {:installer :remote
+                       :sign-releases? true}}}}

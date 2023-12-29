@@ -58,3 +58,10 @@
            :uber-file uber-file
            :basis basis})
   (println uber-file))
+
+(defn pom [_]
+  (b/write-pom {:target "."
+                :lib lib
+                :version version
+                :basis basis
+                :src-dirs ["src"]}))

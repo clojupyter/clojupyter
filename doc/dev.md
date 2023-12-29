@@ -53,3 +53,24 @@ Building an uberjar:
 ```
 clj -T:build uber
 ```
+
+## Release
+
+
+
+``` bash
+$ cat ~/.m2/settings.xml
+<settings>
+    <servers>
+        <server>
+            <id>${repo.id}</id>
+            <username>${repo.login}</username>
+            <password>${repo.pwd}</password>
+        </server>
+    </servers>
+</settings>
+
+$ clj -T:build pom
+
+$ mvn deploy -DaltDeploymentRepository=clojars::https://repo.clojars.org/ -Drepo.id=clojars -Drepo.login=krukow -Drepo.pwd="..."
+```

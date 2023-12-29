@@ -87,11 +87,12 @@ If you are using Clojupyter as a library, you can use Clojupyter's command line 
 operations such as listing, installing, and removing Clojupyter kernels.
 
 For example, in a Clojure repository which includes Clojuputer, you can get the list of available
-commands:
+commands (you can ignore the warning - it's from an older dependency):
 
-```
-bash> clj -m clojupyter.cmdline list-commands
-Clojupyter v0.2.3 - List commands
+```bash
+clj -M -m clojupyter.cmdline list-commands
+WARNING: parse-boolean already refers to: #'clojure.core/parse-boolean in namespace: omniconf.core, being replaced by: #'omniconf.core/parse-boolean
+Clojupyter v0.4.319@319 - List commands
 
     Clojupyter commands:
 

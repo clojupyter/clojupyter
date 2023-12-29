@@ -671,7 +671,7 @@
 
   EXAMPLE USE:
 
-    > clj -m clojupyter.cmdline version
+    > clj -M -m clojupyter.cmdline version
     Clojupyter v0.2.3 - Version
 
              #:version{:major 0,
@@ -929,7 +929,7 @@
 
               EXAMPLE USE:
 
-                > clj -m clojupyter.cmdline version
+                > clj -M -m clojupyter.cmdline version
                 Clojupyter v0.2.3 - Version
 
                          #:version{:major 0,

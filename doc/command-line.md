@@ -34,8 +34,9 @@ Often, the easiest way to get information about a command is simply to list the 
 available directly from Clojupyter itself:
 
 ```
-> clj -m clojupyter.cmdline help version
-Clojupyter v0.2.3 - Help
+> clj -M -m clojupyter.cmdline help version
+WARNING: parse-boolean already refers to: #'clojure.core/parse-boolean in namespace: omniconf.core, being replaced by: #'omniconf.core/parse-boolean
+Clojupyter v0.4.319@319 - Help
 
     Use command 'list-commands' to see a list of available commands.
 
@@ -73,7 +74,6 @@ Clojupyter v0.2.3 - Help
             >
 
 exit(0)
->
 ```
 
 ## Using the Clojupyter command line
@@ -189,6 +189,32 @@ The `install` command is used to install Clojupyter locally on the current machi
 works both in Clojupyter's own repo, and if you are using Clojupyter as library included in another
 project.
 
+```
+Clojupyter cmdline command: Installs a Clojuputer kernel on the local host based on the contents of
+          the code repository in the current directory.
+
+          Note that this function is designed to be used from the command line and is normally not called
+          from the REPL although this does in fact work.  Note also that the function itself, if used
+          directly from the REPL, returns a data structure containing a vector of strings which will be sent
+          to standard output, whereas the cmdline command itself actually sends the strings to stdout.  The
+          function receives its arguments as string values.
+
+          OPTIONS:
+
+            -h, --host:         Install kernel such that it is available to all users on the host.  If not
+                                specified installs the kernel in the Jupyter kernel directory of the current
+                                user.  See platform documentation for details on the location of host-wide and
+                                user-specific Jupyter kernel directories.
+
+            -i, --ident:        String to be used as identifier for the kernel.
+
+            -j, --jarfile:      Filename of the jarfile, which must be a standalone jar containing Clojupyter,
+                                to be installed.  If the not specified, uses any standalone jarfile found in
+                                the current directory or one of its subdirectories, provided a single such
+                                file is found.  If zero or multiple standalone jarfiles are found an error is
+                                raised.
+```
+
 If you want to know how to install Clojupyter when using it as a library, see [Using Clojupyter as a
 library](library.md).
 
@@ -233,7 +259,7 @@ platform dependent).
 #### Example
 
 ```
-> clj -m clojupyter.cmdline install --ident mykernel -h
+> clj -M -m clojupyter.cmdline install --ident mykernel -h
 Clojupyter v0.2.3 - Install Clojupyter
 
     Installed jar:      ~/lab/clojure/clojupyter/target/clojupyter-0.2.3-SNAPSHOT-standalone.jar
@@ -252,7 +278,7 @@ The `list-commands` command simply lists the commands available.
 
 Example: 
 ```
-> clj -m clojupyter.cmdline list-commands
+> clj -M -m clojupyter.cmdline list-commands
 Clojupyter v0.2.3 - List commands
 
     Clojupyter commands:
@@ -287,7 +313,7 @@ install, the kernel identifier and installation location is show.
 
 Example:
 ```
-> clj -m clojupyter.cmdline list-installs
+> clj -M -m clojupyter.cmdline list-installs
 Clojupyter v0.2.3 - All Clojupyter kernels
 
     |    IDENT |                                DIR |
@@ -311,7 +337,7 @@ to select which kernels to include in the listing.
 Example:
 
 ```
-> clj -m clojupyter.cmdline list-installs-matching test
+> clj -M -m clojupyter.cmdline list-installs-matching test
 Clojupyter v0.2.3 - Clojupyter kernels matching the regular expression 'test'.
 
     |  IDENT |                              DIR |
@@ -335,7 +361,7 @@ your machine are not affected.
 Example:
 
 ```
-> clj -m clojupyter.cmdline remove-install test-2
+> clj -M -m clojupyter.cmdline remove-install test-2
 Clojupyter v0.2.3 - Remove kernel 'test-2'
 
     Step: Delete ~/Library/Jupyter/kernels/test-2
@@ -355,7 +381,7 @@ expression argument.
 Example:
 
 ```
-> clj -m clojupyter.cmdline remove-installs-matching test
+> clj -M -m clojupyter.cmdline remove-installs-matching test
 Clojupyter v0.2.3 - Remove installs
 
     Step: Delete ~/Library/Jupyter/kernels/test-2
@@ -375,7 +401,7 @@ Unsurprisingly the `version` command provides version information about the Cloj
 Example:
 
 ```
-> clj -m clojupyter.cmdline version
+> clj -M -m clojupyter.cmdline version
 Clojupyter v0.2.3 - Version
 
          #:version{:major 0,

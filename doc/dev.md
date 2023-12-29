@@ -52,7 +52,49 @@ Building an uberjar:
 
 ```
 clj -T:build uber
+WARNING: parse-boolean already refers to: #'clojure.core/parse-boolean in namespace: omniconf.core, being replaced by: #'omniconf.core/parse-boolean
+target/clojupyter-0.4.321-standalone.jar
 ```
+
+## Install kernel
+
+```
+$ clj -M -m clojupyter.cmdline install --jarfile target/clojupyter-0.4.321-standalone.jar --ident clojupyter-0.4.321
+```
+
+Verify:
+
+```
+$ clj -M -m clojupyter.cmdline list-installs
+WARNING: parse-boolean already refers to: #'clojure.core/parse-boolean in namespace: omniconf.core, being replaced by: #'omniconf.core/parse-boolean
+Clojupyter v0.4.321@321 - All Clojupyter kernels
+
+    |              IDENT |                                          DIR |
+    |--------------------+----------------------------------------------|
+    | clojupyter-0.4.321 | ~/Library/Jupyter/kernels/clojupyter-0.4.321 |
+
+exit(0)
+```
+
+```
+brew install jupyterlab
+```
+
+
+```
+jupyter lab --version
+4.0.9
+```
+
+```
+jupyter-console --kernel=clojupyter-0.4.321
+WARNING: parse-boolean already refers to: #'clojure.core/parse-boolean in namespace: omniconf.core, being replaced by: #'omniconf.core/parse-boolean
+Jupyter console 6.6.3
+
+Clojupyter (0.4.321)
+```
+
+
 
 ## Release
 

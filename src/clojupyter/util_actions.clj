@@ -66,7 +66,6 @@
   [k v var]
   (alter-meta! var #(assoc % k v)))
 
-
 (defn create-temp-diretory!
   "Creates a new readable/writable directory and returns its name as a `java.io.File`.  Throws an
   exception if the temp directory could not be created."
@@ -104,7 +103,7 @@
       (if (a/success? action-result)
         (assoc result :leave-action action-result)
         (throw (ex-info (str "Action failed: " action-result)
-                 {:action leave-action, :action-result action-result}))))
+                        {:action leave-action, :action-result action-result}))))
     result))
 
 (defmacro  exiting-on-completion
@@ -118,15 +117,15 @@
 (defn file-filetype
   [f]
   (cond
-    (fs/file? f)		:filetype/file
-    (fs/directory? f)		:filetype/directory
-    :else			nil))
+    (fs/file? f)        :filetype/file
+    (fs/directory? f)       :filetype/directory
+    :else           nil))
 
 (defmulti  find-executable (fn [_] (os/operating-system)))
 (letfn [(find-exe [exe]
           (let [{:keys [out err exit]} (sh/sh "/usr/bin/env" "which" exe)]
             (when (zero? exit)
-              (-> out str/trim io/file)))) ]
+              (-> out str/trim io/file))))]
   (defmethod find-executable :macos [exe]
     (find-exe exe))
   (defmethod find-executable :linux [exe]
@@ -236,10 +235,10 @@
   ([return-value f]
    (fn [& args]
      (try (with-exception-logging
-              (apply f args))
-      (catch Exception e
-        (log/error e)
-        (Thread/sleep 10)
-        [return-value (str e) e])))))
+            (apply f args))
+          (catch Exception e
+            (log/error e)
+            (Thread/sleep 10)
+            [return-value (str e) e])))))
 
 (set-defn-indent! #'exiting-on-completion #'without-exiting #'with-temp-directory!)

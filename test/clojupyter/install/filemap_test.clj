@@ -27,16 +27,16 @@
                  fm2 g-random-filemap
                  fm3 g-random-filemap]
     ;; Base properties
-    (= fm1 fm1) (= fm2 fm2) (= fm3 fm3)
-    (= {} (get-map (filemap)))
-    (= fm1 (filemap (get-map fm1)))
+                (= fm1 fm1) (= fm2 fm2) (= fm3 fm3)
+                (= {} (get-map (filemap)))
+                (= fm1 (filemap (get-map fm1)))
     ;; Monoid properties:
-    (= fm1 (filemap fm1 (filemap)))
-    (= fm1 (filemap (filemap) fm1))
-    (= (filemap fm1 fm2 fm3)
-       (filemap (filemap fm1 fm2) fm3)
-       (filemap fm1 (filemap fm2 fm3)))))
+                (= fm1 (filemap fm1 (filemap)))
+                (= fm1 (filemap (filemap) fm1))
+                (= (filemap fm1 fm2 fm3)
+                   (filemap (filemap fm1 fm2) fm3)
+                   (filemap fm1 (filemap fm2 fm3)))))
 
 (fact "Filemap is a monoid"
-  (:pass? (tc/quick-check QC-ITERS prop--filemap-monoid))
-  => true)
+      (:pass? (tc/quick-check QC-ITERS prop--filemap-monoid))
+      => true)

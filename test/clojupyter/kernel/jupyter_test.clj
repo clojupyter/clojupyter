@@ -1,11 +1,11 @@
 (ns clojupyter.kernel.jupyter-test
   (:require
-   [clojure.spec.alpha			:as s]
-   [midje.sweet				:as midje	:refer [fact =>]]
+   [clojure.spec.alpha          :as s]
+   [midje.sweet             :as midje   :refer [fact =>]]
    ,,
-   [clojupyter.messages			:as msgs]
-   [clojupyter.messages-specs		:as msp]
-   [clojupyter.test-shared 		:as ts]))
+   [clojupyter.messages         :as msgs]
+   [clojupyter.messages-specs       :as msp]
+   [clojupyter.test-shared      :as ts]))
 
 (fact
  "comm-close-content conforms"
@@ -65,8 +65,8 @@
  "history-reply-content conforms"
  (s/valid? ::msp/history-reply-content
            (msgs/history-reply-content [{:session 1, :line 1, :source "(list 1 2 3)"}
-                               {:session 3, :line 1, :source "(list 4 5 6)"}
-                               {:session 4, :line 1, :source "(list 7 8 9)"}]))
+                                        {:session 3, :line 1, :source "(list 4 5 6)"}
+                                        {:session 4, :line 1, :source "(list 7 8 9)"}]))
  => true)
 
 (fact

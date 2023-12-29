@@ -3,6 +3,6 @@
             [io.simplect.compose :refer [C p]])
   (:import [org.zeromq ZContext ZMQ$Socket]))
 
-(s/def ::zcontext			(p instance? ZContext))
-(s/def ::zsocket			(p instance? ZMQ$Socket))
-(s/def ::two-tuple			(s/and vector? (C count (p = 2))))
+(s/def ::zcontext           (p instance? ZContext))
+(s/def ::zsocket            (p instance? ZMQ$Socket))
+(s/def ::two-tuple          (s/and vector? (C count (p = 2))))

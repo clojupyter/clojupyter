@@ -4,8 +4,8 @@
             [clojure.java.io :as io])
   (:import javax.imageio.ImageIO))
 
-(def ^:private LOGO-PATH	"clojupyter/assets/logo-350x80.png")
-(def ^:private LICENSE-PATH	"clojupyter/assets/license.txt")
+(def ^:private LOGO-PATH    "clojupyter/assets/logo-350x80.png")
+(def ^:private LICENSE-PATH "clojupyter/assets/license.txt")
 
 (defn- logo-dimensions
   [filename]
@@ -28,7 +28,6 @@
   "Returns a clojupyter logo as a `java.awt.image.BufferedImage`."
   []
   (ImageIO/read ^java.net.URL (logo-resource)))
-
 
 (defn render-license
   []

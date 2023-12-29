@@ -29,7 +29,7 @@
              true)
       (not valid?)
       ,, (throw (ex-info (str "Invalid msgtype for port " channel-port ": " msgtype)
-                  {:req-message req-message, :msgtype msgtype, :channel-port channel-port}))
+                         {:req-message req-message, :msgtype msgtype, :channel-port channel-port}))
       :else
       ,, (do (update-status! "busy")
              (he/handle-event! (assoc ctx :req-message req-message :req-port req-port))
@@ -56,10 +56,10 @@
   [sock-kw valid-msgtype-pred {:keys [term] :as ctx}]
   (async/thread
     (shutdown/initiating-shutdown-on-exit [:handle-event-process term]
-      (u!/with-exception-logging
-          (do (log/debug (str "handle-event-process starting: " sock-kw))
-              (run-dispatch-loop sock-kw valid-msgtype-pred ctx))
-        (log/debug (str "handle-event-process terminating: "  sock-kw))))))
+                                          (u!/with-exception-logging
+                                            (do (log/debug (str "handle-event-process starting: " sock-kw))
+                                                (run-dispatch-loop sock-kw valid-msgtype-pred ctx))
+                                            (log/debug (str "handle-event-process terminating: "  sock-kw))))))
 
 (def valid-control-port-msgtype? (p contains? #{msgs/SHUTDOWN-REQUEST msgs/INTERRUPT-REQUEST msgs/KERNEL-INFO-REQUEST}))
 
@@ -71,6 +71,6 @@
 
 (defn start-handle-event-process
   [ctx]
-  (doseq [[sock-kw pred] [[:control_port 	valid-control-port-msgtype?]
-                          [:shell_port		valid-shell-port-msgtype?]]]
+  (doseq [[sock-kw pred] [[:control_port    valid-control-port-msgtype?]
+                          [:shell_port      valid-shell-port-msgtype?]]]
     (start-channel-thread sock-kw pred ctx)))

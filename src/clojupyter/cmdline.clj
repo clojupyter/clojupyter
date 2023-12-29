@@ -76,12 +76,12 @@
           docstr (when cmd? (->> arg symbol (ns-resolve cmdline-ns)  meta :doc))]
       (cmdline/outputs
        (cond
-         (not cmd?)	[(str "'" arg "' does not appear to be a Clojupyter command.")]
-         (not docstr)	[(str "No docstring found for command '" arg "'.")]
-         :else		(concat [(str "Docstring for '" arg "':") ""]
-                                (->> docstr
-                                     str/split-lines
-                                     (map (p str "    ")))))))
+         (not cmd?) [(str "'" arg "' does not appear to be a Clojupyter command.")]
+         (not docstr)   [(str "No docstring found for command '" arg "'.")]
+         :else      (concat [(str "Docstring for '" arg "':") ""]
+                            (->> docstr
+                                 str/split-lines
+                                 (map (p str "    ")))))))
     (cmdline/outputs ["" "Usage: <clojupyter> help [command]"])))
 
 (defn- s*help
@@ -90,7 +90,7 @@
      (cmdline/outputs ["Use command 'list-commands' to see a list of available commands." ""
                        "Use command 'help <cmd>' to get documentation for individual commands." ""])
      (s*when (-> args count pos?)
-       (s*help-cmd args))
+             (s*help-cmd args))
      (cmdline/set-exit-code 0)))
 
 (defn- s*list-commands
@@ -115,9 +115,9 @@
 
 (defn- s*supported-os?
   []
-  (let [supp?	(os/supported-os?)
-        supp	(if supp? "Supported." "Not supported.")
-        ex	(if supp? 0 1)]
+  (let [supp?   (os/supported-os?)
+        supp    (if supp? "Supported." "Not supported.")
+        ex  (if supp? 0 1)]
     (C (cmdline/set-header "Operating System")
        (cmdline/set-result {:osname (os/osname), :supported-os? supp?})
        (cmdline/output (if-let [os (os/operating-system)]
@@ -186,55 +186,55 @@
     :validate [(C str (p re-find #".jar$"))]
     :parse-fn io/file]])
 
-(s/def ::host			boolean?)
-(s/def ::ident			string?)
-(s/def ::jarfile		string?)
-(s/def ::loc			#{:user :host})
-(s/def ::options		(s/keys :req-un [::host]
-                                        :opt-un [::ident]))
-(s/def ::parse-result		(s/keys :req-un [::options]))
+(s/def ::host           boolean?)
+(s/def ::ident          string?)
+(s/def ::jarfile        string?)
+(s/def ::loc            #{:user :host})
+(s/def ::options        (s/keys :req-un [::host]
+                                :opt-un [::ident]))
+(s/def ::parse-result       (s/keys :req-un [::options]))
 
 (def- KEYMAP
-  {:host		:local/loc
-   :ident		:local/ident
-   :jarfile		:local/source-jarfile})
+  {:host        :local/loc
+   :ident       :local/ident
+   :jarfile     :local/source-jarfile})
 
 (def- HOSTMAP {true  :loc/host, false :loc/user})
 
 (sdefn build-user-opts (s/cat :parse-result ::parse-result)
-  [{{:keys [host jarfile] :as parse-opts} :options :as parse-result}]
-  (let [jarfiles (if jarfile #{jarfile} #{})
-        user-opts (-> (merge lsp/DEFAULT-USER-OPTS
-                             (set/rename-keys parse-opts KEYMAP)
-                             {:local/loc (get HOSTMAP host)})
-                      (assoc :local/filemap (fm/filemap jarfiles)
-                             :local/source-jarfiles jarfiles)
-                      (dissoc :local/source-jarfile))]
-    (when-not (s/valid? :local/user-opts user-opts)
-      (u!/throw-info "Internal error: Invalid cmdline parse result."
-        {:parse-result parse-result, :user-opts user-opts,
-         :explain-str (s/explain-str :local/user-opts user-opts)}))
-    user-opts))
+       [{{:keys [host jarfile] :as parse-opts} :options :as parse-result}]
+       (let [jarfiles (if jarfile #{jarfile} #{})
+             user-opts (-> (merge lsp/DEFAULT-USER-OPTS
+                                  (set/rename-keys parse-opts KEYMAP)
+                                  {:local/loc (get HOSTMAP host)})
+                           (assoc :local/filemap (fm/filemap jarfiles)
+                                  :local/source-jarfiles jarfiles)
+                           (dissoc :local/source-jarfile))]
+         (when-not (s/valid? :local/user-opts user-opts)
+           (u!/throw-info "Internal error: Invalid cmdline parse result."
+                          {:parse-result parse-result, :user-opts user-opts,
+                           :explain-str (s/explain-str :local/user-opts user-opts)}))
+         user-opts))
 
 (def parse-install-local-cmdline (p parse-cmdline INSTALL-OPTIONS))
 
 (sdefn- s*install (s/nilable (s/coll-of string? :type vector?))
-  [& args]
-  (let [{:keys [error-messages arguments] :as result} (parse-install-local-cmdline args)
-        result (assoc result :cmdline-args args)]
-    (C (cmdline/set-header "Install Clojupyter")
-       (cond
-         error-messages
-         ,, (C (cmdline/set-exit-code 1)
-               (cmdline/outputs error-messages))
-         (-> arguments count pos?)
-         ,, (C (cmdline/set-exit-code 1)
-               (cmdline/outputs [(str "Command line arguments not permitted: " arguments)
-                                 "To specify a kernel identifier use the \"--ident\" option."]))
-         :else
-         ,, (local/s*install {}
-                             (build-user-opts result)
-                             (local!/get-install-environment))))))
+        [& args]
+        (let [{:keys [error-messages arguments] :as result} (parse-install-local-cmdline args)
+              result (assoc result :cmdline-args args)]
+          (C (cmdline/set-header "Install Clojupyter")
+             (cond
+               error-messages
+               ,, (C (cmdline/set-exit-code 1)
+                     (cmdline/outputs error-messages))
+               (-> arguments count pos?)
+               ,, (C (cmdline/set-exit-code 1)
+                     (cmdline/outputs [(str "Command line arguments not permitted: " arguments)
+                                       "To specify a kernel identifier use the \"--ident\" option."]))
+               :else
+               ,, (local/s*install {}
+                                   (build-user-opts result)
+                                   (local!/get-install-environment))))))
 
 ;;; ----------------------------------------------------------------------------------------------------
 ;;; BUILD CONDA PACKAGE
@@ -276,7 +276,7 @@
               (cmdline/set-exit-code 1))
            (C (conda-build/s*conda-build opts blddir install-env build-env build-params)
               (pl/s*when-executing
-                conda-build/s*report-conda-build)))))))
+               conda-build/s*report-conda-build)))))))
 
 ;;; ----------------------------------------------------------------------------------------------------
 ;;; CONDA LINK
@@ -339,7 +339,7 @@
          (C (cmdline/set-result (assoc parse-result :conda-unlink/cmdline-args args))
             (cmdline/outputs error-messages)
             (s*when arguments?
-              (cmdline/output (str "Arguments not allowed: " arguments))))
+                    (cmdline/output (str "Arguments not allowed: " arguments))))
          (let [result ((unlink/s*conda-unlink {:skip-execute? no-actions} env) {})
                filemap (-> kernel-dir io/file file-seq doall fm/filemap)]
            (unlink/s*report-unlink-actions kernel-dir result filemap))))))
@@ -371,30 +371,27 @@
             (invoke-s*fn ~f ~argc args# ~exit-code ~msg)))))
 
 (define-cmds CMDS
-  {
-   "help"			[nil s*help]
-   "install"			[nil s*install]
-   "list-commands"		[0 (s*list-commands CMDS)]
-   "list-installs"		[0 s*list-installs]
-   "list-installs-matching"	[1 s*list-installs-matching 1
-                                 "Usage: Specify a regular expression to match with kernel identifier."]
-   "remove-installs-matching"	[1 s*remove-installs-matching 1
+  {"help"           [nil s*help]
+   "install"            [nil s*install]
+   "list-commands"      [0 (s*list-commands CMDS)]
+   "list-installs"      [0 s*list-installs]
+   "list-installs-matching" [1 s*list-installs-matching 1
+                             "Usage: Specify a regular expression to match with kernel identifier."]
+   "remove-installs-matching"   [1 s*remove-installs-matching 1
                                  "Usage: ... remove-installs-matching <ident-regex-string>"]
-   "remove-install"		[1 s*remove-install 1
-                                 "Usage: ... remove-install <ident>"]
-   "version"			[0 s*version]
-   })
+   "remove-install"     [1 s*remove-install 1
+                         "Usage: ... remove-install <ident>"]
+   "version"            [0 s*version]})
 
 (define-cmds DVL-CMDS
   ;; Relevant for Clojupyter development only
-  {
-   "conda-build"		[nil s*conda-build]		;; Build package for distribution via conda
-   "conda-link"			[nil s*conda-link]		;; Used by conda install procedure on end-user machine
-   "conda-unlink"		[nil s*conda-unlink]		;; Used by conda uninastall procedure on end-user machine
-   "eval"			[1 s*eval]			;; For debugging
-   "getenv"			[1 s*getenv]			;; For debugging
-   "list-dvl-commands"		[0 (s*list-commands DVL-CMDS)]	;; In case you forget
-   "supported-os?"		[0 s*supported-os?]		;; Not really used
+  {"conda-build"        [nil s*conda-build]     ;; Build package for distribution via conda
+   "conda-link"         [nil s*conda-link]      ;; Used by conda install procedure on end-user machine
+   "conda-unlink"       [nil s*conda-unlink]        ;; Used by conda uninastall procedure on end-user machine
+   "eval"           [1 s*eval]          ;; For debugging
+   "getenv"         [1 s*getenv]            ;; For debugging
+   "list-dvl-commands"      [0 (s*list-commands DVL-CMDS)]  ;; In case you forget
+   "supported-os?"      [0 s*supported-os?]     ;; Not really used
    })
 
 (defmethod handle-cmd :default
@@ -451,9 +448,9 @@
   function is designed to be used from the command line and is normally not called from
   REPL (although this does in fact work).
 
-  COMMAND ARGUMENTS: 	None
+  COMMAND ARGUMENTS:    None
 
-  FLAG/OPTIONS: 	None
+  FLAG/OPTIONS:     None
 
   EXAMPLE USE:
 
@@ -495,9 +492,9 @@
   directly from the REPL, returns a data structure containing a vector of strings which will be sent
   to standard output, whereas the cmdline command itself actually sends the strings to stdout.
 
-  COMMAND ARGUMENTS:	None
+  COMMAND ARGUMENTS:    None
 
-  OPTIONS:		None
+  OPTIONS:      None
 
   EXAMPLE USE:
 
@@ -532,7 +529,7 @@
 
     1. Mandatory string representing a regular expression to be interpreted by `clojure.core/re-pattern`,
 
-  OPTIONS:		None
+  OPTIONS:      None
 
   EXAMPLE USE:
 
@@ -685,7 +682,7 @@
 
     exit(0)
     >"
- #((s*version) {}))
+  #((s*version) {}))
 
 ;;; ----------------------------------------------------------------------------------------------------
 ;;; INTERNAL/DEVELOPMENT-ONLY

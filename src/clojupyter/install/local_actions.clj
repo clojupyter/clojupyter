@@ -22,14 +22,14 @@
 (def resources->resourcemap (C (p map (juxt identity io/resource)) (p into {})))
 
 (defmulti  kernels-dir (fn [loc] [loc (os/operating-system)]))
-(defmethod kernels-dir [:user :linux] [_] 	(fs/expand-home "~/.local/share/jupyter/kernels"))
-(defmethod kernels-dir [:host :linux] [_] 	(io/file "/usr/local/share/jupyter/kernels"))
-(defmethod kernels-dir [:user :macos] [_] 	(fs/expand-home "~/Library/Jupyter/kernels"))
-(defmethod kernels-dir [:host :macos] [_]	(io/file "/usr/local/share/jupyter/kernels"))
+(defmethod kernels-dir [:user :linux] [_]   (fs/expand-home "~/.local/share/jupyter/kernels"))
+(defmethod kernels-dir [:host :linux] [_]   (io/file "/usr/local/share/jupyter/kernels"))
+(defmethod kernels-dir [:user :macos] [_]   (fs/expand-home "~/Library/Jupyter/kernels"))
+(defmethod kernels-dir [:host :macos] [_]   (io/file "/usr/local/share/jupyter/kernels"))
 (letfn [(getenv! [nm] (or (System/getenv nm)
-                         (throw (Exception. (str "Could not retrieve '" nm "' env variable.")))))]
-  (defmethod kernels-dir [:user :windows] [_] 	(io/file (str (getenv! "APPDATA") "/jupyter")))
-  (defmethod kernels-dir [:host :windows] [_] 	(io/file (str (getenv! "PROGRAMDATA") "/jupyter"))))
+                          (throw (Exception. (str "Could not retrieve '" nm "' env variable.")))))]
+  (defmethod kernels-dir [:user :windows] [_]   (io/file (str (getenv! "APPDATA") "/jupyter")))
+  (defmethod kernels-dir [:host :windows] [_]   (io/file (str (getenv! "PROGRAMDATA") "/jupyter"))))
 (u!/set-var-private! #'kernels-dir)
 
 (def- find-imagemagick-convert #(u!/find-executable "convert"))
@@ -86,13 +86,13 @@
   [resource-name file-name]
   (with-open [in (-> resource-name io/resource io/input-stream)
               out (io/output-stream file-name)]
-      (io/copy in out)))
+    (io/copy in out)))
 
 (defn generate-kernel-json-file!
   "Action to generate the `kernel.json` needed for a Jupyter kernel to work."
   [install-dir kernel-id-string]
   (let [jsonfile (io/file (str install-dir "/" lsp/KERNEL-JSON))
-        jarfile (-> (str install-dir "/" lsp/DEFAULT-TARGET-JARNAME) io/file fs/normalized )]
+        jarfile (-> (str install-dir "/" lsp/DEFAULT-TARGET-JARNAME) io/file fs/normalized)]
     (->> (u/kernel-spec jarfile kernel-id-string)
          u/json-str
          (spit jsonfile))))
@@ -102,14 +102,13 @@
   []
   (let [convert-exe (find-imagemagick-convert)
         version-map (ver/version)
-        host-kdir(kernels-dir :host)
+        host-kdir (kernels-dir :host)
         user-kdir (kernels-dir :user)
         jarfiles (find-standalone-jars fs/*cwd*)
         other-files #{convert-exe host-kdir user-kdir}
         kernels (installed-clojupyter-kernels)
         kernels-map (->> kernels (map (juxt :kernel/ident identity)) (into {}))
-        res (merge {
-                    :local/default-ident ((u/sanitize-string lsp/IDENT-CHAR-REGEX) (u!/default-ident version-map))
+        res (merge {:local/default-ident ((u/sanitize-string lsp/IDENT-CHAR-REGEX) (u!/default-ident version-map))
                     :local/filemap (fm/filemap jarfiles other-files)
                     :local/host-kernel-dir host-kdir
                     :local/installed-kernels kernels-map
@@ -118,14 +117,13 @@
                     :local/resource-map (resources->resourcemap DEFAULT-RESOURCE-NAMES)
                     :local/user-homedir (user-homedir)
                     :local/user-kernel-dir user-kdir
-                    :version/version-map version-map
-                    }
+                    :version/version-map version-map}
                    (when convert-exe
                      {:local/convert-exe convert-exe}))]
     (if (s/valid? :local/install-env res)
       res
       (u!/throw-info "Internal error: Bad install-env"
-        {:install-env res, :explain-str (s/explain-str :local/install-env res)}))))
+                     {:install-env res, :explain-str (s/explain-str :local/install-env res)}))))
 
 (defn remove-kernel-environment
   "Returns the data needed to remove kernels."
@@ -145,4 +143,4 @@
     (if (s/valid? :local/remove-env res)
       res
       (u!/throw-info "remove-kernel-environment: internal error"
-        {:res res, :explain-str (s/explain-str :local/remove-env res)}))))
+                     {:res res, :explain-str (s/explain-str :local/remove-env res)}))))

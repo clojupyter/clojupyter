@@ -24,31 +24,31 @@
         fmterr (C fmtmsg #(log/error %))]
     (zutil/zmq-thread
      (shutdown/initiating-shutdown-on-exit [:channel-forward-start term]
-       (u!/with-exception-logging
-           (zutil/rebind-context-shadowing [ztx]
-             (let [data-sock (doto (zutil/zsocket ztx :pair) (.connect data-socket-addr))]
-               (try (fmtdbg "Starting")
-                    (loop []
-                      (let [[data rcv-chan] (alts!! [term-ch fwd-chan] :priority true)]
-                        (cond
-                          (shutdown/is-token? data)
-                          ,, (fmtdbg "Shutdown message received")
-                          (= rcv-chan term-ch)
-                          ,, (fmtdbg "Term signal received")
-                          (nil? data)
-                          ,, (fmtdbg "Outbound channel closed")
-                          (and (= rcv-chan fwd-chan) data)
-                          ,, (if (zutil/send-frames data-sock data)
-                               (recur)
-                               (do (fmterr "Could not send all frames - terminated.")
-                                   (terminate!)))
-                          :else
-                          (let [errstr (fmtmsg "Internal error occurred")]
-                            (log/error errstr)
-                            (throw (ex-info errstr {:data data}))))))
-                    (finally
-                      (terminate!)
-                      (fmtdbg "Terminating"))))))))))
+                                           (u!/with-exception-logging
+                                             (zutil/rebind-context-shadowing [ztx]
+                                                                             (let [data-sock (doto (zutil/zsocket ztx :pair) (.connect data-socket-addr))]
+                                                                               (try (fmtdbg "Starting")
+                                                                                    (loop []
+                                                                                      (let [[data rcv-chan] (alts!! [term-ch fwd-chan] :priority true)]
+                                                                                        (cond
+                                                                                          (shutdown/is-token? data)
+                                                                                          ,, (fmtdbg "Shutdown message received")
+                                                                                          (= rcv-chan term-ch)
+                                                                                          ,, (fmtdbg "Term signal received")
+                                                                                          (nil? data)
+                                                                                          ,, (fmtdbg "Outbound channel closed")
+                                                                                          (and (= rcv-chan fwd-chan) data)
+                                                                                          ,, (if (zutil/send-frames data-sock data)
+                                                                                               (recur)
+                                                                                               (do (fmterr "Could not send all frames - terminated.")
+                                                                                                   (terminate!)))
+                                                                                          :else
+                                                                                          (let [errstr (fmtmsg "Internal error occurred")]
+                                                                                            (log/error errstr)
+                                                                                            (throw (ex-info errstr {:data data}))))))
+                                                                                    (finally
+                                                                                      (terminate!)
+                                                                                      (fmtdbg "Terminating"))))))))))
 
 ;;; ------------------------------------------------------------------------------------------------------------------------
 ;;; START ZMQ SOCKET FORWARDING
@@ -71,61 +71,61 @@
   ([ztx id jupyter-socket-addr term
     {:keys [bufsize connect? zmq-socket-type inbound-ch outbound-ch timeout]}]
    (u!/with-exception-logging
-       (let [zmq-socket-type (or zmq-socket-type :router)
-             inbound-ch (or inbound-ch (chan bufsize))
-             outbound-ch (or outbound-ch (chan bufsize))
-             timeout (or timeout 250)
-             data-socket-addr (inproc-addr (str "fwd-" id) (gensym))
-             continue? (atom true)
-             terminate! #(reset! continue? false)
-             fmtmsg #(str "socket-fwd(" id ") -- " % ".")
-             fmtdbg (C fmtmsg #(log/debug %))
-             fmtinf (C fmtmsg #(log/info %))
-             fmterr (C fmtmsg #(log/error %))]
-         (channel-forward-start ztx id data-socket-addr outbound-ch terminate! term)
-         (zutil/zmq-thread
-          (shutdown/initiating-shutdown-on-exit [:zmq-start term]
-            (zutil/rebind-context-shadowing [ztx]
-              (try (fmtdbg "Starting")
-                   (let [b-or-c (select-bind-or-connect connect?)
-                         jsock (doto (zutil/zsocket ztx zmq-socket-type)
-                                 (b-or-c jupyter-socket-addr))
-                         dsock (doto (zutil/zsocket ztx :pair) (.bind data-socket-addr))
-                         poller (.createPoller ztx 2)
-                         jpoll (.register poller jsock (zutil/poll-events :pollin :pollerr))
-                         dpoll (.register poller dsock (zutil/poll-events :pollin :pollerr))]
-                     (u!/closing-channels-on-exit! [outbound-ch inbound-ch]
-                       (loop []
-                         (let [poll (.poll poller timeout)]
-                           (cond
-                             (neg? poll)
-                             ,, (do (fmtinf "Polling ZeroMQ sockets returned negative value - terminating")
-                                    (terminate!))
-                             (zero? poll)
-                             ,, nil
-                             :else
-                             (do (when (.pollin poller jpoll)
-                                   (when-not (>!! inbound-ch (zutil/receive-frames jsock))
-                                     (fmtinf "Inbound channel closed.")
-                                     (terminate!)))
-                                 (when (.pollin poller dpoll)
-                                   (let [frames (zutil/receive-frames dsock)]
-                                     (when-not (zutil/send-frames jsock frames)
-                                       (fmterr "Could not send all frames - terminating")
-                                       (terminate!))))
-                                 (when (.pollerr poller jpoll)
-                                   (fmterr "Error polling Jupyter ZeroMQ socket - terminating")
-                                   (terminate!))
-                                 (when (.pollerr poller dpoll)
-                                   (fmterr "Error polling outbount ZeroMQ socket - terminating")
-                                   (terminate!)))))
-                         (when @continue?
-                           (recur)))))
-                   (catch Exception e
-                     (fmterr (str "Exception occurred: " e " (not rethrowing)")))
-                   (finally
-                     (fmtdbg "Terminating"))))))
-         [inbound-ch outbound-ch]))))
+     (let [zmq-socket-type (or zmq-socket-type :router)
+           inbound-ch (or inbound-ch (chan bufsize))
+           outbound-ch (or outbound-ch (chan bufsize))
+           timeout (or timeout 250)
+           data-socket-addr (inproc-addr (str "fwd-" id) (gensym))
+           continue? (atom true)
+           terminate! #(reset! continue? false)
+           fmtmsg #(str "socket-fwd(" id ") -- " % ".")
+           fmtdbg (C fmtmsg #(log/debug %))
+           fmtinf (C fmtmsg #(log/info %))
+           fmterr (C fmtmsg #(log/error %))]
+       (channel-forward-start ztx id data-socket-addr outbound-ch terminate! term)
+       (zutil/zmq-thread
+        (shutdown/initiating-shutdown-on-exit [:zmq-start term]
+                                              (zutil/rebind-context-shadowing [ztx]
+                                                                              (try (fmtdbg "Starting")
+                                                                                   (let [b-or-c (select-bind-or-connect connect?)
+                                                                                         jsock (doto (zutil/zsocket ztx zmq-socket-type)
+                                                                                                 (b-or-c jupyter-socket-addr))
+                                                                                         dsock (doto (zutil/zsocket ztx :pair) (.bind data-socket-addr))
+                                                                                         poller (.createPoller ztx 2)
+                                                                                         jpoll (.register poller jsock (zutil/poll-events :pollin :pollerr))
+                                                                                         dpoll (.register poller dsock (zutil/poll-events :pollin :pollerr))]
+                                                                                     (u!/closing-channels-on-exit! [outbound-ch inbound-ch]
+                                                                                                                   (loop []
+                                                                                                                     (let [poll (.poll poller timeout)]
+                                                                                                                       (cond
+                                                                                                                         (neg? poll)
+                                                                                                                         ,, (do (fmtinf "Polling ZeroMQ sockets returned negative value - terminating")
+                                                                                                                                (terminate!))
+                                                                                                                         (zero? poll)
+                                                                                                                         ,, nil
+                                                                                                                         :else
+                                                                                                                         (do (when (.pollin poller jpoll)
+                                                                                                                               (when-not (>!! inbound-ch (zutil/receive-frames jsock))
+                                                                                                                                 (fmtinf "Inbound channel closed.")
+                                                                                                                                 (terminate!)))
+                                                                                                                             (when (.pollin poller dpoll)
+                                                                                                                               (let [frames (zutil/receive-frames dsock)]
+                                                                                                                                 (when-not (zutil/send-frames jsock frames)
+                                                                                                                                   (fmterr "Could not send all frames - terminating")
+                                                                                                                                   (terminate!))))
+                                                                                                                             (when (.pollerr poller jpoll)
+                                                                                                                               (fmterr "Error polling Jupyter ZeroMQ socket - terminating")
+                                                                                                                               (terminate!))
+                                                                                                                             (when (.pollerr poller dpoll)
+                                                                                                                               (fmterr "Error polling outbount ZeroMQ socket - terminating")
+                                                                                                                               (terminate!)))))
+                                                                                                                     (when @continue?
+                                                                                                                       (recur)))))
+                                                                                   (catch Exception e
+                                                                                     (fmterr (str "Exception occurred: " e " (not rethrowing)")))
+                                                                                   (finally
+                                                                                     (fmtdbg "Terminating"))))))
+       [inbound-ch outbound-ch]))))
 
 (s/fdef start
   :args (s/cat :ztx ::zp/zcontext

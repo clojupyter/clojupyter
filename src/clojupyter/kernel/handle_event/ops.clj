@@ -2,7 +2,7 @@
   (:require [clojupyter.kernel.jup-channels :refer [send!!]]
             [clojupyter.log :as log]
             [clojupyter.messages :as msgs]
-            [io.aviso.exception	:as aviso-ex]
+            [io.aviso.exception :as aviso-ex]
             [io.pedestal.interceptor :as ic]
             [io.pedestal.interceptor.chain :as ich]
             [io.simplect.compose :refer [p P]]
@@ -10,16 +10,16 @@
 
 (use 'clojure.pprint)
 
-(defn- append-action		[ctx k a]	(update-in ctx [k] (P action a)))
-(defn- get-action		[ctx k]		(get ctx k (action nil)))
-(defn- set-action		[ctx k a]	(assoc ctx k a))
+(defn- append-action        [ctx k a]   (update-in ctx [k] (P action a)))
+(defn- get-action       [ctx k]     (get ctx k (action nil)))
+(defn- set-action       [ctx k a]   (assoc ctx k a))
 
-(defn- append-enter-action	[ctx a]		(append-action ctx :enter-action a))
-(defn- append-leave-action	[ctx a]		(append-action ctx :leave-action a))
-(defn get-enter-action		[ctx]		(get-action ctx :enter-action))
-(defn set-enter-action		[ctx a]		(set-action ctx :enter-action a))
-(defn get-leave-action		[ctx]		(get-action ctx :leave-action))
-(defn set-leave-action		[ctx a]		(set-action ctx :leave-action a))
+(defn- append-enter-action  [ctx a]     (append-action ctx :enter-action a))
+(defn- append-leave-action  [ctx a]     (append-action ctx :leave-action a))
+(defn get-enter-action      [ctx]       (get-action ctx :enter-action))
+(defn set-enter-action      [ctx a]     (set-action ctx :enter-action a))
+(defn get-leave-action      [ctx]       (get-action ctx :leave-action))
+(defn set-leave-action      [ctx a]     (set-action ctx :leave-action a))
 
 (defn s*set-response
   [msgtype message]
@@ -67,7 +67,7 @@
             (merge (a/output evaluated-action)))
         (let [fl (failure evaluated-action)
               trace (when fl (binding [aviso-ex/*fonts* nil] (aviso-ex/format-exception fl)))
-              logdata {:evaluated-action evaluated-action}] 
+              logdata {:evaluated-action evaluated-action}]
           (log/error "Action failed:" (log/ppstr logdata)
                      \newline "  Stacktrace:" \newline trace)
           (throw (ex-info (str "Action failed: " evaluated-action) logdata)))))))

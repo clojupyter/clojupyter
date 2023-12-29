@@ -52,7 +52,6 @@
   [html-str]
   (html html-str))
 
-
 ;; Latex
 
 (defrecord Latex [latex]
@@ -69,7 +68,6 @@
 (defn ^:deprecated make-latex
   [latex-str]
   (latex latex-str))
-
 
 ;; Markdown
 

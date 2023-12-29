@@ -109,7 +109,7 @@
 (def-conda-var HOME [:macos :linux]
   "Standard `$HOME` environment variable.")
 
-(def-conda-var PKG_CONFIG_PATH	[:macos :linux]
+(def-conda-var PKG_CONFIG_PATH  [:macos :linux]
   "Path to pkgconfig directory.")
 
 ;;; ----------------------------------------------------------------------------------------------------

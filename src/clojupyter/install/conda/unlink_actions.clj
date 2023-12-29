@@ -34,6 +34,6 @@
      (if (s/valid? :conda-unlink/env env)
        env
        (u!/throw-info "get-unlink-environment: internal error"
-         {:prefix prefix, :env env,
-          :explain-str (s/explain-str :conda-unlink/env env)})))))
+                      {:prefix prefix, :env env,
+                       :explain-str (s/explain-str :conda-unlink/env env)})))))
 

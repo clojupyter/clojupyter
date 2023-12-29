@@ -11,8 +11,8 @@
 
 (def DEPEND [csp/DEPEND-DUMMY])
 
-(def- bat-file?		(C str (p re-find #"\.bat$") boolean))
-(def- nl->crnl		(C str/split-lines (p str/join "\r\n")))
+(def- bat-file?     (C str (p re-find #"\.bat$") boolean))
+(def- nl->crnl      (C str/split-lines (p str/join "\r\n")))
 
 ;;; ----------------------------------------------------------------------------------------------------
 ;;; EXTERNAL
@@ -30,7 +30,7 @@
     (if (s/valid? :conda-build/env env)
       env
       (u!/throw-info "get-build-environment: internal err"
-        {:env env, :explain-str (s/explain-str :conda-build/env env)}))))
+                     {:env env, :explain-str (s/explain-str :conda-build/env env)}))))
 
 (defn copy-template-file!
   "Action to copy a conda script file, converting it DOS/Windows text format if it is a .BAT file."
@@ -47,11 +47,11 @@
   "Action to perform the actual conda build."
   [conda-exe blddir]
   (pl/s*bind-state S
-    (let [{:keys [exit out err]} (sh/with-sh-dir blddir (sh/sh (str conda-exe) "build" "."))]
-      (C (pl/s*set-values :conda-build/build-cmd-out out
-                       :conda-build/build-cmd-err err
-                       :conda-build/build-cmd-exit-code exit)
-         (if (zero? exit)
-           (pl/s*log-info {:message "conda-build successful"})
-           (pl/s*log-error {:message (str "Error: conda-build terminated with exit-code " exit)
-                         :type :bad-conda-build-exit}))))))
+                   (let [{:keys [exit out err]} (sh/with-sh-dir blddir (sh/sh (str conda-exe) "build" "."))]
+                     (C (pl/s*set-values :conda-build/build-cmd-out out
+                                         :conda-build/build-cmd-err err
+                                         :conda-build/build-cmd-exit-code exit)
+                        (if (zero? exit)
+                          (pl/s*log-info {:message "conda-build successful"})
+                          (pl/s*log-error {:message (str "Error: conda-build terminated with exit-code " exit)
+                                           :type :bad-conda-build-exit}))))))

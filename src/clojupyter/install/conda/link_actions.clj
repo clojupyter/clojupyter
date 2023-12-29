@@ -69,7 +69,7 @@
      (if (s/valid? :conda-link/env env)
        env
        (u!/throw-info "conda-link-environment: internal error"
-         {:env env, :explain-str (s/explain-str :conda-link/env env)})))))
+                      {:env env, :explain-str (s/explain-str :conda-link/env env)})))))
 
 (defn conda-verify-install
   "Action to check if the Clojupyter kernel appears to have been installed correctly."

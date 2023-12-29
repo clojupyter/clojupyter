@@ -20,8 +20,7 @@
             [clojure.spec.alpha :as s]
             [clojure.spec.test.alpha :refer [instrument]]
             [clojure.walk :as walk]
-            [io.simplect.compose :refer [def- curry c C p P >->> >>->]]
-            ))
+            [io.simplect.compose :refer [def- curry c C p P >->> >>->]]))
 
 (def- address
   (curry 2 (fn [config service]
@@ -33,8 +32,8 @@
   [jup term cljsrv]
   (state/ensure-initial-state!)
   (u!/with-exception-logging
-      (let [proto-ctx {:cljsrv cljsrv, :jup jup, :term term}]
-        (start-handle-event-process proto-ctx))))
+    (let [proto-ctx {:cljsrv cljsrv, :jup jup, :term term}]
+      (start-handle-event-process proto-ctx))))
 
 (s/fdef run-kernel
   :args (s/cat :jup jup?, :term shutdown/terminator?, :cljsrv cljsrv/cljsrv?))
@@ -107,50 +106,50 @@
   terminating Clojupyter."
   [ztx config]
   (u!/with-exception-logging
-      (let [bufsize 25 ;; leave plenty of space - we don't want blocking on termination
-            term (shutdown/make-terminator bufsize)
-            get-shutdown (partial shutdown/notify-on-shutdown term)
-            sess-key (s/assert ::msp/key (:key config))
-            [signer checker] (u/make-signer-checker sess-key)
-            in-ch (fn [port] (get-shutdown (chan (buffer bufsize)
-                                                 (map (inbound-channel-transducer port checker)))))
-            out-ch (fn [port] (get-shutdown (chan (buffer bufsize)
-                                                  (map (outbound-channel-transducer port signer)))))]
-        (letfn [(start-fwd [port addr sock-type]
-                  (cjpzmq/start ztx port addr term
-                                {:inbound-ch (in-ch port), :outbound-ch (out-ch port),
-                                 :zmq-socket-type sock-type}))]
-          (let [[ctrl-in ctrl-out]	(let [port :control_port]
-                                          (start-fwd port (address config port) :router))
-                [shell-in shell-out]	(let [port :shell_port]
-                                          (start-fwd port (address config port) :router))
-                [iopub-in iopub-out]	(let [port :iopub_port]
-                                          (start-fwd port (address config port) :pub))
-                [stdin-in stdin-out]	(let [port :stdin_port]
-                                          (start-fwd port (address config port) :dealer))
-                jup			(make-jup ctrl-in  ctrl-out
-                                                  shell-in shell-out
-                                                  iopub-in iopub-out
-                                                  stdin-in stdin-out)]
-            (hb/start-hb ztx (address config :hb_port) term)
-            [jup term])))
-      (log/debug "start-zmq-socket-fwd returning")))
+    (let [bufsize 25 ;; leave plenty of space - we don't want blocking on termination
+          term (shutdown/make-terminator bufsize)
+          get-shutdown (partial shutdown/notify-on-shutdown term)
+          sess-key (s/assert ::msp/key (:key config))
+          [signer checker] (u/make-signer-checker sess-key)
+          in-ch (fn [port] (get-shutdown (chan (buffer bufsize)
+                                               (map (inbound-channel-transducer port checker)))))
+          out-ch (fn [port] (get-shutdown (chan (buffer bufsize)
+                                                (map (outbound-channel-transducer port signer)))))]
+      (letfn [(start-fwd [port addr sock-type]
+                (cjpzmq/start ztx port addr term
+                              {:inbound-ch (in-ch port), :outbound-ch (out-ch port),
+                               :zmq-socket-type sock-type}))]
+        (let [[ctrl-in ctrl-out]  (let [port :control_port]
+                                    (start-fwd port (address config port) :router))
+              [shell-in shell-out]    (let [port :shell_port]
+                                        (start-fwd port (address config port) :router))
+              [iopub-in iopub-out]    (let [port :iopub_port]
+                                        (start-fwd port (address config port) :pub))
+              [stdin-in stdin-out]    (let [port :stdin_port]
+                                        (start-fwd port (address config port) :dealer))
+              jup         (make-jup ctrl-in  ctrl-out
+                                    shell-in shell-out
+                                    iopub-in iopub-out
+                                    stdin-in stdin-out)]
+          (hb/start-hb ztx (address config :hb_port) term)
+          [jup term])))
+    (log/debug "start-zmq-socket-fwd returning")))
 
 (defn- start-clojupyter
   "Starts Clojupyter including threads forwarding traffic between ZMQ sockets and core.async channels."
   [ztx config]
   (u!/with-exception-logging
-      (do (log/info "Clojupyter config" (log/ppstr config))
-          (when-not (s/valid? ::msp/jupyter-config config)
-            (log/error "Command-line arguments do not conform to specification."))
-          (init/ensure-init-global-state!)
-          (let [[jup term] (start-zmq-socket-forwarding ztx config)
-                wait-ch	(shutdown/notify-on-shutdown term (chan 1))]
-            (with-open [cljsrv (cljsrv/make-cljsrv)]
-              (run-kernel jup term cljsrv)
-              (<!! wait-ch)
-              (log/debug "start-clojupyter: wait-signal received"))))
-      (log/debug "start-clojupyter returning")))
+    (do (log/info "Clojupyter config" (log/ppstr config))
+        (when-not (s/valid? ::msp/jupyter-config config)
+          (log/error "Command-line arguments do not conform to specification."))
+        (init/ensure-init-global-state!)
+        (let [[jup term] (start-zmq-socket-forwarding ztx config)
+              wait-ch (shutdown/notify-on-shutdown term (chan 1))]
+          (with-open [cljsrv (cljsrv/make-cljsrv)]
+            (run-kernel jup term cljsrv)
+            (<!! wait-ch)
+            (log/debug "start-clojupyter: wait-signal received"))))
+    (log/debug "start-clojupyter returning")))
 
 (defn- finish-up
   []

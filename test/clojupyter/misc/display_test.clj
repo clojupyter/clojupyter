@@ -1,13 +1,12 @@
 (ns clojupyter.misc.display-test
   (:require
-   [cheshire.core				:as cheshire]
-   [midje.sweet							:refer [facts =>]]
+   [cheshire.core               :as cheshire]
+   [midje.sweet                         :refer [facts =>]]
    ,,
-   [clojupyter.misc.display			:as display]
+   [clojupyter.misc.display         :as display]
    [clojupyter.misc.mime-convertible]
-   [clojupyter.test-shared			:as ts]
-   [clojupyter.protocol.mime-convertible	:as mc]
-   ))
+   [clojupyter.test-shared          :as ts]
+   [clojupyter.protocol.mime-convertible    :as mc]))
 
 (defn pretty-maker [maker]
   #(-> % maker mc/to-mime (cheshire/decode true)))
@@ -19,7 +18,7 @@
        ((pretty-maker display/make-latex) "$\\sin{x}$") => {:text/latex "$\\sin{x}$"})
 
 (facts "Should be able to produce markdown"
-         ((pretty-maker display/make-markdown) "# hello world") => {:text/markdown "# hello world"})
+       ((pretty-maker display/make-markdown) "# hello world") => {:text/markdown "# hello world"})
 
 (facts "Should be able to produce from hiccup html"
        ((pretty-maker display/hiccup-html) [:p "some text"]) => {:text/html "<p>some text</p>"}

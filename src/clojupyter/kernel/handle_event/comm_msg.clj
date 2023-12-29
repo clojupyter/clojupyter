@@ -61,7 +61,7 @@
 (defmethod calc* :default
   [msgtype state ctx]
   (throw (ex-info (str "Unhandled message type: " msgtype)
-           {:msgtype msgtype, :state state, :ctx ctx})))
+                  {:msgtype msgtype, :state state, :ctx ctx})))
 
 ;;; ------------------------------------------------------------------------------------------------------------------------
 ;;; COMM MESSAGES - HANDLED PER `:method` field
@@ -153,7 +153,7 @@
     (let [present? (comm-global-state/known-comm-id? S comm_id)
           state (or state {})
           buffer_paths (or buffer_paths [])]
-    (if present?
+      (if present?
         (do (log/debug "COMM-OPEN - already present")
             (return ctx S))
         (let [msgtype msgs/COMM-OPEN
@@ -175,8 +175,7 @@
       (let [msgtype msgs/COMM-CLOSE
             content (msgs/comm-close-content comm_id {})
             A (action (step [`jup/send!! jup IOPUB req-message msgtype content]
-                            (jupmsg-spec IOPUB msgtype content))
-                      )
+                            (jupmsg-spec IOPUB msgtype content)))
             S' (comm-global-state/comm-atom-remove S comm_id)]
         (return ctx A S S'))
       (return ctx S))))
@@ -227,4 +226,4 @@
   [state {:keys [req-message] :as ctx}]
   (let [msgtype (msgs/message-msg-type req-message)]
     (log/debug "handling message: " msgtype "with req-message:" req-message)
-    (calc msgtype state ctx )))
+    (calc msgtype state ctx)))

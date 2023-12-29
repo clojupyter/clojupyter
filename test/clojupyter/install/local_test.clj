@@ -67,19 +67,19 @@
 (def prop--generated-remove-env-correct
   "Properties of correct removal environment."
   (prop/for-all [{:keys [env kerneldirs kerneldir-parents jsons]} g-remove-env]
-    (and (s/valid? :local/remove-env env)
-         (-> env count pos?)
-         (-> kerneldirs count pos?)
-         (-> kerneldir-parents count pos?)
-         (= jsons (->> env :local/kernelmap keys (into #{})))
-         (= kerneldir-parents (:local/kerneldir-parents env))
-         (->> (for [dir kerneldirs]
-                (some (P u/file-ancestor-of dir) kerneldir-parents))
-              (every? true?)))))
+                (and (s/valid? :local/remove-env env)
+                     (-> env count pos?)
+                     (-> kerneldirs count pos?)
+                     (-> kerneldir-parents count pos?)
+                     (= jsons (->> env :local/kernelmap keys (into #{})))
+                     (= kerneldir-parents (:local/kerneldir-parents env))
+                     (->> (for [dir kerneldirs]
+                            (some (P u/file-ancestor-of dir) kerneldir-parents))
+                          (every? true?)))))
 
 (fact "Generated remove-environments are correct"
-  (:pass? (tc/quick-check QC-ITERS prop--generated-remove-env-correct))
-  => true)
+      (:pass? (tc/quick-check QC-ITERS prop--generated-remove-env-correct))
+      => true)
 
 (def prop--remove-only-matching-kerneldirs
   "Properties of correctly generated kernel removal action."
@@ -87,31 +87,30 @@
                  ;; Select some arbitrary strings to try in addition to the kernel idents
                  ;; They are very unlikely to be one of the idents which are generated using shg/g-name
                  extra-idents (gen/set gen/string {:min-elements 10 :max-elements 20})]
-    (every? true?
-            (for [id (set/union idents extra-idents)]
-              (let [matching? (boolean (some (p u/re-find+ id) idents))
-                    delete-step? (C first (p = `fs/delete-dir))
-                    S ((C pl/s*set-do-execute (local/s*generate-remove-action id env)) {})
-                    action-spec (pl/get-action-spec S)
-                    doing? (pl/executing? S)
-                    ]
-                (and
+                (every? true?
+                        (for [id (set/union idents extra-idents)]
+                          (let [matching? (boolean (some (p u/re-find+ id) idents))
+                                delete-step? (C first (p = `fs/delete-dir))
+                                S ((C pl/s*set-do-execute (local/s*generate-remove-action id env)) {})
+                                action-spec (pl/get-action-spec S)
+                                doing? (pl/executing? S)]
+                            (and
                  ;; 1A) If we match something then we do something
                  ;; 1B) If we do something then we matched something
-                 true
-                 (<==> matching? doing?)
+                             true
+                             (<==> matching? doing?)
                  ;; 2) If we do something, it's deleting
-                 (==> doing? (->> action-spec (remove delete-step?) count zero?))
+                             (==> doing? (->> action-spec (remove delete-step?) count zero?))
                  ;; 3) If we delete something, it's one of the kernel directories
-                 (==> doing?
-                      (->> action-spec
-                           (filter delete-step?)
-                           (map (C second (p contains? kerneldirs)))
-                           (every? true?)))))))))
+                             (==> doing?
+                                  (->> action-spec
+                                       (filter delete-step?)
+                                       (map (C second (p contains? kerneldirs)))
+                                       (every? true?)))))))))
 
 (fact "Remove only matching kerneldirs"
-  (:pass? (tc/quick-check QC-ITERS prop--generated-remove-env-correct))
-  => true)
+      (:pass? (tc/quick-check QC-ITERS prop--generated-remove-env-correct))
+      => true)
 
 ;;; ----------------------------------------------------------------------------------------------------
 ;;; LOCAL INSTALL - USER OPTS
@@ -141,7 +140,7 @@
       (if (s/valid? :local/user-opts res)
         (R res)
         (u!/throw-info "g-local-install-user-opts: internal error"
-          {:res res, :explain-str (s/explain-str :local/user-opts res)})))))
+                       {:res res, :explain-str (s/explain-str :local/user-opts res)})))))
 
 ;;; ----------------------------------------------------------------------------------------------------
 ;;; LOCAL INSTALL - INSTALL-ENV
@@ -196,7 +195,7 @@
       (if (s/valid? :local/install-env env)
         (R env)
         (u!/throw-info "g-local-install-env: internal error"
-          {:env env, :explain-str (s/explain-str :local/install-env env)})))))
+                       {:env env, :explain-str (s/explain-str :local/install-env env)})))))
 
 ;;; ----------------------------------------------------------------------------------------------------
 ;;; LOCAL INSTALL - INSTALL SPEC
@@ -205,36 +204,36 @@
 (def prop--install-spec
   (prop/for-all [opts g-local-install-user-opts
                  env g-local-install-env]
-    (let [spec (local/install-spec opts env)
-          u-destdir (:local/destdir opts)]
-      (and
-       (= (:local/allow-deletions? opts) (:local/allow-deletions? spec))
-       (= (:local/allow-destdir? opts) (:local/allow-destdir? spec))
-       (= (:local/convert-exe env) (:local/convert-exe spec))
-       (==> u-destdir (= u-destdir (:local/destdir spec)))
-       (==> (not u-destdir)
-            (and (==> (= (:local/loc env) :loc/host)
-                      (u/file-ancestor-of (:local/host-kernel-dir env) (:local/destdir spec)))
-                 (==> (= (:local/loc env) :loc/user)
-                      (u/file-ancestor-of (:local/user-kernel-dir env) (:local/destdir spec)))))
-       (u/submap? (fm/get-map (:local/filemap opts)) (fm/get-map (:local/filemap spec)))
-       (u/submap? (fm/get-map (:local/filemap env)) (fm/get-map (:local/filemap spec)))
-       (string? (:local/ident spec))
-       (if (:local/ident opts)
-         (= (:local/ident opts) (:local/ident spec))
-         (= (:local/default-ident env) (:local/ident spec)))
-       (= (:local/installed-kernels env) (:local/installed-kernels spec))
-       (= (:local/logo-resource env) (:local/logo-resource spec))
-       (= (:local/resource-map env) (:local/resource-map spec))
-       (<= (-> opts :local/source-jarfiles count) 1)
-       (if (-> opts :local/source-jarfiles count pos?)
-         (= (:local/source-jarfiles opts) (:local/source-jarfiles spec))
-         (= (:local/jarfiles env) (:local/source-jarfiles spec)))
-       (s/valid? :version/version-map (:version/version-map spec))))))
+                (let [spec (local/install-spec opts env)
+                      u-destdir (:local/destdir opts)]
+                  (and
+                   (= (:local/allow-deletions? opts) (:local/allow-deletions? spec))
+                   (= (:local/allow-destdir? opts) (:local/allow-destdir? spec))
+                   (= (:local/convert-exe env) (:local/convert-exe spec))
+                   (==> u-destdir (= u-destdir (:local/destdir spec)))
+                   (==> (not u-destdir)
+                        (and (==> (= (:local/loc env) :loc/host)
+                                  (u/file-ancestor-of (:local/host-kernel-dir env) (:local/destdir spec)))
+                             (==> (= (:local/loc env) :loc/user)
+                                  (u/file-ancestor-of (:local/user-kernel-dir env) (:local/destdir spec)))))
+                   (u/submap? (fm/get-map (:local/filemap opts)) (fm/get-map (:local/filemap spec)))
+                   (u/submap? (fm/get-map (:local/filemap env)) (fm/get-map (:local/filemap spec)))
+                   (string? (:local/ident spec))
+                   (if (:local/ident opts)
+                     (= (:local/ident opts) (:local/ident spec))
+                     (= (:local/default-ident env) (:local/ident spec)))
+                   (= (:local/installed-kernels env) (:local/installed-kernels spec))
+                   (= (:local/logo-resource env) (:local/logo-resource spec))
+                   (= (:local/resource-map env) (:local/resource-map spec))
+                   (<= (-> opts :local/source-jarfiles count) 1)
+                   (if (-> opts :local/source-jarfiles count pos?)
+                     (= (:local/source-jarfiles opts) (:local/source-jarfiles spec))
+                     (= (:local/jarfiles env) (:local/source-jarfiles spec)))
+                   (s/valid? :version/version-map (:version/version-map spec))))))
 
 (fact "Basic install-spec"
-  (:pass? (tc/quick-check QC-ITERS prop--install-spec))
-  => true)
+      (:pass? (tc/quick-check QC-ITERS prop--install-spec))
+      => true)
 
 ;;; ----------------------------------------------------------------------------------------------------
 ;;; LOCAL INSTALL - GENERATE INSTALL ACTIONS
@@ -243,29 +242,29 @@
 (def prop--generate-install-actions
   (prop/for-all [opts g-local-install-user-opts
                  env g-local-install-env]
-    (let [spec (local/install-spec opts env)
-          res ((C pl/s*set-do-execute
-                  (local/s*generate-install-effects spec)) {})
-          aspec (pl/get-action-spec res)
-          aspec-ops (->> aspec (map first) (into #{}))
-          ok!	(pl/executing? res)
-          stop! (not ok!)]
-      (and (s/valid? :local/user-opts opts)
-           (s/valid? :local/install-env env)
-           (s/valid? :local/install-spec spec)
-           (==> (-> spec :local/source-jarfiles count zero?) stop!)
-           (==> (-> spec :local/source-jarfiles count (> 1)) stop!)
-           (==> ok! (contains? aspec-ops `local!/copy-resource-to-file!))
-           (==> (and ok! (:local/generate-kernel-json? opts))
-                (contains? aspec-ops `local!/generate-kernel-json-file!))
-           (==> ok! (->> aspec
-                         (filter (every-pred (C first (p = `io/copy))
-                                             (C (P nth 2) str (p re-find #"jar$"))))
-                         count
-                         (= 1)))
-           (==> (contains? (->> spec :local/installed-kernels keys (into #{})) (:local/ident spec))
-                stop!)))))
+                (let [spec (local/install-spec opts env)
+                      res ((C pl/s*set-do-execute
+                              (local/s*generate-install-effects spec)) {})
+                      aspec (pl/get-action-spec res)
+                      aspec-ops (->> aspec (map first) (into #{}))
+                      ok!   (pl/executing? res)
+                      stop! (not ok!)]
+                  (and (s/valid? :local/user-opts opts)
+                       (s/valid? :local/install-env env)
+                       (s/valid? :local/install-spec spec)
+                       (==> (-> spec :local/source-jarfiles count zero?) stop!)
+                       (==> (-> spec :local/source-jarfiles count (> 1)) stop!)
+                       (==> ok! (contains? aspec-ops `local!/copy-resource-to-file!))
+                       (==> (and ok! (:local/generate-kernel-json? opts))
+                            (contains? aspec-ops `local!/generate-kernel-json-file!))
+                       (==> ok! (->> aspec
+                                     (filter (every-pred (C first (p = `io/copy))
+                                                         (C (P nth 2) str (p re-find #"jar$"))))
+                                     count
+                                     (= 1)))
+                       (==> (contains? (->> spec :local/installed-kernels keys (into #{})) (:local/ident spec))
+                            stop!)))))
 
 (fact "Check s*generate-install-effects"
-  (:pass? (tc/quick-check QC-ITERS prop--generate-install-actions))
-  => true)
+      (:pass? (tc/quick-check QC-ITERS prop--generate-install-actions))
+      => true)

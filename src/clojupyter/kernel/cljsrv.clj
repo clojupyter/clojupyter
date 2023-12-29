@@ -3,15 +3,15 @@
   code cells, but supporting code completion, access to documentation strings, and interrupting
   currently running evaluations."
   (:require
-   [clojure.pprint			:as pp]
-   [io.simplect.compose					:refer [def-]]
-   [nrepl.core				:as nrepl]
+   [clojure.pprint          :as pp]
+   [io.simplect.compose                 :refer [def-]]
+   [nrepl.core              :as nrepl]
    [nrepl.server]
    ,,
-   [clojupyter.messages		:as msgs]
-   [clojupyter.kernel.nrepl-middleware	:as mw]
-   [clojupyter.log			:as log]
-   [clojupyter.util-actions		:as u!]
+   [clojupyter.messages     :as msgs]
+   [clojupyter.kernel.nrepl-middleware  :as mw]
+   [clojupyter.log          :as log]
+   [clojupyter.util-actions     :as u!]
    [clojupyter.util :as u]))
 
 ;;; ------------------------------------------------------------------------------------------------------------------------
@@ -99,7 +99,7 @@
           :else
           ,, (recur (rest ms) msgs' result (dec iter))))
       (throw (ex-info (str "messages-result - internal error: we should not get to end of nrepl stream without 'done' msg")
-               {:msgs msgs, :result result})))))
+                      {:msgs msgs, :result result})))))
 
 (defrecord CljSrv [nrepl-server_ nrepl-client_ nrepl-sockaddr_ pending-input?_]
   nrepl-server-proto
@@ -174,11 +174,11 @@
 
 (defn make-cljsrv ^CljSrv
   []
-  (let [nrepl-server		(nrepl.server/start-server :handler (clojupyter-nrepl-handler))
-        nrepl-transport		(nrepl/connect :port (:port nrepl-server))
-        nrepl-base-client	(nrepl/client nrepl-transport Integer/MAX_VALUE)
-        nrepl-client		(nrepl/client-session nrepl-base-client)
-        nrepl-sockaddr		(.getLocalSocketAddress ^java.net.ServerSocket (:server-socket nrepl-server))
-        cljsrv 			(->CljSrv nrepl-server nrepl-client nrepl-sockaddr (atom false))]
+  (let [nrepl-server        (nrepl.server/start-server :handler (clojupyter-nrepl-handler))
+        nrepl-transport     (nrepl/connect :port (:port nrepl-server))
+        nrepl-base-client   (nrepl/client nrepl-transport Integer/MAX_VALUE)
+        nrepl-client        (nrepl/client-session nrepl-base-client)
+        nrepl-sockaddr      (.getLocalSocketAddress ^java.net.ServerSocket (:server-socket nrepl-server))
+        cljsrv          (->CljSrv nrepl-server nrepl-client nrepl-sockaddr (atom false))]
     (log/info (str "Started NREPL server: tcp:/" nrepl-sockaddr "."))
     cljsrv))

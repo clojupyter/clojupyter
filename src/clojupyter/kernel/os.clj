@@ -12,10 +12,10 @@
   known (known: `:macos`, `:linux`)."
   []
   (cond
-    (os? "mac")		:macos
-    (os? "linux")	:linux
-    (os? "windows")	:windows
-    true		nil))
+    (os? "mac")     :macos
+    (os? "linux")   :linux
+    (os? "windows") :windows
+    true        nil))
 
 (defn supported-os?
   "Returns `true` if-and-only-if the operating system is known to be supported by clojupyter, and

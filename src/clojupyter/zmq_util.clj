@@ -5,8 +5,8 @@
 
 (defmacro with-new-context [[binding] & body]
   `(let [ztx# (zcontext), ~binding ztx#]
-    (try ~@body
-         (finally (.destroy ztx#)))))
+     (try ~@body
+          (finally (.destroy ztx#)))))
 
 (defmacro with-shadow-context [[binding context] & body]
   (if (and (symbol? binding) context)
@@ -42,18 +42,18 @@
 (defn socket-type
   [socket-type-kw]
   (case socket-type-kw
-    :dealer	(SocketType/DEALER)
-    :pair	(SocketType/PAIR)
-    :pub	(SocketType/PUB)
-    :pull	(SocketType/PULL)
-    :push	(SocketType/PUSH)
-    :rep	(SocketType/REP)
-    :req	(SocketType/REQ)
-    :router	(SocketType/ROUTER)
-    :stream	(SocketType/STREAM)
-    :sub	(SocketType/SUB)
-    :xpub	(SocketType/XPUB)
-    :xsub	(SocketType/XSUB)
+    :dealer (SocketType/DEALER)
+    :pair   (SocketType/PAIR)
+    :pub    (SocketType/PUB)
+    :pull   (SocketType/PULL)
+    :push   (SocketType/PUSH)
+    :rep    (SocketType/REP)
+    :req    (SocketType/REQ)
+    :router (SocketType/ROUTER)
+    :stream (SocketType/STREAM)
+    :sub    (SocketType/SUB)
+    :xpub   (SocketType/XPUB)
+    :xsub   (SocketType/XSUB)
     (throw (Exception. (str "Unknown socket-type: " socket-type-kw)))))
 
 (def ^Integer socket-type-code (C socket-type #(.type %)))

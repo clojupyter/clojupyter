@@ -13,38 +13,38 @@
   (when (instance? java.io.File v)
     (let [v ^java.io.File v]
       (cond
-        (not (.exists v))	nil
-        (.isFile v)		:filetype/file
-        (.isDirectory v)	:filetype/directory
-        :else			:filetype/other))))
+        (not (.exists v))   nil
+        (.isFile v)     :filetype/file
+        (.isDirectory v)    :filetype/directory
+        :else           :filetype/other))))
 
 (defprotocol filemap-proto
-  (dir		[_ nm])
-  (entity	[_ nm])
-  (exists	[_ nm] [_ nm default])
-  (file		[_ nm])
-  (get-map	[_])
-  (names	[_]))
+  (dir      [_ nm])
+  (entity   [_ nm])
+  (exists   [_ nm] [_ nm default])
+  (file     [_ nm])
+  (get-map  [_])
+  (names    [_]))
 
 (deftype FileMap [_m]
   filemap-proto
-  (dir		[fm nm]		(when-let [typ (exists fm nm)]
-                                  (when (= typ :filetype/directory)
-                                    nm)))
-  (entity	[fm nm]		(when (exists fm nm)
-                                  nm))
-  (exists	[fm nm]		(exists fm nm nil))
-  (exists	[_ nm default]	(clojure.core/get _m nm default))
-  (file		[fm nm]		(when-let [typ (exists fm nm)]
-                                  (when (= typ :filetype/file)
-                                    nm)))
-  (get-map	[_]		_m)
-  (names	[_]		(keys _m))
+  (dir      [fm nm]     (when-let [typ (exists fm nm)]
+                          (when (= typ :filetype/directory)
+                            nm)))
+  (entity   [fm nm]     (when (exists fm nm)
+                          nm))
+  (exists   [fm nm]     (exists fm nm nil))
+  (exists   [_ nm default]  (clojure.core/get _m nm default))
+  (file     [fm nm]     (when-let [typ (exists fm nm)]
+                          (when (= typ :filetype/file)
+                            nm)))
+  (get-map  [_]     _m)
+  (names    [_]     (keys _m))
   Object
-  (toString	[_]		(str "#filemap" (with-out-str (print _m)) ""))
-  (equals	[fm v] 		(boolean
-                                 (when (filemap? v)
-                                   (= _m (get-map v))))))
+  (toString [_]     (str "#filemap" (with-out-str (print _m)) ""))
+  (equals   [fm v]      (boolean
+                         (when (filemap? v)
+                           (= _m (get-map v))))))
 
 (alter-meta! #'->FileMap (P assoc :private true))
 
@@ -63,15 +63,15 @@
 (defn- coerce-to-map
   [v]
   (cond
-    (instance? java.io.File v)	{v (fstype v)}
-    (nil? v)			{}
-    (map? v)			v
-    (filemap? v)		(get-map v)
-    (string? v)			(recur (io/file v))
-    (seq? v)			(recur (apply filemap v))
-    (vector? v)			(recur (apply filemap v))
-    (set? v)			(recur (apply filemap v))
-    :else			(u!/throw-info (str "Can't be coerced to map: " v) {:fm v})))
+    (instance? java.io.File v)  {v (fstype v)}
+    (nil? v)            {}
+    (map? v)            v
+    (filemap? v)        (get-map v)
+    (string? v)         (recur (io/file v))
+    (seq? v)            (recur (apply filemap v))
+    (vector? v)         (recur (apply filemap v))
+    (set? v)            (recur (apply filemap v))
+    :else           (u!/throw-info (str "Can't be coerced to map: " v) {:fm v})))
 
 (defn filemap
   ([] (->FileMap {}))

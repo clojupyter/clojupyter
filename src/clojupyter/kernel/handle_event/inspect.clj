@@ -24,7 +24,7 @@
   (->>
    (loop [token-pos (re-index #"\S+" code)]
      (cond
-       (nil? (first token-pos)) nil
+       (nil? (first token-pos)) ""
        (nil? (second token-pos)) (val (first token-pos))
        (< position (key (second token-pos))) (val (first token-pos))
        :else (recur (rest token-pos))))

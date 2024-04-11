@@ -28,8 +28,8 @@
 (defmethod kernels-dir [:host :macos] [_]   (io/file "/usr/local/share/jupyter/kernels"))
 (letfn [(getenv! [nm] (or (System/getenv nm)
                           (throw (Exception. (str "Could not retrieve '" nm "' env variable.")))))]
-  (defmethod kernels-dir [:user :windows] [_]   (io/file (str (getenv! "APPDATA") "/jupyter")))
-  (defmethod kernels-dir [:host :windows] [_]   (io/file (str (getenv! "PROGRAMDATA") "/jupyter"))))
+  (defmethod kernels-dir [:user :windows] [_]   (io/file (str (getenv! "APPDATA") "/jupyter/kernels")))
+  (defmethod kernels-dir [:host :windows] [_]   (io/file (str (getenv! "PROGRAMDATA") "/jupyter/kernels"))))
 (u!/set-var-private! #'kernels-dir)
 
 (def- find-imagemagick-convert #(u!/find-executable "convert"))

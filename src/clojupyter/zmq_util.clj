@@ -10,7 +10,7 @@
 
 (defmacro with-shadow-context [[binding context] & body]
   (if (and (symbol? binding) context)
-    `(let [ztx# (ZContext/shadow ~context)
+    `(let [ztx# (. (clojupyter.state/zmq-context) shadow)
            ~binding ztx#]
        (try ~@body
             (finally (.destroy ztx#))))

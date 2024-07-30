@@ -48,4 +48,4 @@
            :exec-args {:installer :remote
                        :sign-releases? true
                        :sign-key-id "2C7452D1862CEFA60AE8F69C95F039A2C58E7138"
-                       :artifact "target/clojupyter-0.4.329.jar"}}}}
+                       :artifact "target/clojupyter-0.4.332.jar"}}}}

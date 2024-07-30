@@ -19,6 +19,19 @@
               *out* w]
       (pr {:version version, :raw-version (b/git-count-revs nil)}))))
 
+(defn- pom-template [version]
+  [[:description "The next generation of clojure.java.jdbc: a new low-level Clojure wrapper for JDBC-based access to databases."]
+   [:url "https://github.com/clojupyter/clojupyter"]
+   [:licenses
+    [:license
+     [:name "MIT License"]
+     [:url "https://github.com/clojupyter/clojupyter/blob/master/LICENSE.txt"]]]
+   [:scm
+    [:url "https://github.com/clojupyter/clojupyter"]
+    [:connection "scm:git:https://github.com/clojupyter/clojupyter.git"]
+    [:developerConnection "scm:git:ssh://git@github.com/clojupyter/clojupyter.git"]
+    [:tag (str "v" version)]]])
+
 (defn jar [_]
   (clean nil)
   (update-version nil)
@@ -29,7 +42,8 @@
                 :lib lib
                 :version version
                 :basis basis
-                :src-dirs ["src"]})
+                :src-dirs ["src"]
+                :pom-data  (pom-template version)})
 
   (b/compile-clj {:basis basis
                   :src-dirs ["src"]
@@ -38,6 +52,7 @@
           :jar-file jar-file
           :basis basis})
   (println jar-file))
+
 
 (defn uber [_]
   (clean nil)
@@ -49,7 +64,8 @@
                 :lib lib
                 :version version
                 :basis basis
-                :src-dirs ["src"]})
+                :src-dirs ["src"]
+                :pom-data  (pom-template version)})
 
   (b/compile-clj {:basis basis
                   :src-dirs ["src"]
@@ -58,10 +74,3 @@
            :uber-file uber-file
            :basis basis})
   (println uber-file))
-
-(defn pom [_]
-  (b/write-pom {:target "."
-                :lib lib
-                :version version
-                :basis basis
-                :src-dirs ["src"]}))

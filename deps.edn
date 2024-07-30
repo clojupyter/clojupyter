@@ -41,10 +41,11 @@
 
   :test {:extra-paths ["test"]
          :extra-deps {midje/midje {:mvn/version "1.10.10"}}
-         :exec-fn clojupyter.run-tests/run-tests}}
+         :exec-fn clojupyter.run-tests/run-tests}
 
   :deploy {:extra-deps {slipset/deps-deploy {:mvn/version "RELEASE"}}
            :exec-fn deps-deploy.deps-deploy/deploy
            :exec-args {:installer :remote
                        :sign-releases? true
-                       :artifact "deps-deploy.jar"}}}
+                       :sign-key-id "2C7452D1862CEFA60AE8F69C95F039A2C58E7138"
+                       :artifact "target/clojupyter-0.4.329.jar"}}}}

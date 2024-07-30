@@ -1,45 +1,44 @@
 {:paths ["src" "resources"]
- :deps {cheshire/cheshire           {:mvn/version "5.11.0"}
-        cider/cider-nrepl  {:mvn/version "0.44.0"}
-        clojure.java-time/clojure.java-time     {:mvn/version "1.1.0"}
-        clj-commons/pomegranate {:mvn/version "1.2.23"}
-        com.grammarly/omniconf  {:mvn/version "0.4.3"}
-        com.taoensso/timbre     {:mvn/version "6.4.0"}
-        io.aviso/pretty         {:mvn/version "1.1.1"}
-        hiccup/hiccup               {:mvn/version "2.0.0-RC2"}
-        io.forward/yaml                 {:mvn/version "1.0.11" :exclusions [org.flatland/ordered]}
-        org.flatland/ordered {:mvn/version "1.15.10"}
+ :deps {cheshire/cheshire           {:mvn/version "5.13.0"}
+        cider/cider-nrepl           {:mvn/version "0.44.0"}
+        clojure.java-time/clojure.java-time     {:mvn/version "1.4.2"}
+        clj-commons/pomegranate     {:mvn/version "1.2.24"}
+        com.grammarly/omniconf      {:mvn/version "0.5.2"}
+        com.taoensso/timbre         {:mvn/version "6.5.0"}
+        io.aviso/pretty             {:mvn/version "1.4.3"}
+        hiccup/hiccup               {:mvn/version "2.0.0-RC3"}
+        io.forward/yaml             {:mvn/version "1.0.11" :exclusions [org.flatland/ordered]}
+        org.flatland/ordered        {:mvn/version "1.15.12"}
         io.pedestal/pedestal.interceptor {:mvn/version "0.5.10"}
-        io.simplect/compose     {:mvn/version "0.7.27"}
-        me.raynes/fs            {:mvn/version "1.4.6"}
-        net.cgrand/parsley      {:mvn/version "0.9.3" :exclusions [org.clojure/clojure]}
-        net.cgrand/regex        {:mvn/version "1.1.0" :exclusions [org.clojure/clojure]}
-        net.cgrand/sjacket      {:mvn/version "0.1.1" :exclusions [org.clojure/clojure net.cgrand/parsley]}
-        nrepl/nrepl             {:mvn/version "1.0.0"}
-        org.clojure/clojure     {:mvn/version "1.11.1"}
+        io.simplect/compose         {:mvn/version "0.7.27"}
+        me.raynes/fs                {:mvn/version "1.4.6"}
+        net.cgrand/parsley          {:mvn/version "0.9.3" :exclusions [org.clojure/clojure]}
+        net.cgrand/regex            {:mvn/version "1.1.0" :exclusions [org.clojure/clojure]}
+        net.cgrand/sjacket          {:mvn/version "0.1.1" :exclusions [org.clojure/clojure net.cgrand/parsley]}
+        nrepl/nrepl                 {:mvn/version "1.0.0"}
+        org.clojure/clojure         {:mvn/version "1.11.3"}
         org.clojure/data.codec      {:mvn/version "0.1.1"}
-        org.clojure/data.json       {:mvn/version "2.4.0"}
+        org.clojure/data.json       {:mvn/version "2.5.0"}
         org.clojure/java.jdbc       {:mvn/version "0.7.12"}
         org.clojure/test.check      {:mvn/version "1.1.1"}
-        org.clojure/tools.cli       {:mvn/version "1.0.214"}
-        org.clojure/tools.build     {:mvn/version "0.8.4"}
-        org.xerial/sqlite-jdbc      {:mvn/version "3.39.3.0"}
-        org.zeromq/jeromq           {:mvn/version "0.5.2"}
+        org.clojure/tools.cli       {:mvn/version "1.1.230"}
+        org.xerial/sqlite-jdbc      {:mvn/version "3.46.0.0"}
+        org.zeromq/jeromq           {:mvn/version "0.5.2"} ;; Can't upgrade to 0.5.3+ https://github.com/zeromq/jeromq/issues/994
         pandect/pandect             {:mvn/version "1.0.2"}
-        org.clojure/tools.analyzer  {:mvn/version "1.1.0"}
+        org.clojure/tools.analyzer  {:mvn/version "1.2.0"}
         slingshot/slingshot         {:mvn/version "0.12.2"}
-        zprint/zprint               {:mvn/version "1.2.4"}
+        zprint/zprint               {:mvn/version "1.2.9"}
         org.clojure/core.async      {:mvn/version "1.6.681"}
         com.fzakaria/slf4j-timbre   {:mvn/version "0.4.1"}
-        org.slf4j/log4j-over-slf4j  {:mvn/version "2.0.9"}
-        org.slf4j/jul-to-slf4j      {:mvn/version "2.0.9"}
-        org.slf4j/jcl-over-slf4j    {:mvn/version "2.0.9"}}
+        org.slf4j/log4j-over-slf4j  {:mvn/version "2.0.13"}
+        org.slf4j/jul-to-slf4j      {:mvn/version "2.0.13"}
+        org.slf4j/jcl-over-slf4j    {:mvn/version "2.0.13"}}
  :aliases
  {:build
   {:deps
-   {io.github.clojure/tools.build {:git/tag "v0.9.6" :git/sha "8e78bcc"}}
+   {io.github.clojure/tools.build {:mvn/version "0.10.5"}}
    :ns-default build}
 
   :test {:extra-paths ["test"]
-         :extra-deps {midje/midje {:mvn/version "1.10.9"}}
+         :extra-deps {midje/midje {:mvn/version "1.10.10"}}
          :exec-fn clojupyter.run-tests/run-tests}}}

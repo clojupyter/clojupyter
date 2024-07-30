@@ -23,7 +23,7 @@
         org.clojure/test.check      {:mvn/version "1.1.1"}
         org.clojure/tools.cli       {:mvn/version "1.1.230"}
         org.xerial/sqlite-jdbc      {:mvn/version "3.46.0.0"}
-        org.zeromq/jeromq           {:mvn/version "0.5.2"} ;; Can't upgrade to 0.5.3+ https://github.com/zeromq/jeromq/issues/994
+        org.zeromq/jeromq           {:mvn/version "0.6.0"}
         pandect/pandect             {:mvn/version "1.0.2"}
         org.clojure/tools.analyzer  {:mvn/version "1.2.0"}
         slingshot/slingshot         {:mvn/version "0.12.2"}
@@ -48,4 +48,4 @@
            :exec-args {:installer :remote
                        :sign-releases? true
                        :sign-key-id "2C7452D1862CEFA60AE8F69C95F039A2C58E7138"
-                       :artifact "target/clojupyter-0.4.329.jar"}}}}
+                       :artifact "target/clojupyter-0.4.332.jar"}}}}

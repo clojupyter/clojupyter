@@ -1,6 +1,6 @@
 {:paths ["src" "resources"]
  :deps {cheshire/cheshire           {:mvn/version "5.13.0"}
-        cider/cider-nrepl           {:mvn/version "0.44.0"}
+        cider/cider-nrepl           {:mvn/version "0.50.3"}
         clojure.java-time/clojure.java-time     {:mvn/version "1.4.2"}
         clj-commons/pomegranate     {:mvn/version "1.2.24"}
         clj-commons/clj-yaml        {:mvn/version "1.0.29"}
@@ -15,7 +15,7 @@
         net.cgrand/parsley          {:mvn/version "0.9.3" :exclusions [org.clojure/clojure]}
         net.cgrand/regex            {:mvn/version "1.1.0" :exclusions [org.clojure/clojure]}
         net.cgrand/sjacket          {:mvn/version "0.1.1" :exclusions [org.clojure/clojure net.cgrand/parsley]}
-        nrepl/nrepl                 {:mvn/version "1.0.0"}
+        nrepl/nrepl                 {:mvn/version "1.3.0"}
         org.clojure/clojure         {:mvn/version "1.11.3"}
         org.clojure/data.codec      {:mvn/version "0.1.1"}
         org.clojure/data.json       {:mvn/version "2.5.0"}

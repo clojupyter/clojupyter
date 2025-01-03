@@ -7,7 +7,7 @@
             [clojure.string :as str]
             [clojure.walk :as walk]
             [io.simplect.compose :refer [C def- p P sdefn]]
-            [yaml.core :as yaml]))
+            [clj-yaml.core :as yaml]))
 
 (def DEPEND [csp/DEPEND-DUMMY])
 

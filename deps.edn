@@ -34,6 +34,7 @@
         org.slf4j/jul-to-slf4j      {:mvn/version "2.0.13"}
         org.slf4j/jcl-over-slf4j    {:mvn/version "2.0.13"}
         org.scicloj/kindly-advice   {:mvn/version "1-beta12"}
+        org.scicloj/kindly-render   {:mvn/version "0.1.1-alpha"}
         }
  :aliases
  {:build

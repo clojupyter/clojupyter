@@ -14,6 +14,7 @@
    [clojupyter.util-actions     :as u!]
    [clojupyter.util :as u]
    [scicloj.kindly-advice.v1.api :as kindly-advice]
+   [scicloj.kindly-render.note.to-hiccup :as to-hiccup]
    [clojupyter.display :as display]
    [cheshire.core :as cheshire]
 
@@ -121,8 +122,15 @@
                    [:script {:src "https://cdn.plot.ly/plotly-2.35.2.min.js"
                              :charset "utf-8"}]
                    [:script (format "Plotly.newPlot(document.currentScript.parentElement, %s);"
-                                    (cheshire/encode (:data value))
-                                    )]])
+                                    (cheshire/encode (:data value)))]])
+    
+    :kind/dataset
+    (->
+     (to-hiccup/render {:value value})
+     :hiccup
+     display/hiccup-html
+     )
+
     value))
 
 

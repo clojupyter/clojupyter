@@ -12,7 +12,12 @@
    [clojupyter.kernel.nrepl-middleware  :as mw]
    [clojupyter.log          :as log]
    [clojupyter.util-actions     :as u!]
-   [clojupyter.util :as u]))
+   [clojupyter.util :as u]
+   [scicloj.kindly-advice.v1.api :as kindly-advice]
+   [clojupyter.display :as display]
+   [cheshire.core :as cheshire]
+
+   ))
 
 ;;; ------------------------------------------------------------------------------------------------------------------------
 ;;; NREPL-SERVER PROTOCOL
@@ -101,15 +106,48 @@
       (throw (ex-info (str "messages-result - internal error: we should not get to end of nrepl stream without 'done' msg")
                       {:msgs msgs, :result result})))))
 
+(defn advise->clojupyter [{:keys [kind value] :as advise}]
+  ;(println :advise->clojupyter--advise advise)
+  ;(println :advise->clojupyter--kind kind)
+  ;(println :advise->clojupyter--value value)
+  (case kind
+    :kind/md (display/markdown value)
+    :kind/tex (display/latex value)
+    :kind/vega-lite (display/render-mime :application/vnd.vegalite.v3+json value)
+    :kind/hiccup (display/hiccup-html value)
+    :kind/plotly (display/hiccup-html
+                  [:div {:style {:height "500px"
+                                 :width "500px"}}
+                   [:script {:src "https://cdn.plot.ly/plotly-2.35.2.min.js"
+                             :charset "utf-8"}]
+                   [:script (format "Plotly.newPlot(document.currentScript.parentElement, %s);"
+                                    (cheshire/encode (:data value))
+                                    )]])
+    value))
+
+
+(defn advising-eval [form]
+  (let [value (eval form)]
+    (if (var? value)
+      value
+      (let [advise  (kindly-advice/advise {:form form :value value})]
+        (advise->clojupyter advise)))
+    ;(println :advising--meta-form (meta form))
+    ;(println :advising--meta-value (meta value ))
+    ))
+
 (defrecord CljSrv [nrepl-server_ nrepl-client_ nrepl-sockaddr_ pending-input?_]
   nrepl-server-proto
 
   (nrepl-complete
     [_ code]
-    (->> (nrepl/message nrepl-client_ {:op "complete" :symbol code})
-         nrepl/combine-responses
-         :completions
-         (mapv :candidate)))
+    (println :nrepl-complete--code code)
+    (let [complete-anwer (nrepl/message nrepl-client_ {:op "complete" :symbol code})]
+      (println :complete-answer complete-anwer)
+      (->> complete-anwer
+       nrepl/combine-responses
+       :completions
+       (mapv :candidate))))
 
   (nrepl-continue-eval
     [cljsrv msgseq]
@@ -125,7 +163,8 @@
 
   (nrepl-eval
     [cljsrv code]
-    (->> {:id (u!/uuid), :op "eval", :code code}
+    ;(println :nrepl-eval--code code) 
+    (->> {:id (u!/uuid), :op "eval", :code code :eval 'clojupyter.kernel.cljsrv/advising-eval}
          (nrepl/message nrepl-client_)
          (nrepl-continue-eval cljsrv)))
 

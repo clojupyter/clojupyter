@@ -110,9 +110,7 @@
 
   (nrepl-complete
     [_ code]
-    (println :nrepl-complete--code code)
     (let [complete-anwer (nrepl/message nrepl-client_ {:op "complete" :symbol code})]
-      (println :complete-answer complete-anwer)
       (->> complete-anwer
        nrepl/combine-responses
        :completions

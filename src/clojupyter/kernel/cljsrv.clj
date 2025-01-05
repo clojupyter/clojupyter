@@ -110,11 +110,10 @@
 
   (nrepl-complete
     [_ code]
-    (let [complete-anwer (nrepl/message nrepl-client_ {:op "complete" :symbol code})]
-      (->> complete-anwer
-       nrepl/combine-responses
-       :completions
-       (mapv :candidate))))
+    (->> (nrepl/message nrepl-client_ {:op "complete" :symbol code})
+         nrepl/combine-responses
+         :completions
+         (mapv :candidate)))
 
   (nrepl-continue-eval
     [cljsrv msgseq]

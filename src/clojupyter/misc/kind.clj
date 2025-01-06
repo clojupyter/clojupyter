@@ -12,6 +12,14 @@
   (:import
    [javax.imageio ImageIO]))
 
+(def require-cytoscape
+  [:script    "
+  if (typeof cytoscape === 'undefined') {
+    const script = document.createElement('script');
+    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.30.4/cytoscape.min.js';
+    document.head.appendChild(script);
+  }"])
+
 
 (def require-plotly
   [:script    "
@@ -46,6 +54,22 @@
     require-plotly
     [:script (format "Plotly.newPlot(document.currentScript.parentElement, %s);"
                      (cheshire/encode value))]]))
+
+(defn display-cytoscape [value]
+  
+    (->> [:div {:style {:height "500px"
+                        :width "500px"}}
+          require-cytoscape
+          [:script (format "
+  {
+  value = %s;
+  value['container'] = document.currentScript.parentElement;
+  cytoscape(value);
+  };"
+                           (cheshire/encode value))]]
+  
+  ))
+
 
 (defn display-default [value]
   (println :display-default--value value)
@@ -85,6 +109,7 @@
 
           :kind/plotly (display-plotly (:data value))
           :kind/highcharts (display-highcharts value)
+          :kind/cytoscape (display-cytoscape value)
 
 
           :kind/echarts
@@ -131,45 +156,29 @@
 
 (comment
 
-  (def hs
-    (kind/highcharts
-     {:title {:text "Line chart"}
-      :subtitle {:text "By Job Category"}
-      :yAxis {:title {:text "Number of Employees"}}
-      :series [{:name "Installation & Developers"
-                :data [43934, 48656, 65165, 81827, 112143, 142383,
-                       171533, 165174, 155157, 161454, 154610]}
+  (def ct
+   (kind/cytoscape
+    {:elements {:nodes [{:data {:id "a" :parent "b"} :position {:x 215 :y 85}}
+                        {:data {:id "b"}}
+                        {:data {:id "c" :parent "b"} :position {:x 300 :y 85}}
+                        {:data {:id "d"} :position {:x 215 :y 175}}
+                        {:data {:id "e"}}
+                        {:data {:id "f" :parent "e"} :position {:x 300 :y 175}}]
+                :edges [{:data {:id "ad" :source "a" :target "d"}}
+                        {:data {:id "eb" :source "e" :target "b"}}]}
+     :style [{:selector "node"
+              :css {:content "data(id)"
+                    :text-valign "center"
+                    :text-halign "center"}}
+             {:selector "parent"
+              :css {:text-valign "top"
+                    :text-halign "center"}}
+             {:selector "edge"
+              :css {:curve-style "bezier"
+                    :target-arrow-shape "triangle"}}]
+     :layout {:name "preset"
+              :padding 5}}) 
+  )
 
-               {:name "Manufacturing",
-                :data [24916, 37941, 29742, 29851, 32490, 30282,
-                       38121, 36885, 33726, 34243, 31050]}
-
-               {:name "Sales & Distribution",
-                :data [11744, 30000, 16005, 19771, 20185, 24377,
-                       32147, 30912, 29243, 29213, 25663]}
-
-               {:name "Operations & Maintenance",
-                :data [nil, nil, nil, nil, nil, nil, nil,
-                       nil, 11164, 11218, 10077]}
-
-               {:name "Other",
-                :data [21908, 5548, 8105, 11248, 8989, 11816, 18274,
-                       17300, 13053, 11906, 10073]}]
-
-      :xAxis {:accessibility {:rangeDescription "Range: 2010 to 2020"}}
-
-      :legend {:layout "vertical",
-               :align "right",
-               :verticalAlign "middle"}
-
-      :plotOptions {:series {:label {:connectorAllowed false},
-                             :pointStart 2010}}
-
-      :responsive {:rules [{:condition {:maxWidth 500},
-                            :chartOptions {:legend {:layout "horizontal",
-                                                    :align "center",
-                                                    :verticalAlign "bottom"}}}]}}))
-
-
-  (to-hiccup-js/render {:value hs})
+  (to-hiccup-js/render {:value ct})
   )

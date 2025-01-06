@@ -8,7 +8,8 @@
    [scicloj.kindly-advice.v1.api :as kindly-advice]
    [scicloj.kindly-render.note.to-hiccup :as to-hiccup]
    [scicloj.kindly-render.note.to-hiccup-js :as to-hiccup-js]
-   ) 
+   
+   [clojupyter.misc.display :as display]) 
   (:import
    [javax.imageio ImageIO]))
 
@@ -57,18 +58,17 @@
 
 (defn display-cytoscape [value]
   
-    (->> [:div {:style {:height "500px"
-                        :width "500px"}}
-          require-cytoscape
-          [:script (format "
+    (display/hiccup-html
+     [:div {:style {:height "500px"
+                    :width "500px"}}
+      require-cytoscape
+      [:script (format "
   {
   value = %s;
   value['container'] = document.currentScript.parentElement;
   cytoscape(value);
-  };"
-                           (cheshire/encode value))]]
-  
-  ))
+  };"                      
+    (cheshire/encode value))]]))
 
 
 (defn display-default [value]

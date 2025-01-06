@@ -10,10 +10,28 @@
   (:import
    [javax.imageio ImageIO]))
 
+
+(def require-plotly
+  [:script    "
+  if (typeof Plotly === 'undefined') {
+    const script = document.createElement('script');
+    script.src = 'https://cdn.plot.ly/plotly-2.35.2.min.js';
+    document.head.appendChild(script);
+  }"])
+
+
+(defn disply-plotly [value]
+  (display/hiccup-html
+   [:div {:style {:height "500px"
+                  :width "500px"}}
+    require-plotly
+    [:script (format "Plotly.newPlot(document.currentScript.parentElement, %s);"
+                     (cheshire/encode value))]]))
+
 (defn advise->clojupyter [{:keys [kind value] :as advise}]
   ;(println :advise->clojupyter--advise advise)
-  ;(println :advise->clojupyter--kind kind)
-  ;;(println :advise->clojupyter--value value)
+  (println :advise->clojupyter--kind kind)
+  (println :advise->clojupyter--value value)
   (case kind
     ;; clojupyter specific
 
@@ -34,13 +52,8 @@
 
     ;; generic and use diplay/hiccup-html
 
-    :kind/plotly (display/hiccup-html
-                  [:div {:style {:height "500px"
-                                 :width "500px"}}
-                   [:script {:src "https://cdn.plot.ly/plotly-2.35.2.min.js"
-                             :charset "utf-8"}]
-                   [:script (format "Plotly.newPlot(document.currentScript.parentElement, %s);"
-                                    (cheshire/encode (:data value)))]])
+    :kind/plotly (disply-plotly (:data value))
+    
 
     :kind/echarts
     (display/hiccup-html
@@ -64,7 +77,10 @@
 
 
 
-    value))
+    (->
+     (to-hiccup/render {:value value})
+     :hiccup
+     display/hiccup-html)))
 
 
 

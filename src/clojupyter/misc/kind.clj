@@ -105,7 +105,7 @@
 
     ;; generic and use diplay/hiccup-html
 
-          :kind/plotly (display-plotly (:data value))
+          :kind/plotly (display-plotly value)
           :kind/highcharts (display-highcharts value)
           :kind/cytoscape (display-cytoscape value)
 

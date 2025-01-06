@@ -7,9 +7,7 @@
    [clojure.java.io :as io]
    [scicloj.kindly-advice.v1.api :as kindly-advice]
    [scicloj.kindly-render.note.to-hiccup :as to-hiccup]
-   [scicloj.kindly-render.note.to-hiccup-js :as to-hiccup-js]
-   
-   [clojupyter.misc.display :as display]) 
+   [scicloj.kindly-render.note.to-hiccup-js :as to-hiccup-js]) 
   (:import
    [javax.imageio ImageIO]))
 
@@ -72,20 +70,20 @@
 
 
 (defn display-default [value]
-  (println :display-default--value value)
+  ;;(println :display-default--value value)
   (let [hiccup
         (->
          (to-hiccup/render {:value value})
          :hiccup)]
 
-    (println :display-default--hiccup hiccup)
+    ;;(println :display-default--hiccup hiccup)
     (display/hiccup-html hiccup)))
 
 
 (defn advise->clojupyter [{:keys [kind value] :as advise}]
   ;(println :advise->clojupyter--advise advise)
-  (println :advise->clojupyter--kind kind)
-  (println :advise->clojupyter--value value)
+  ;;(println :advise->clojupyter--kind kind)
+  ;;(println :advise->clojupyter--value value)
   (let [hiccup
         (case kind
     ;; clojupyter specific

@@ -3,11 +3,19 @@
             [clojure.java.io :as io]))
 
 (def lib 'clojupyter/clojupyter)
-(def version (format "0.4.%s" (b/git-count-revs nil)))
+(defn new-version [] (format "0.4.%s" (b/git-count-revs nil)))
+(defn read-version
+  []
+  (-> (slurp "resources/clojupyter/assets/version.edn")
+      (read-string)
+      (get :version)))
+(def version (atom (read-version)))
 (def class-dir "target/classes")
 (def basis (b/create-basis {:project "deps.edn"}))
-(def jar-file (format "target/%s-%s.jar" (name lib) version))
-(def uber-file (format "target/%s-%s-standalone.jar" (name lib) version))
+(defn jar-file []
+  (format "target/%s-%s.jar" (name lib) @version))
+(defn uber-file []
+  (format "target/%s-%s-standalone.jar" (name lib) @version))
 (def resource-file "resources/clojupyter/assets/version.edn")
 
 (defn clean [_]
@@ -17,7 +25,9 @@
   (with-open [w (io/writer resource-file)]
     (binding [*print-length* false
               *out* w]
-      (pr {:version version, :raw-version (b/git-count-revs nil)}))))
+      (pr {:version (new-version), :raw-version (b/git-count-revs nil)})))
+  (reset! version (read-version)))
+
 
 (defn- pom-template [version]
   [[:description "The next generation of clojure.java.jdbc: a new low-level Clojure wrapper for JDBC-based access to databases."]
@@ -34,43 +44,43 @@
 
 (defn jar [_]
   (clean nil)
-  (update-version nil)
+  ;(update-version nil)
   (b/copy-dir {:src-dirs ["resources"]
                :target-dir class-dir})
 
   (b/write-pom {:class-dir class-dir
                 :lib lib
-                :version version
+                :version @version
                 :basis basis
                 :src-dirs ["src"]
-                :pom-data  (pom-template version)})
+                :pom-data  (pom-template @version)})
 
   (b/compile-clj {:basis basis
                   :src-dirs ["src"]
                   :class-dir class-dir})
   (b/jar {:class-dir class-dir
-          :jar-file jar-file
+          :jar-file (jar-file)
           :basis basis})
-  (println jar-file))
+  (println (jar-file)))
 
 
 (defn uber [_]
   (clean nil)
-  (update-version nil)
+  ;;(update-version nil)
   (b/copy-dir {:src-dirs ["resources"]
                :target-dir class-dir})
 
   (b/write-pom {:class-dir class-dir
                 :lib lib
-                :version version
+                :version @version
                 :basis basis
                 :src-dirs ["src"]
-                :pom-data  (pom-template version)})
+                :pom-data  (pom-template @version)})
 
   (b/compile-clj {:basis basis
                   :src-dirs ["src"]
                   :class-dir class-dir})
   (b/uber {:class-dir class-dir
-           :uber-file uber-file
+           :uber-file (uber-file)
            :basis basis})
-  (println uber-file))
+  (println (uber-file)))

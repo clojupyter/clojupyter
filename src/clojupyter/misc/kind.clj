@@ -90,17 +90,15 @@
 
 
 
-(defn- default-to-hiccup-render [{:as note :keys [value kind]}]
+(defn- default-to-hiccup-render [note]
 
   (let [hiccup
         (->
-         (to-hiccup/render-advice kind note)
+         (to-hiccup/render note)
          :hiccup)]
     (assoc note
            :clojupyter (display/hiccup-html hiccup)
            :hiccup hiccup)))
-
-
 
 (defn- render-non-nestable [note clojupyter]
   (assoc note
@@ -222,18 +220,9 @@
     (if (var? value)
       value
       (:clojupyter (render {:value value
-                            :form form}))
-      ;(let [advise  (kindly-advice/advise {:form form :value value})]
-      ;  (advise->clojupyter advise))
-      )
+                            :form form})))
     ;(println :advising--meta-form (meta form))
     ;(println :advising--meta-value (meta value ))
     ))
 
 
-(meta
- (kind/html
-  "
-<svg height=100 width=100>
-<circle cx=50 cy=50 r=40 stroke='purple' stroke-width=3 fill='floralwhite' />
-</svg> "))

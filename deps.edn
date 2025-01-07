@@ -43,7 +43,9 @@
    :ns-default build}
 
   :test {:extra-paths ["test"]
-         :extra-deps {midje/midje {:mvn/version "1.10.10"}}
+         :extra-deps {midje/midje {:mvn/version "1.10.10"}
+                      org.scicloj/noj {:mvn/version "2-beta4"} ;; to test all kinds
+                      }
          :exec-fn clojupyter.run-tests/run-tests-and-exit}
 
   :deploy {:extra-deps {slipset/deps-deploy {:mvn/version "RELEASE"}}

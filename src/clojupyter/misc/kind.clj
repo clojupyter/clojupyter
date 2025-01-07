@@ -40,6 +40,14 @@
     document.head.appendChild(script);
   }"])
 
+(def require-echarts
+  [:script    "
+  if (typeof echarts === 'undefined') {
+    const script = document.createElement('script');
+    script.src = 'https://cdn.jsdelivr.net/npm/echarts@5.4.1/dist/echarts.min.js';
+    document.head.appendChild(script);
+  }"])
+
 
 (defn highcharts->hiccup [value]
   [:div {:style {:height "500px"
@@ -72,8 +80,7 @@
 (defn echarts->hiccup [value]
   [:div {:style {:height "500px"
                  :width "500px"}}
-   [:script {:src "https://cdn.jsdelivr.net/npm/echarts@5.4.1/dist/echarts.min.js"
-             :charset "utf-8"}]
+   [:script require-echarts]
    [:script (format "
             {
             var myChart = echarts.init(document.currentScript.parentElement);
@@ -81,71 +88,7 @@
             };"
                     (cheshire/encode value))]])
 
-(defn display-default [value]
-  ;;(println :display-default--value value)
-  (let [hiccup
-        (->
-         (to-hiccup/render {:value value})
-         :hiccup)]
 
-    ;;(println :display-default--hiccup hiccup)
-    (display/hiccup-html hiccup)))
-
-
-(defn advise->clojupyter [{:keys [kind value] :as advise}]
-  ;(println :advise->clojupyter--advise advise)
-  ;;(println :advise->clojupyter--kind kind)
-  ;;(println :advise->clojupyter--value value)
-  (let [display-result
-        (case kind
-    ;; clojupyter specific
-
-          :kind/md (display/markdown value)
-          :kind/tex (display/latex value)
-          :kind/vega-lite (display/render-mime :application/vnd.vegalite.v3+json value)
-          :kind/hiccup (display/hiccup-html value)
-          :kind/image
-          (let [out (io/java.io.ByteArrayOutputStream.)
-                v (first value)]
-            (ImageIO/write v "png" out)
-            (display/render-mime :image/png
-                                 (-> out .toByteArray b64/encode String.)))
-
-          :kind/html
-          (display/html (first value))
-
-
-    ;; generic and use diplay/hiccup-html
-
-          :kind/plotly (plotly->hiccup value)
-          :kind/highcharts (highcharts->hiccup value)
-          :kind/cytoscape (cytoscape>hiccup value)
-
-
-          :kind/echarts
-          (display/hiccup-html
-           [:div {:style {:height "500px"
-                          :width "500px"}}
-            [:script {:src "https://cdn.jsdelivr.net/npm/echarts@5.4.1/dist/echarts.min.js"
-                      :charset "utf-8"}]
-            [:script (format "
-          {
-          var myChart = echarts.init(document.currentScript.parentElement);
-          myChart.setOption(%s);
-          };"
-                             (cheshire/encode value))]])
-
-
-          :kind/dataset
-          (->
-           (to-hiccup/render {:value value})
-           :hiccup
-           display/hiccup-html)
-
-
-          (display-default value))]
-    (println :advise->clojupyter--display-result display-result)
-    display-result))
 
 (defn- default-to-hiccup-render [{:as note :keys [value]}]
 

@@ -84,7 +84,7 @@
   ;(println :advise->clojupyter--advise advise)
   ;;(println :advise->clojupyter--kind kind)
   ;;(println :advise->clojupyter--value value)
-  (let [hiccup
+  (let [display-result
         (case kind
     ;; clojupyter specific
 
@@ -137,7 +137,7 @@
            
            ]
     
-    hiccup
+    display-result
     ))
 
 

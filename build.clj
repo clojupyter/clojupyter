@@ -30,7 +30,7 @@
 
 
 (defn- pom-template [version]
-  [[:description "The next generation of clojure.java.jdbc: a new low-level Clojure wrapper for JDBC-based access to databases."]
+  [[:description "A Jupyter kernel for Clojure - run Clojure code in Jupyter Lab, Notebook and Console"]
    [:url "https://github.com/clojupyter/clojupyter"]
    [:licenses
     [:license

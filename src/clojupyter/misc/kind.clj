@@ -7,7 +7,11 @@
    [clojure.java.io :as io]
    [scicloj.kindly-advice.v1.api :as kindly-advice]
    [scicloj.kindly-render.note.to-hiccup :as to-hiccup]
-   [scicloj.kindly-render.note.to-hiccup-js :as to-hiccup-js]) 
+   [scicloj.kindly-render.note.to-hiccup-js :as to-hiccup-js]
+   [scicloj.kindly-render.shared.util :as util]
+   [scicloj.kindly-render.shared.walk :as walk]
+
+   [hiccup.core :as hiccup])
   (:import
    [javax.imageio ImageIO]))
 
@@ -37,37 +41,45 @@
   }"])
 
 
-(defn display-highcharts [value]
-  (display/hiccup-html
-   [:div {:style {:height "500px"
-                  :width "500px"}}
-    require-highcharts
-    [:script (format "Highcharts.chart(document.currentScript.parentElement, %s);"
-                     (cheshire/encode value))]]))
+(defn highcharts->hiccup [value]
+  [:div {:style {:height "500px"
+                 :width "500px"}}
+   require-highcharts
+   [:script (format "Highcharts.chart(document.currentScript.parentElement, %s);"
+                    (cheshire/encode value))]])
 
 
-(defn display-plotly [value] 
-  (display/hiccup-html
-   [:div {:style {:height "500px"
-                  :width "500px"}}
-    require-plotly
-    [:script (format "Plotly.newPlot(document.currentScript.parentElement, %s);"
-                     (cheshire/encode value))]]))
+(defn plotly->hiccup [value]
+  [:div {:style {:height "500px"
+                 :width "500px"}}
+   require-plotly
+   [:script (format "Plotly.newPlot(document.currentScript.parentElement, %s);"
+                    (cheshire/encode value))]])
 
-(defn display-cytoscape [value]
-  
-    (display/hiccup-html
-     [:div {:style {:height "500px"
-                    :width "500px"}}
-      require-cytoscape
-      [:script (format "
+(defn cytoscape>hiccup [value]
+
+  [:div {:style {:height "500px"
+                 :width "500px"}}
+   require-cytoscape
+   [:script (format "
   {
   value = %s;
   value['container'] = document.currentScript.parentElement;
   cytoscape(value);
-  };"                      
-    (cheshire/encode value))]]))
+  };"
+                    (cheshire/encode value))]])
 
+(defn echarts->hiccup [value]
+  [:div {:style {:height "500px"
+                 :width "500px"}}
+   [:script {:src "https://cdn.jsdelivr.net/npm/echarts@5.4.1/dist/echarts.min.js"
+             :charset "utf-8"}]
+   [:script (format "
+            {
+            var myChart = echarts.init(document.currentScript.parentElement);
+            myChart.setOption(%s);
+            };"
+                    (cheshire/encode value))]])
 
 (defn display-default [value]
   ;;(println :display-default--value value)
@@ -105,9 +117,9 @@
 
     ;; generic and use diplay/hiccup-html
 
-          :kind/plotly (display-plotly value)
-          :kind/highcharts (display-highcharts value)
-          :kind/cytoscape (display-cytoscape value)
+          :kind/plotly (plotly->hiccup value)
+          :kind/highcharts (highcharts->hiccup value)
+          :kind/cytoscape (cytoscape>hiccup value)
 
 
           :kind/echarts
@@ -131,24 +143,178 @@
            display/hiccup-html)
 
 
-          (display-default value)
+          (display-default value))]
+    (println :advise->clojupyter--display-result display-result)
+    display-result))
 
-          )
-           
-           ]
-    
-    display-result
-    ))
+(defn- default-to-hiccup-render [{:as note :keys [value]}]
+
+  (let [hiccup
+        (->
+         (to-hiccup/render {:value value})
+         :hiccup)]
+    (assoc note
+           :clojupyter (display/hiccup-html hiccup)
+           :hiccup hiccup)))
+
+
+
+(defmulti render-advice :kind)
+
+(defn render [note]
+  (walk/advise-render-style note render-advice))
+
+(defmethod render-advice :default [{:as note :keys [value kind]}]
+  (let [hiccup (if kind
+
+                 [:div
+                  [:div "Unimplemented: " [:code (pr-str kind)]]
+                  [:code (pr-str value)]]
+                 (str value))]
+    (assoc note
+           :clojupyter (display/hiccup-html hiccup)
+           :hiccup hiccup)))
+
+(defmethod render-advice :kind/plotly [{:as note :keys [value]}]
+  (let [hiccup
+        (->
+         (plotly->hiccup value))]
+    (assoc note
+           :clojupyter (display/hiccup-html hiccup)
+           :hiccup hiccup)))
+
+(defmethod render-advice :kind/cytoscape [{:as note :keys [value]}]
+  (let [hiccup
+        (->
+         (cytoscape>hiccup value))]
+    (assoc note
+           :clojupyter (display/hiccup-html hiccup)
+           :hiccup hiccup)))
+
+(defmethod render-advice :kind/highcharts [{:as note :keys [value]}]
+  (let [hiccup
+        (->
+         (highcharts->hiccup value))]
+    (assoc note
+           :clojupyter (display/hiccup-html hiccup)
+           :hiccup hiccup)))
+
+(defmethod render-advice :kind/echarts [{:as note :keys [value]}]
+  (let [hiccup
+        (->
+         (echarts->hiccup value))]
+    (assoc note
+           :clojupyter (display/hiccup-html hiccup)
+           :hiccup hiccup)))
+
+
+(defmethod render-advice :kind/image [{:as note :keys [value]}]
+  (let [out (io/java.io.ByteArrayOutputStream.)
+        v (first value)
+        clojupyter (do (ImageIO/write v "png" out)
+                       (display/render-mime :image/png
+                                            (-> out .toByteArray b64/encode String.)))]
+
+    (assoc note
+           :clojupyter clojupyter
+           :hiccup [:div {:style "color:red"} "nested rendering of kind/image not possible in Clojupyter"])))
+
+(defmethod render-advice :kind/vega-lite [{:as note :keys [value]}]
+  (assoc note
+         :clojupyter (display/render-mime :application/vnd.vegalite.v3+json value)
+         :hiccup [:div {:style "color:red"} "nested rendering of kind/vega-lite not possible in Clojupyter"]))
+
+(defmethod render-advice :kind/md [{:as note :keys [value]}]
+  (assoc note
+         :clojupyter (display/markdown value)
+         :hiccup [:div {:style "color:red"} "nested rendering of kind/md not possible in Clojupyter"]))
+
+(defmethod render-advice :kind/tex [{:as note :keys [value]}]
+  (assoc note
+         :clojupyter (display/latex value)
+         :hiccup [:div {:style "color:red"} "nested rendering of kind/tex not possible in Clojupyter"]))
+
+
+
+
+
+(defmethod render-advice :kind/dataset [note]
+  (default-to-hiccup-render note))
+
+(defmethod render-advice :kind/code [note]
+  (default-to-hiccup-render note))
+
+
+(defmethod render-advice :kind/pprint [note]
+  (default-to-hiccup-render note))
+
+
+(defmethod render-advice :kind/html [{:as note :keys [value]}]
+  (assoc note
+         :clojupyter (display/html (first value))
+         :hiccup (first value)))
+
+
+(defmethod render-advice :kind/hiccup [note]
+  (let [hiccup
+        (:hiccup (walk/render-hiccup-recursively note render))]
+    (assoc note
+           :clojupyter (display/hiccup-html hiccup)
+           :hiccup hiccup)))
+
+(defmethod render-advice :kind/vector [{:as note :keys [value]}]
+  (let [hiccup
+        (:hiccup (walk/render-data-recursively note {:class "kind-vector"} value render))]
+    (assoc note
+           :clojupyter (display/hiccup-html hiccup)
+           :hiccup hiccup)))
+
+(defmethod render-advice :kind/map [{:as note :keys [value]}]
+  (let [hiccup
+        (:hiccup (walk/render-data-recursively note {:class "kind-map"} (apply concat value) render))]
+    (assoc note
+           :clojupyter (display/hiccup-html hiccup)
+           :hiccup hiccup)))
+
+(defmethod render-advice :kind/set [{:as note :keys [value]}]
+  (let [hiccup
+        (:hiccup (walk/render-data-recursively note {:class "kind-set"} value render))]
+    (assoc note
+           :clojupyter (display/hiccup-html hiccup)
+           :hiccup hiccup)))
+
+(defmethod render-advice :kind/seq [{:as note :keys [value]}]
+  (let [hiccup
+        (:hiccup (walk/render-data-recursively note {:class "kind-seq"} value render))]
+    (assoc note
+           :clojupyter (display/hiccup-html hiccup)
+           :hiccup hiccup)))
+
+
+(defmethod render-advice :kind/table [note]
+  (walk/render-table-recursively note render))
+
+
 
 
 (defn kind-eval [form]
-  
+
   (let [value (eval form)]
     (if (var? value)
       value
-      (let [advise  (kindly-advice/advise {:form form :value value})]
-        (advise->clojupyter advise)))
+      (:clojupyter (render {:value value
+                            :form form}))
+      ;(let [advise  (kindly-advice/advise {:form form :value value})]
+      ;  (advise->clojupyter advise))
+      )
     ;(println :advising--meta-form (meta form))
     ;(println :advising--meta-value (meta value ))
     ))
 
+
+(meta
+ (kind/html
+  "
+<svg height=100 width=100>
+<circle cx=50 cy=50 r=40 stroke='purple' stroke-width=3 fill='floralwhite' />
+</svg> "))

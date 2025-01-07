@@ -90,16 +90,37 @@
 
 
 
-(defn- default-to-hiccup-render [{:as note :keys [value]}]
+(defn- default-to-hiccup-render [{:as note :keys [value kind]}]
 
   (let [hiccup
         (->
-         (to-hiccup/render {:value value})
+         (to-hiccup/render-advice kind note)
          :hiccup)]
     (assoc note
            :clojupyter (display/hiccup-html hiccup)
            :hiccup hiccup)))
 
+
+
+(defn- render-non-nestable [note clojupyter]
+  (assoc note
+         :clojupyter clojupyter
+         :hiccup [:div {:style "color:red"} (format "nested rendering of %s not possible in Clojupyter" (:kind note))]))
+
+(defn- render-recursively [note value css-class render]
+  (let [hiccup
+        (:hiccup (walk/render-data-recursively note {:class css-class} value render))]
+    (assoc note
+           :clojupyter (display/hiccup-html hiccup)
+           :hiccup hiccup)))
+
+(defn render-js [note value ->hiccup-fn]
+  (let [hiccup
+        (->
+         (->hiccup-fn value))]
+    (assoc note
+           :clojupyter (display/hiccup-html hiccup)
+           :hiccup hiccup)))
 
 
 (defmulti render-advice :kind)
@@ -118,37 +139,19 @@
            :clojupyter (display/hiccup-html hiccup)
            :hiccup hiccup)))
 
+
+
 (defmethod render-advice :kind/plotly [{:as note :keys [value]}]
-  (let [hiccup
-        (->
-         (plotly->hiccup value))]
-    (assoc note
-           :clojupyter (display/hiccup-html hiccup)
-           :hiccup hiccup)))
+  (render-js note value plotly->hiccup))
 
 (defmethod render-advice :kind/cytoscape [{:as note :keys [value]}]
-  (let [hiccup
-        (->
-         (cytoscape>hiccup value))]
-    (assoc note
-           :clojupyter (display/hiccup-html hiccup)
-           :hiccup hiccup)))
+  (render-js note value cytoscape>hiccup))
 
 (defmethod render-advice :kind/highcharts [{:as note :keys [value]}]
-  (let [hiccup
-        (->
-         (highcharts->hiccup value))]
-    (assoc note
-           :clojupyter (display/hiccup-html hiccup)
-           :hiccup hiccup)))
+  (render-js note value  highcharts->hiccup))
 
 (defmethod render-advice :kind/echarts [{:as note :keys [value]}]
-  (let [hiccup
-        (->
-         (echarts->hiccup value))]
-    (assoc note
-           :clojupyter (display/hiccup-html hiccup)
-           :hiccup hiccup)))
+  (render-js note value echarts->hiccup))
 
 
 (defmethod render-advice :kind/image [{:as note :keys [value]}]
@@ -157,28 +160,17 @@
         clojupyter (do (ImageIO/write v "png" out)
                        (display/render-mime :image/png
                                             (-> out .toByteArray b64/encode String.)))]
-
-    (assoc note
-           :clojupyter clojupyter
-           :hiccup [:div {:style "color:red"} "nested rendering of kind/image not possible in Clojupyter"])))
+    (render-non-nestable note clojupyter)))
 
 (defmethod render-advice :kind/vega-lite [{:as note :keys [value]}]
-  (assoc note
-         :clojupyter (display/render-mime :application/vnd.vegalite.v3+json value)
-         :hiccup [:div {:style "color:red"} "nested rendering of kind/vega-lite not possible in Clojupyter"]))
+  (render-non-nestable note (display/render-mime :application/vnd.vegalite.v3+json value))
+  )
 
 (defmethod render-advice :kind/md [{:as note :keys [value]}]
-  (assoc note
-         :clojupyter (display/markdown value)
-         :hiccup [:div {:style "color:red"} "nested rendering of kind/md not possible in Clojupyter"]))
+  (render-non-nestable note (display/markdown value)))
 
 (defmethod render-advice :kind/tex [{:as note :keys [value]}]
-  (assoc note
-         :clojupyter (display/latex value)
-         :hiccup [:div {:style "color:red"} "nested rendering of kind/tex not possible in Clojupyter"]))
-
-
-
+  (render-non-nestable note (display/latex value)))
 
 
 (defmethod render-advice :kind/dataset [note]
@@ -205,38 +197,22 @@
            :clojupyter (display/hiccup-html hiccup)
            :hiccup hiccup)))
 
+
 (defmethod render-advice :kind/vector [{:as note :keys [value]}]
-  (let [hiccup
-        (:hiccup (walk/render-data-recursively note {:class "kind-vector"} value render))]
-    (assoc note
-           :clojupyter (display/hiccup-html hiccup)
-           :hiccup hiccup)))
+  (render-recursively note value "kind-vector" render))
 
 (defmethod render-advice :kind/map [{:as note :keys [value]}]
-  (let [hiccup
-        (:hiccup (walk/render-data-recursively note {:class "kind-map"} (apply concat value) render))]
-    (assoc note
-           :clojupyter (display/hiccup-html hiccup)
-           :hiccup hiccup)))
+  (render-recursively note (apply concat value) "kind-map" render))
 
 (defmethod render-advice :kind/set [{:as note :keys [value]}]
-  (let [hiccup
-        (:hiccup (walk/render-data-recursively note {:class "kind-set"} value render))]
-    (assoc note
-           :clojupyter (display/hiccup-html hiccup)
-           :hiccup hiccup)))
+  (render-recursively note value "kind-set" render))
+  
 
 (defmethod render-advice :kind/seq [{:as note :keys [value]}]
-  (let [hiccup
-        (:hiccup (walk/render-data-recursively note {:class "kind-seq"} value render))]
-    (assoc note
-           :clojupyter (display/hiccup-html hiccup)
-           :hiccup hiccup)))
-
+  (render-recursively note value "kind-seq" render))
 
 (defmethod render-advice :kind/table [note]
   (walk/render-table-recursively note render))
-
 
 
 

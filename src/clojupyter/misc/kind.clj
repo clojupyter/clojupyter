@@ -91,8 +91,7 @@
 
 
 (defn- default-to-hiccup-render [note]
-
-  (let [hiccup
+ (let [hiccup
         (->
          (to-hiccup/render note)
          :hiccup)]
@@ -111,6 +110,15 @@
     (assoc note
            :clojupyter (display/hiccup-html hiccup)
            :hiccup hiccup)))
+
+(defn- render-table-recursively [note render]
+  (let [hiccup
+        ;; TODO: https://github.com/scicloj/kindly-render/issues/23
+        (:hjccup (walk/render-table-recursively note render))]
+    (assoc note
+           :clojupyter (display/hiccup-html hiccup)
+           :hiccup hiccup)))
+
 
 (defn render-js [note value ->hiccup-fn]
   (let [hiccup
@@ -210,7 +218,7 @@
   (render-recursively note value "kind-seq" render))
 
 (defmethod render-advice :kind/table [note]
-  (walk/render-table-recursively note render))
+  (render-table-recursively note render))
 
 (defmethod render-advice :kind/fn [{:keys [value form]}]
   (let [f (second (last value))
@@ -220,6 +228,7 @@
     (assoc note
            :hiccup (:hiccup note)
            :clojupyter (display/hiccup-html (:hiccup note)))))
+
 
 
 
@@ -233,5 +242,7 @@
     ;(println :advising--meta-form (meta form))
     ;(println :advising--meta-value (meta value ))
     ))
+
+
 
 

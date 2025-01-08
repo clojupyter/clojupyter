@@ -11,11 +11,15 @@
             [midje.sweet                    :refer [facts =>]])
   )
 
+(def raw-image
+  (->  "https://upload.wikimedia.org/wikipedia/commons/e/eb/Ash_Tree_-_geograph.org.uk_-_590710.jpg"
+       (java.net.URL.)
+       (javax.imageio.ImageIO/read))
+  )
+
 (def image
-  (kind/image
-   (->  "https://upload.wikimedia.org/wikipedia/commons/e/eb/Ash_Tree_-_geograph.org.uk_-_590710.jpg"
-        (java.net.URL.)
-        (javax.imageio.ImageIO/read))))
+  (kind/image raw-image
+   ))
 
 (def cs
   (kind/cytoscape
@@ -107,3 +111,42 @@
       ;;      {:kindly/f tc/dataset}))
        )
   
+(facts "kind/fragment works"
+
+      ;;  (k/kind-eval
+      ;;   '(->> ["purple" "darkgreen" "brown"]
+      ;;         (mapcat (fn [color]
+      ;;                   [(kind/md (str "### subsection: " color))
+      ;;                    (kind/hiccup [:div {:style {:background-color color
+      ;;                                                :color "lightgrey"}}
+      ;;                                  [:big [:p color]]])]))
+      ;;         kind/fragment))
+
+      ;;  (k/kind-eval
+      ;;   '(->> (range 3)
+      ;;         kind/fragment))
+       
+       )
+(facts "kind/table works"
+       (-> 
+        (k/kind-eval '(kind/table {:column-names [:a :b] :row-vectors [[1 2]]}))
+        :html-data
+        first
+        ) => :table)
+
+
+
+(facts "image inside hiccup should not crash"
+      ;;  (k/kind-eval
+      ;;   '(kind/hiccup [:div.clay-limit-image-width
+      ;;                 raw-image]))
+       
+       )
+
+
+(facts "kind/code is working"
+       
+       ;;(k/kind-eval '(kind/code "(defn f [x] {:y (+  x 9)})"))
+
+       )
+

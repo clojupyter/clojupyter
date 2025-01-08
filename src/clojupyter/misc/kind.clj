@@ -212,6 +212,15 @@
 (defmethod render-advice :kind/table [note]
   (walk/render-table-recursively note render))
 
+(defmethod render-advice :kind/fn [{:keys [value form]}]
+  (let [f (second (last value))
+        note (render {:value (f value)
+                      :form form})]
+    
+    (assoc note
+           :hiccup (:hiccup note)
+           :clojupyter (display/hiccup-html (:hiccup note)))))
+
 
 
 (defn kind-eval [form]

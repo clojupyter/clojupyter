@@ -7,19 +7,16 @@
             [clojure.string :as str]
             [tablecloth.api :as tc]
             [scicloj.tableplot.v1.plotly :as plotly]
-            
-            [midje.sweet                    :refer [facts =>]])
-  )
+
+            [midje.sweet                    :refer [facts =>]]))
 
 (def raw-image
   (->  "https://upload.wikimedia.org/wikipedia/commons/e/eb/Ash_Tree_-_geograph.org.uk_-_590710.jpg"
        (java.net.URL.)
-       (javax.imageio.ImageIO/read))
-  )
+       (javax.imageio.ImageIO/read)))
 
 (def image
-  (kind/image raw-image
-   ))
+  (kind/image raw-image))
 
 (def cs
   (kind/cytoscape
@@ -43,16 +40,16 @@
                    :target-arrow-shape "triangle"}}]
     :layout {:name "preset"
              :padding 5}}))
-  
-(defn fetch-dataset [dataset-name]  
+
+(defn fetch-dataset [dataset-name]
   (-> dataset-name
-     (->> (format "https://vincentarelbundock.github.io/Rdatasets/csv/%s.csv"))
-     (tc/dataset {:key-fn (fn [k]
-                            (-> k
-                                str/lower-case
-                                (str/replace #"\." "-")
-                                keyword))})
-     (tc/set-dataset-name dataset-name)))
+      (->> (format "https://vincentarelbundock.github.io/Rdatasets/csv/%s.csv"))
+      (tc/dataset {:key-fn (fn [k]
+                             (-> k
+                                 str/lower-case
+                                 (str/replace #"\." "-")
+                                 keyword))})
+      (tc/set-dataset-name dataset-name)))
 
 (def iris
   (fetch-dataset "datasets/iris"))
@@ -95,7 +92,6 @@
          (nth 2)
          second) "Plotly") => true
 
-       ;; TODO: should work
       ;;  (k/kind-eval
       ;;   '(kind/fn
       ;;      {:kindly/f (fn [{:keys [x y]}]
@@ -110,7 +106,7 @@
       ;;       :y (repeatedly 3 rand)}
       ;;      {:kindly/f tc/dataset}))
        )
-  
+
 (facts "kind/fragment works"
 
       ;;  (k/kind-eval
@@ -125,14 +121,12 @@
       ;;  (k/kind-eval
       ;;   '(->> (range 3)
       ;;         kind/fragment))
-       
        )
 (facts "kind/table works"
-       (-> 
+       (->
         (k/kind-eval '(kind/table {:column-names [:a :b] :row-vectors [[1 2]]}))
         :html-data
-        first
-        ) => :table)
+        first) => :table)
 
 
 
@@ -140,13 +134,11 @@
       ;;  (k/kind-eval
       ;;   '(kind/hiccup [:div.clay-limit-image-width
       ;;                 raw-image]))
-       
        )
 
 
 (facts "kind/code is working"
-       
-       ;;(k/kind-eval '(kind/code "(defn f [x] {:y (+  x 9)})"))
 
+       ;;(k/kind-eval '(kind/code "(defn f [x] {:y (+  x 9)})"))
        )
 

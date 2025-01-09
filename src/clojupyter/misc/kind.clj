@@ -2,91 +2,100 @@
   (:require
    [cheshire.core :as cheshire]
    [clojupyter.display :as display]
-   [scicloj.kindly.v4.kind  :as kind]
    [clojure.data.codec.base64 :as b64]
    [clojure.java.io :as io]
-   [scicloj.kindly-advice.v1.api :as kindly-advice]
    [scicloj.kindly-render.note.to-hiccup :as to-hiccup]
-   [scicloj.kindly-render.note.to-hiccup-js :as to-hiccup-js]
-   [scicloj.kindly-render.shared.util :as util]
    [scicloj.kindly-render.shared.walk :as walk]
 
    [hiccup.core :as hiccup])
   (:import
    [javax.imageio ImageIO]))
 
-(def require-cytoscape
-  [:script    "
-  if (typeof cytoscape === 'undefined') {
-    const script = document.createElement('script');
-    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.30.4/cytoscape.min.js';
-    document.head.appendChild(script);
-  }"])
+(defn require-js [url js-object render]
+  [:script 
+   (format 
+    "
+    loadScript_%s = src => new Promise(resolve => {
+    script_%s = document.createElement('script');
+    script_%s.src = src;
+    script_%s.addEventListener('load', resolve);
+    document.head.appendChild(script_%s);
+  });
+  if (typeof %s === 'undefined') {  
+     promise_%s=loadScript_%s('%s')
+     
+     Promise.all([promise_%s]).then(() => {
+       console.log('%s loaded');
+       %s })
+     
+     } else {
+       %s
+     };
+  
+
+ ",js-object,js-object,js-object, js-object,js-object,js-object,js-object,js-object,url,js-object,js-object ,
+    render,render)])
 
 
-(def require-plotly
-  [:script    "
-  if (typeof Plotly === 'undefined') {
-    const script = document.createElement('script');
-    script.src = 'https://cdn.plot.ly/plotly-2.35.2.min.js';
-    document.head.appendChild(script);
-  }"])
+(defn require-cytoscape [render]
+  (require-js "https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.30.4/cytoscape.min.js"
+              "cytoscape",render))
 
-(def require-highcharts
-  [:script    "
-  if (typeof Highcharts === 'undefined') {
-    const script = document.createElement('script');
-    script.src = 'https://code.highcharts.com/highcharts.js';
-    document.head.appendChild(script);
-  }"])
 
-(def require-echarts
-  [:script    "
-  if (typeof echarts === 'undefined') {
-    const script = document.createElement('script');
-    script.src = 'https://cdn.jsdelivr.net/npm/echarts@5.4.1/dist/echarts.min.js';
-    document.head.appendChild(script);
-  }"])
+(defn require-plotly [render]
+  (require-js "https://cdn.plot.ly/plotly-2.35.2.min.js"
+              "Plotly"
+              render
+              ))
+
+(defn require-highcharts [render]
+  (require-js "https://code.highcharts.com/highcharts.js",
+              "Highcharts",render)
+  )
+
+(defn require-echarts [render]
+  (require-js "https://cdn.jsdelivr.net/npm/echarts@5.4.1/dist/echarts.min.js"
+              "echarts",render))
 
 
 (defn highcharts->hiccup [value]
   [:div {:style {:height "500px"
                  :width "500px"}}
-   require-highcharts
-   [:script (format "Highcharts.chart(document.currentScript.parentElement, %s);"
-                    (cheshire/encode value))]])
+   (require-highcharts (format "Highcharts.chart(document.currentScript.parentElement, %s);"
+                               (cheshire/encode value)))
+   ])
 
 
 (defn plotly->hiccup [value]
   [:div {:style {:height "500px"
                  :width "500px"}}
-   require-plotly
-   [:script (format "Plotly.newPlot(document.currentScript.parentElement, %s);"
-                    (cheshire/encode value))]])
+   (require-plotly (format "Plotly.newPlot(document.currentScript.parentElement, %s);"
+                           (cheshire/encode value)))
+   ])
 
 (defn cytoscape>hiccup [value]
 
   [:div {:style {:height "500px"
                  :width "500px"}}
-   require-cytoscape
-   [:script (format "
-  {
-  value = %s;
-  value['container'] = document.currentScript.parentElement;
-  cytoscape(value);
-  };"
-                    (cheshire/encode value))]])
+   (require-cytoscape (format "
+                        {
+                        value = %s;
+                        value['container'] = document.currentScript.parentElement;
+                        cytoscape(value);
+                        };"
+                              (cheshire/encode value)))
+   ])
 
 (defn echarts->hiccup [value]
   [:div {:style {:height "500px"
                  :width "500px"}}
-   [:script require-echarts]
-   [:script (format "
-            {
-            var myChart = echarts.init(document.currentScript.parentElement);
-            myChart.setOption(%s);
-            };"
-                    (cheshire/encode value))]])
+   (require-echarts (format "
+                                {
+                                var myChart = echarts.init(document.currentScript.parentElement);
+                                myChart.setOption(%s);
+                                };"
+                            (cheshire/encode value)))
+   ])
 
 
 

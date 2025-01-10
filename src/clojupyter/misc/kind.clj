@@ -6,8 +6,11 @@
    [clojure.java.io :as io]
    [scicloj.kindly-render.note.to-hiccup :as to-hiccup]
    [scicloj.kindly-render.shared.walk :as walk]
+   [scicloj.kindly-advice.v1.api :as kindly-advice]
 
-   [hiccup.core :as hiccup])
+   [clojure.string :as str]
+   [hiccup.core :as hiccup]
+   [scicloj.kindly.v4.kind :as kind])
   (:import
    [javax.imageio ImageIO]))
 
@@ -238,19 +241,44 @@
            :hiccup (:hiccup note)
            :clojupyter (display/hiccup-html (:hiccup note)))))
 
+(defn- render-as-clojupyter [value]
+  (or
+         (nil? value)
+         (str/starts-with? (.getName (class value)) "clojupyter.misc.display$render_mime")
+         (contains?
+          #{clojupyter.misc.display.Latex
+            clojupyter.misc.display.HiccupHTML
+            clojupyter.misc.display.Markdown
+            clojupyter.misc.display.HtmlString
+            java.awt.image.BufferedImage}
+          (class value))))
+
 
 
 
 (defn kind-eval [form]
+  ;(println :kind-eval--form form)
 
-  (let [value (eval form)]
-    (if (var? value)
+  (let [value (eval form)
+        ;; kindly-advice (kindly-advice/advise {:form form
+        ;;                                      :value value})
+        ]
+    ;(println :kind-eval--value value)
+    ;(println :kind-eval--value-class (class value))
+    ;(println :kind-eval--advise kindly-advice)
+    
+    (if (or (render-as-clojupyter value)
+            (var? value))
+
       value
       (:clojupyter (render {:value value
                             :form form})))
+    
+
+    )
     ;(println :advising--meta-form (meta form))
     ;(println :advising--meta-value (meta value ))
-    ))
+    )
 
 
 

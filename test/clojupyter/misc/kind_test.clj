@@ -141,4 +141,6 @@
 
        ;;(k/kind-eval '(kind/code "(defn f [x] {:y (+  x 9)})"))
        )
+(facts "nil return nil"
+       (k/kind-eval 'nil) => nil)
 

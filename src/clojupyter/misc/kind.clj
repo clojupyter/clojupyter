@@ -8,9 +8,7 @@
    [scicloj.kindly-render.shared.walk :as walk]
    [scicloj.kindly-advice.v1.api :as kindly-advice]
 
-   [clojure.string :as str]
-   [hiccup.core :as hiccup]
-   [scicloj.kindly.v4.kind :as kind])
+   [clojure.string :as str])
   (:import
    [javax.imageio ImageIO]))
 
@@ -232,6 +230,8 @@
 (defmethod render-advice :kind/table [note]
   (render-table-recursively note render))
 
+
+
 (defmethod render-advice :kind/fn [{:keys [value form]}]
   (let [f (second (last value))
         note (render {:value (f value)
@@ -241,17 +241,24 @@
            :hiccup (:hiccup note)
            :clojupyter (display/hiccup-html (:hiccup note)))))
 
-(defn- render-as-clojupyter [value]
+(defn- render-as-clojupyter [form value]
+  (let [kindly-advice (kindly-advice/advise {:form form
+                                             :value value})])
   (or
-         (nil? value)
-         (str/starts-with? (.getName (class value)) "clojupyter.misc.display$render_mime")
-         (contains?
-          #{clojupyter.misc.display.Latex
-            clojupyter.misc.display.HiccupHTML
-            clojupyter.misc.display.Markdown
-            clojupyter.misc.display.HtmlString
-            java.awt.image.BufferedImage}
-          (class value))))
+   (nil? value)
+   (str/starts-with? (.getName (class value)) "clojupyter.misc.display$render_mime")
+   (contains?
+    #{clojupyter.misc.display.Latex
+      clojupyter.misc.display.HiccupHTML
+      clojupyter.misc.display.Markdown
+      clojupyter.misc.display.HtmlString
+      java.awt.image.BufferedImage}
+    (class value))
+   ;(= [:kind/map {:reason :predicate}] (-> advice :advice first))
+   
+   
+   
+   ))
 
 
 
@@ -259,26 +266,16 @@
 (defn kind-eval [form]
   ;(println :kind-eval--form form)
 
-  (let [value (eval form)
-        ;; kindly-advice (kindly-advice/advise {:form form
-        ;;                                      :value value})
-        ]
+  (let [value (eval form)]
     ;(println :kind-eval--value value)
     ;(println :kind-eval--value-class (class value))
     ;(println :kind-eval--advise kindly-advice)
-    
-    (if (or (render-as-clojupyter value)
-            (var? value))
 
+    (if (or (render-as-clojupyter form value)
+            (var? value))
       value
       (:clojupyter (render {:value value
-                            :form form})))
-    
-
-    )
-    ;(println :advising--meta-form (meta form))
-    ;(println :advising--meta-value (meta value ))
-    )
+                            :form form})))))
 
 
 

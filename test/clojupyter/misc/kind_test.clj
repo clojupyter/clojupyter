@@ -90,23 +90,40 @@
                                                  :=mark-size 10})))
          :html-data
          (nth 2)
-         second) "Plotly") => true
+         second) "Plotly") => true)
 
-      ;;  (k/kind-eval
-      ;;   '(kind/fn
-      ;;      {:kindly/f (fn [{:keys [x y]}]
-      ;;                   (+ x y))
-      ;;       :x 1
-      ;;       :y 2}))
+(facts "kind/table works"
+       (->
+        (k/kind-eval '(kind/table {:column-names [:a :b] :row-vectors [[1 2]]}))
+        :html-data
+        first) => :table)
 
 
-      ;;  (k/kind-eval
-      ;;   '(kind/fn
-      ;;      {:x (range 3)
-      ;;       :y (repeatedly 3 rand)}
-      ;;      {:kindly/f tc/dataset}))
-       )
 
+
+
+(facts "nil return nil"
+       (k/kind-eval 'nil) => nil)
+
+
+(facts "kind/map works"
+       (k/kind-eval '(kind/map {:a 1})) 
+       =>
+       {:html-data
+        [:div
+         {:class "kind-map"}
+         [:div {:style {:border "1px solid grey", :padding "2px"}} ":a"]
+         [:div {:style {:border "1px solid grey", :padding "2px"}} "1"]]}
+       
+       (k/kind-eval '{:a 1})
+       => {:html-data
+           [:div
+            {:class "kind-map"}
+            [:div {:style {:border "1px solid grey", :padding "2px"}} ":a"]
+            [:div {:style {:border "1px solid grey", :padding "2px"}} "1"]]})
+
+
+;; Getting these pass would brings us closer to "kind compliancy"
 (facts "kind/fragment works"
 
       ;;  (k/kind-eval
@@ -122,12 +139,11 @@
       ;;   '(->> (range 3)
       ;;         kind/fragment))
        )
-(facts "kind/table works"
-       (->
-        (k/kind-eval '(kind/table {:column-names [:a :b] :row-vectors [[1 2]]}))
-        :html-data
-        first) => :table)
 
+(facts "kind/code is working"
+
+       ;;(k/kind-eval '(kind/code "(defn f [x] {:y (+  x 9)})"))
+       )
 
 
 (facts "image inside hiccup should not crash"
@@ -137,10 +153,21 @@
        )
 
 
-(facts "kind/code is working"
+(facts "kind/fn works as expected - 2"
 
-       ;;(k/kind-eval '(kind/code "(defn f [x] {:y (+  x 9)})"))
+      ;; Getting these pass would brings us closer to "kind compliancy"
+
+      ;;  (k/kind-eval
+      ;;   '(kind/fn
+      ;;      {:kindly/f (fn [{:keys [x y]}]
+      ;;                   (+ x y))
+      ;;       :x 1
+      ;;       :y 2}))
+
+
+      ;;  (k/kind-eval
+      ;;   '(kind/fn
+      ;;      {:x (range 3)
+      ;;       :y (repeatedly 3 rand)}
+      ;;      {:kindly/f tc/dataset}))
        )
-(facts "nil return nil"
-       (k/kind-eval 'nil) => nil)
-

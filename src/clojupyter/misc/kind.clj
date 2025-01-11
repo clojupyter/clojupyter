@@ -12,7 +12,7 @@
   (:import
    [javax.imageio ImageIO]))
 
-(defn require-js [url js-object render]
+(defn require-js [url js-object render-cmd]
   [:script 
    (format 
     "
@@ -27,36 +27,37 @@
      
      Promise.all([promise_%s]).then(() => {
        console.log('%s loaded');
-       %s })
+        })
      
-     } else {
-       %s
      };
-  
+ %s  
 
- ",js-object,js-object,js-object, js-object,js-object,js-object,js-object,js-object,url,js-object,js-object ,
-    render,render)])
+ "
+ js-object js-object js-object 
+ js-object js-object js-object js-object
+ js-object url js-object js-object 
+    render-cmd)])
 
 
-(defn require-cytoscape [render]
+(defn require-cytoscape [render-cmd]
   (require-js "https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.30.4/cytoscape.min.js"
-              "cytoscape",render))
+              "cytoscape",render-cmd))
 
 
-(defn require-plotly [render]
+(defn require-plotly [render-cmd]
   (require-js "https://cdn.plot.ly/plotly-2.35.2.min.js"
               "Plotly"
-              render
+              render-cmd
               ))
 
-(defn require-highcharts [render]
+(defn require-highcharts [render-cmd]
   (require-js "https://code.highcharts.com/highcharts.js",
-              "Highcharts",render)
+              "Highcharts",render-cmd)
   )
 
-(defn require-echarts [render]
+(defn require-echarts [render-cmd]
   (require-js "https://cdn.jsdelivr.net/npm/echarts@5.4.1/dist/echarts.min.js"
-              "echarts",render))
+              "echarts",render-cmd))
 
 
 (defn highcharts->hiccup [value]

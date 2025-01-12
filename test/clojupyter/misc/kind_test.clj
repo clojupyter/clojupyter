@@ -1,14 +1,12 @@
 (ns clojupyter.misc.kind-test
-  (:require [clojupyter.misc.display        :as display]
-            [clojupyter.misc.helper     :as helper]
-            [clojupyter.test-shared     :as ts]
-            [clojupyter.misc.kind :as k]
-            [scicloj.kindly.v4.kind :as kind]
-            [clojure.string :as str]
-            [tablecloth.api :as tc]
-            [scicloj.tableplot.v1.plotly :as plotly]
-
-            [midje.sweet                    :refer [facts =>]]))
+  (:require
+   [clojupyter.misc.kind :as k]
+   [clojure.string :as str]
+   [midje.sweet                    :refer [=> facts]]
+   [scicloj.kindly-render.note.to-hiccup :as to-hiccup]
+   [scicloj.kindly.v4.kind :as kind]
+   [tablecloth.api :as tc]
+   [scicloj.kindly-advice.v1.api :as kindly-advice]))
 
 (def raw-image
   (->  "https://upload.wikimedia.org/wikipedia/commons/e/eb/Ash_Tree_-_geograph.org.uk_-_590710.jpg"
@@ -122,6 +120,11 @@
             [:div {:style {:border "1px solid grey", :padding "2px"}} ":a"]
             [:div {:style {:border "1px solid grey", :padding "2px"}} "1"]]})
 
+(facts "kind/hidden returns nothing"
+       (k/kind-eval
+        '(kind/hidden "(+ 1 1)")) =>
+       {:html-data nil})
+
 
 ;; Getting these pass would brings us closer to "kind compliancy"
 (facts "kind/fragment works"
@@ -142,7 +145,20 @@
 
 (facts "kind/code is working"
 
-       ;;(k/kind-eval '(kind/code "(defn f [x] {:y (+  x 9)})"))
+       ;;bug submitted: https://github.com/scicloj/kindly-render/issues/26
+       ;(k/kind-eval '(kind/code "(defn f [x] {:y (+  x 9)})"))
+
+       
+       ;(kindly-advice/advise {:value (kind/code "(defn f [x] {:y (+  x 9)})")})
+
+       ;(to-hiccup/render {:value (kind/code "(defn f [x] {:y (+  x 9)})")})
+       ;;=> {:value ["(defn f [x] {:y (+  x 9)})"],
+       ;;    :meta-kind :kind/code,
+       ;;    :kindly/options {},
+       ;;    :kind :kind/code,
+       ;;    :advice [[:kind/code {:reason :metadata}] [:kind/vector {:reason :predicate}] [:kind/seq {:reason :predicate}]],
+       ;;    :deps #{:kind/code},
+       ;;    :hiccup [:pre {:class "kind-code"} [:code {:class "sourceCode"} nil]]}
        )
 
 
@@ -171,3 +187,4 @@
       ;;       :y (repeatedly 3 rand)}
       ;;      {:kindly/f tc/dataset}))
        )
+

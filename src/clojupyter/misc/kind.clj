@@ -200,6 +200,9 @@
 (defmethod render-advice :kind/pprint [note]
   (default-to-hiccup-render note))
 
+(defmethod render-advice :kind/hidden [note]
+  (default-to-hiccup-render note))
+
 
 (defmethod render-advice :kind/html [{:as note :keys [value]}]
   (assoc note

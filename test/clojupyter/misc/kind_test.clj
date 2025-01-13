@@ -126,6 +126,10 @@
        {:html-data nil})
 
 
+       
+
+
+
 ;; Getting these pass would brings us closer to "kind compliancy"
 (facts "kind/fragment works"
 
@@ -188,3 +192,9 @@
       ;;      {:kindly/f tc/dataset}))
        )
 
+
+(facts "kind/video is working"
+       ;bu report: https://github.com/scicloj/kindly-render/issues/27
+       ;(k/kind-eval '(kind/video
+       ;       {:youtube-id "DAQnvAgBma8"}
+       )

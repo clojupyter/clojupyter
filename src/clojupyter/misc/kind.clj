@@ -203,6 +203,10 @@
 (defmethod render-advice :kind/hidden [note]
   (default-to-hiccup-render note))
 
+(defmethod render-advice :kind/video [note]
+  (def note note)
+  (default-to-hiccup-render note))
+
 
 (defmethod render-advice :kind/html [{:as note :keys [value]}]
   (assoc note

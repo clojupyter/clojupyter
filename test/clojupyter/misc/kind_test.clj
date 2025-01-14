@@ -5,6 +5,7 @@
    [midje.sweet                    :refer [=> facts]]
    [scicloj.kindly-render.note.to-hiccup :as to-hiccup]
    [scicloj.kindly.v4.kind :as kind]
+   [scicloj.tableplot.v1.plotly :as plotly]
    [tablecloth.api :as tc]
    [scicloj.kindly-advice.v1.api :as kindly-advice]))
 
@@ -194,7 +195,27 @@
 
 
 (facts "kind/video is working"
-       ;bu report: https://github.com/scicloj/kindly-render/issues/27
+       ;bug report: https://github.com/scicloj/kindly-render/issues/27
        ;(k/kind-eval '(kind/video
        ;       {:youtube-id "DAQnvAgBma8"}
+       )
+
+(facts "kind/scittle is working"
+  ; (k/kind-eval '(kind/scittle '(print "hello")))       
+       )
+
+(facts "kind/htmlwidgets-ggplotly is woking"
+       ;; (k/kind-eval
+       ;;  '(kind/htmlwidgets-ggplotly {}))
+       
+       )
+
+(facts "kind/edn is working"
+       ;;  (k/kind-eval
+       ;;   '(kind/edn {}))
+       )
+
+(facts "kind/smile-model is working"
+       ;;   (k/kind-eval
+       ;;    '(kind/smile-model {}))
        )

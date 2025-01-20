@@ -40,6 +40,7 @@
  {:build
   {:deps
    {io.github.clojure/tools.build {:mvn/version "0.10.6"}}
+   
    :ns-default build}
 
   :test {:extra-paths ["test"]

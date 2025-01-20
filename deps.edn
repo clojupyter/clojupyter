@@ -33,6 +33,7 @@
         org.slf4j/log4j-over-slf4j  {:mvn/version "2.0.16"}
         org.slf4j/jul-to-slf4j      {:mvn/version "2.0.16"}
         org.slf4j/jcl-over-slf4j    {:mvn/version "2.0.16"}
+        org.scicloj/kindly          {:mvn/version "4-beta14"}
         org.scicloj/kindly-advice   {:mvn/version "1-beta12"}
         org.scicloj/kindly-render   {:mvn/version "0.1.1-alpha"}
         }
@@ -40,12 +41,14 @@
  {:build
   {:deps
    {io.github.clojure/tools.build {:mvn/version "0.10.6"}}
+   
    :ns-default build}
 
   :test {:extra-paths ["test"]
          :extra-deps {midje/midje {:mvn/version "1.10.10"}
                       org.scicloj/noj {:mvn/version "2-beta4"} ;; to test all kinds
                       }
+         :jvm-opts ["-Djava.awt.headless=true"]
          :exec-fn clojupyter.run-tests/run-tests-and-exit}
 
   :deploy {:extra-deps {slipset/deps-deploy {:mvn/version "RELEASE"}}

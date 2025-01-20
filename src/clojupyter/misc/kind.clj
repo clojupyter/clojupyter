@@ -51,6 +51,18 @@
     js-object url js-object js-object
     render-cmd)])
 
+(defn require-scittle-1 [render-cmd]
+  (require-js "https://cdn.jsdelivr.net/npm/scittle@0.6.22/dist/scittle.js"
+              "scittle_1"
+              render-cmd))
+
+(defn require-scittle-2 [render-cmd]
+  (require-js "https://cdn.jsdelivr.net/npm/scittle@0.6.22/dist/scittle.cljs-ajax.js"
+              "scittle_2"
+              render-cmd))
+
+
+
 (defn require-cytoscape
   "Creates a Hiccup representation to load the Cytoscape.js library and execute a rendering command after it has been loaded.  
   
@@ -180,6 +192,14 @@
                                     myChart.setOption(%s);  
                                     };"
                             (cheshire/encode value)))])
+(defn scittle->hiccup [value]
+  (def value value)
+  [:div
+   (require-scittle-1 (format "scittle.core.eval_string('%s')" (str value)))
+   ;(require-scittle-2 "")
+   ])
+
+
 
 (defn- default-to-hiccup-render
   "Provides a default rendering for notes by converting them into Hiccup format and preparing them for display in Clojupyter. It's a helper function used when no specific rendering method is available for a given kind.  
@@ -322,6 +342,11 @@
   [{:as note :keys [value]}]
   (render-js note value echarts->hiccup))
 
+(defmethod render-advice :kind/scittle
+  [{:as note :keys [value]}]
+  (render-js note value scittle->hiccup))
+
+
 (defmethod render-advice :kind/image
   [{:as note :keys [value]}]
   (let [out (io/java.io.ByteArrayOutputStream.)
@@ -334,6 +359,12 @@
 (defmethod render-advice :kind/vega-lite
   [{:as note :keys [value]}]
   (render-non-nestable note (display/render-mime :application/vnd.vegalite.v3+json value)))
+
+
+(defmethod render-advice :kind/vega
+  [{:as note :keys [value]}]
+  (render-non-nestable note (display/render-mime :application/vnd.vega.v5+json value)))
+
 
 (defmethod render-advice :kind/md
   [{:as note :keys [value]}]

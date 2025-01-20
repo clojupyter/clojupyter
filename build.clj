@@ -3,7 +3,11 @@
             [clojure.java.io :as io]))
 
 (def lib 'clojupyter/clojupyter)
-(defn new-version [] (format "0.4.%s" (b/git-count-revs nil)))
+(defn new-version []
+  (let [vs (format "0.5.%s" (b/git-count-revs nil))]
+    (if (= (System/getenv "SNAPSHOT") "true")
+      (str vs "-SNAPSHOT")
+      vs)))
 (defn read-version
   []
   (-> (slurp "resources/clojupyter/assets/version.edn")
@@ -26,7 +30,8 @@
     (binding [*print-length* false
               *out* w]
       (pr {:version (new-version), :raw-version (b/git-count-revs nil)})))
-  (reset! version (read-version)))
+  (reset! version (read-version))
+  (println "Updated version to: " @version))
 
 
 (defn- pom-template [version]
@@ -44,7 +49,7 @@
 
 (defn jar [_]
   (clean nil)
-  ;(update-version nil)
+  (println "Building version: " @version)
   (b/copy-dir {:src-dirs ["resources"]
                :target-dir class-dir})
 
@@ -66,7 +71,7 @@
 
 (defn uber [_]
   (clean nil)
-  ;;(update-version nil)
+  (println "Building version: " @version)
   (b/copy-dir {:src-dirs ["resources"]
                :target-dir class-dir})
 

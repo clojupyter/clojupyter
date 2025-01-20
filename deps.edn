@@ -32,7 +32,10 @@
         com.fzakaria/slf4j-timbre   {:mvn/version "0.4.1"}
         org.slf4j/log4j-over-slf4j  {:mvn/version "2.0.13"}
         org.slf4j/jul-to-slf4j      {:mvn/version "2.0.13"}
-        org.slf4j/jcl-over-slf4j    {:mvn/version "2.0.13"}}
+        org.slf4j/jcl-over-slf4j    {:mvn/version "2.0.13"}
+        org.scicloj/kindly-advice   {:mvn/version "1-beta12"}
+        org.scicloj/kindly-render   {:mvn/version "0.1.1-alpha"}
+        }
  :aliases
  {:build
   {:deps
@@ -40,7 +43,9 @@
    :ns-default build}
 
   :test {:extra-paths ["test"]
-         :extra-deps {midje/midje {:mvn/version "1.10.10"}}
+         :extra-deps {midje/midje {:mvn/version "1.10.10"}
+                      org.scicloj/noj {:mvn/version "2-beta4"} ;; to test all kinds
+                      }
          :exec-fn clojupyter.run-tests/run-tests-and-exit}
 
   :deploy {:extra-deps {slipset/deps-deploy {:mvn/version "RELEASE"}}

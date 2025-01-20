@@ -12,7 +12,10 @@
    [clojupyter.kernel.nrepl-middleware  :as mw]
    [clojupyter.log          :as log]
    [clojupyter.util-actions     :as u!]
-   [clojupyter.util :as u]))
+   [clojupyter.util :as u]
+   [clojupyter.misc.kind]
+
+   ))
 
 ;;; ------------------------------------------------------------------------------------------------------------------------
 ;;; NREPL-SERVER PROTOCOL
@@ -101,6 +104,7 @@
       (throw (ex-info (str "messages-result - internal error: we should not get to end of nrepl stream without 'done' msg")
                       {:msgs msgs, :result result})))))
 
+
 (defrecord CljSrv [nrepl-server_ nrepl-client_ nrepl-sockaddr_ pending-input?_]
   nrepl-server-proto
 
@@ -125,7 +129,8 @@
 
   (nrepl-eval
     [cljsrv code]
-    (->> {:id (u!/uuid), :op "eval", :code code}
+    ;(println :nrepl-eval--code code) 
+    (->> {:id (u!/uuid), :op "eval", :code code :eval 'clojupyter.misc.kind/kind-eval}
          (nrepl/message nrepl-client_)
          (nrepl-continue-eval cljsrv)))
 

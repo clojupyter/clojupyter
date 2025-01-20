@@ -36,35 +36,55 @@
     document.head.appendChild(script_%s);  
   });  
   if (typeof %s === 'undefined') {    
-     promise_%s=loadScript_%s('%s')  
+     promise_%s=loadScript_%s('%s');  
        
      Promise.all([promise_%s]).then(() => {  
        console.log('%s loaded');  
         })  
        
+     } else {
+       console.log('%s already loaded');
      };  
  %s    
   
  "
     js-object js-object js-object
     js-object js-object js-object js-object
-    js-object url js-object js-object
+    js-object url js-object js-object js-object
     render-cmd)])
 
-(defn require-scittle-1 [render-cmd]
+(defn require-scittle [render-cmd]
   (require-js "https://cdn.jsdelivr.net/npm/scittle@0.6.22/dist/scittle.js"
-              "scittle_1"
+              "scittle"
               render-cmd))
 
-(defn require-scittle-2 [render-cmd]
-  (require-js "https://cdn.jsdelivr.net/npm/scittle@0.6.22/dist/scittle.cljs-ajax.js"
-              "scittle_2"
-              render-cmd))
+(defn require-reagent [render-cmd]
+  [:div 
+   (require-scittle "")
+   
+   (require-js "https://unpkg.com/react@18/umd/react.production.min.js"
+               "react"
+               "")
+   (require-js "https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"
+               "react_dom"
+               "")
+   (require-js  "https://cdn.jsdelivr.net/npm/d3-require@1"
+                "d3_require"
+                "")
+   (require-js "https://cdn.jsdelivr.net/npm/scittle@0.6.22/dist/scittle.reagent.js"
+               "scittle_reagent_1"
+               "")
+   (require-js "https://cdn.jsdelivr.net/npm/scittle@0.6.22/dist/scittle.reagent.js"
+               "scittle_reagent_2"
+               render-cmd)
+   ])
+  
+  
 
 
 
-(defn require-cytoscape
-  "Creates a Hiccup representation to load the Cytoscape.js library and execute a rendering command after it has been loaded.  
+  (defn require-cytoscape
+    "Creates a Hiccup representation to load the Cytoscape.js library and execute a rendering command after it has been loaded.  
   
    **Parameters:**  
   
@@ -73,9 +93,9 @@
    **Returns:**  
   
    - A Hiccup vector that includes a `<script>` tag loading Cytoscape.js and executing the provided rendering command."
-  [render-cmd]
-  (require-js "https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.30.4/cytoscape.min.js"
-              "cytoscape" render-cmd))
+    [render-cmd]
+    (require-js "https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.30.4/cytoscape.min.js"
+                "cytoscape" render-cmd))
 
 (defn require-plotly
   "Generates a Hiccup representation to load the Plotly.js library and execute a rendering command after it has been loaded.  
@@ -193,12 +213,17 @@
                                     };"
                             (cheshire/encode value)))])
 (defn scittle->hiccup [value]
-  (def value value)
   [:div
-   (require-scittle-1 (format "scittle.core.eval_string('%s')" (str value)))
-   ;(require-scittle-2 "")
-   ])
+   (require-scittle (format "scittle.core.eval_string('%s')" (str value)))])
 
+(defn reagent->hiccup [value]
+  (let [id (gensym)]
+    [:div
+     
+     (require-reagent (format "scittle.core.eval_string('(require (quote [reagent.dom]))(reagent.dom/render %s (js/document.getElementById \"%s\"))')" (str id)(str value)))
+     [:div {:id (str id)}]
+     ])
+  )
 
 
 (defn- default-to-hiccup-render
@@ -346,6 +371,11 @@
   [{:as note :keys [value]}]
   (render-js note value scittle->hiccup))
 
+(defmethod render-advice :kind/reagent
+  [{:as note :keys [value]}]
+  (render-js note value reagent->hiccup))
+
+(reagent->hiccup 1)
 
 (defmethod render-advice :kind/image
   [{:as note :keys [value]}]

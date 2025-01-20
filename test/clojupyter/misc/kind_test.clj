@@ -208,7 +208,10 @@
    {:initial-value 9
     :background-color "#d4ebe9"}]))
 
-;; Getting these pass would increase teh ""kind compatibility"
+;; Getting these pass would increase the "kind compatibility"
+
+
+
 (facts "kind/fragment works"
 
       ;;  (k/kind-eval

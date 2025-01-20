@@ -29,29 +29,51 @@
   [:script
    (format
     "  
-    loadScript_%s = src => new Promise(resolve => {  
-    script_%s = document.createElement('script');  
-    script_%s.src = src;  
-    script_%s.addEventListener('load', resolve);  
-    document.head.appendChild(script_%s);  
-  });  
-  if (typeof %s === 'undefined') {    
-     promise_%s=loadScript_%s('%s');  
+  var clojupyter_loaded_marker_%s;  
+  
+  var currentScript_%s = document.currentScript;
+  if (typeof clojupyter_loaded_marker_%s === 'undefined') {    
+      clojupyter_loadScript_%s = src => new Promise(resolve => {  
+      clojupyter_script_%s = document.createElement('script');  
+      clojupyter_script_%s.src = src;  
+      clojupyter_script_%s.async = false;
+      clojupyter_script_%s.addEventListener('load', resolve);  
+      document.head.appendChild(clojupyter_script_%s);  
+      });  
+   
+     clojupyter_promise_%s=clojupyter_loadScript_%s('%s');  
        
-     Promise.all([promise_%s]).then(() => {  
+     Promise.all([clojupyter_promise_%s]).then(() => {  
        console.log('%s loaded');  
+       clojupyter_loaded_marker_%s = true;
+       %s
         })  
        
      } else {
        console.log('%s already loaded');
+       %s
      };  
- %s    
+     
   
  "
-    js-object js-object js-object
-    js-object js-object js-object js-object
-    js-object url js-object js-object js-object
-    render-cmd)])
+    js-object
+    js-object
+    js-object
+    js-object
+    js-object
+    js-object
+    js-object 
+    js-object 
+    js-object 
+    js-object
+    js-object url 
+    js-object 
+    js-object 
+    js-object 
+    render-cmd
+    js-object
+    render-cmd
+    )])
 
 (defn require-scittle [render-cmd]
   (require-js "https://cdn.jsdelivr.net/npm/scittle@0.6.22/dist/scittle.js"
@@ -60,8 +82,7 @@
 
 (defn require-reagent [render-cmd]
   [:div 
-   (require-scittle "")
-   
+   (require-scittle "")   
    (require-js "https://unpkg.com/react@18/umd/react.production.min.js"
                "react"
                "")
@@ -71,6 +92,7 @@
    (require-js  "https://cdn.jsdelivr.net/npm/d3-require@1"
                 "d3_require"
                 "")
+   
    (require-js "https://cdn.jsdelivr.net/npm/scittle@0.6.22/dist/scittle.reagent.js"
                "scittle_reagent_1"
                "")
@@ -93,9 +115,9 @@
    **Returns:**  
   
    - A Hiccup vector that includes a `<script>` tag loading Cytoscape.js and executing the provided rendering command."
-    [render-cmd]
+    [render-cmd key]
     (require-js "https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.30.4/cytoscape.min.js"
-                "cytoscape" render-cmd))
+                key render-cmd))
 
 (defn require-plotly
   "Generates a Hiccup representation to load the Plotly.js library and execute a rendering command after it has been loaded.  
@@ -107,9 +129,9 @@
    **Returns:**  
   
    - A Hiccup vector that includes a `<script>` tag loading Plotly.js and executing the provided rendering command."
-  [render-cmd]
+  [render-cmd key]
   (require-js "https://cdn.plot.ly/plotly-2.35.2.min.js"
-              "Plotly"
+              key
               render-cmd))
 
 (defn require-highcharts
@@ -122,9 +144,9 @@
    **Returns:**  
   
    - A Hiccup vector that includes a `<script>` tag loading Highcharts and executing the provided rendering command."
-  [render-cmd]
+  [render-cmd key]
   (require-js "https://code.highcharts.com/highcharts.js"
-              "Highcharts" render-cmd))
+             key render-cmd))
 
 (defn require-echarts
   "Creates a Hiccup representation to load the ECharts library and execute a rendering command after it has been loaded.  
@@ -136,9 +158,9 @@
    **Returns:**  
   
    - A Hiccup vector that includes a `<script>` tag loading ECharts and executing the provided rendering command."
-  [render-cmd]
+  [render-cmd key]
   (require-js "https://cdn.jsdelivr.net/npm/echarts@5.4.1/dist/echarts.min.js"
-              "echarts" render-cmd))
+              key render-cmd))
 
 (defn highcharts->hiccup
   "Converts Highcharts chart data into a Hiccup vector that can render the chart within a Jupyter notebook using the Highcharts library. It sets up a `<div>` container and includes the necessary scripts to render the chart.  
@@ -153,8 +175,9 @@
   [value]
   [:div {:style {:height "500px"
                  :width "500px"}}
-   (require-highcharts (format "Highcharts.chart(document.currentScript.parentElement, %s);"
-                               (cheshire/encode value)))])
+   (require-highcharts (format "Highcharts.chart(currentScript_highcharts.parentElement, %s);"
+                               (cheshire/encode value))
+                       "highcharts")])
 
 (defn plotly->hiccup
   "Converts Plotly chart data into a Hiccup vector that can render the chart within a Jupyter notebook using the Plotly library.  
@@ -169,8 +192,10 @@
   [value]
   [:div {:style {:height "500px"
                  :width "500px"}}
-   (require-plotly (format "Plotly.newPlot(document.currentScript.parentElement, %s);"
-                           (cheshire/encode value)))])
+   (require-plotly (format "Plotly.newPlot(currentScript_Plotly.parentElement, %s);"
+                           (cheshire/encode value)
+                           )
+                   "Plotly")])
 
 (defn cytoscape>hiccup
   "Converts Cytoscape graph data into a Hiccup vector that can render the graph within a Jupyter notebook using the Cytoscape.js library.  
@@ -188,10 +213,11 @@
    (require-cytoscape (format "  
                             {  
                             value = %s;  
-                            value['container'] = document.currentScript.parentElement;  
+                            value['container'] = currentScript_cytoscape.parentElement;  
                             cytoscape(value);  
                             };"
-                              (cheshire/encode value)))])
+                              (cheshire/encode value))
+                      "cytoscape")])
 
 (defn echarts->hiccup
   "Converts ECharts chart data into a Hiccup vector that can render the chart within a Jupyter notebook using the ECharts library.  
@@ -208,10 +234,11 @@
                  :width "500px"}}
    (require-echarts (format "  
                                     {  
-                                    var myChart = echarts.init(document.currentScript.parentElement);  
+                                    var myChart = echarts.init(currentScript_echarts.parentElement);  
                                     myChart.setOption(%s);  
                                     };"
-                            (cheshire/encode value)))])
+                            (cheshire/encode value))
+                    "echarts")])
 (defn scittle->hiccup [value]
   [:div
    (require-scittle (format "scittle.core.eval_string('%s')" (str value)))])
@@ -220,7 +247,9 @@
   (let [id (gensym)]
     [:div
      
-     (require-reagent (format "scittle.core.eval_string('(require (quote [reagent.dom]))(reagent.dom/render %s (js/document.getElementById \"%s\"))')" (str id)(str value)))
+     (require-reagent (format "scittle.core.eval_string('(require (quote [reagent.dom]))(reagent.dom/render %s (js/document.getElementById \"%s\"))')" 
+                              (str value)
+                              (str id)))
      [:div {:id (str id)}]
      ])
   )

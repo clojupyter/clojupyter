@@ -148,7 +148,13 @@
          (k/kind-eval  '^:kind/cytoscape cs)
          :html-data
          
-         (nth 2)) "cytoscape") => true)
+         (nth 2)
+         first
+         second
+         
+         ) "cytoscape") => true)
+
+
 
 
 (facts "kind/fn works as expected"
@@ -161,7 +167,8 @@
                                                  :=mark-size 10})))
          :html-data
          (nth 2)
-         (nth 2)
+         first
+        second 
          ) "plotly") => true)
 
 (facts "kind/table works"
@@ -205,7 +212,9 @@
          (k/kind-eval '(kind/scittle '(.log js/console "hello")))
          :html-data
          second
-         second)
+         (nth 4)
+         second
+         )
         "scittle.core.eval_string('(.log js/console \"hello\")')"
         )=> true)
        
@@ -222,7 +231,9 @@
          (k/kind-eval '(kind/plotly plotly-data))
          :html-data
          (nth 2)
-         second)
+         first
+         second
+         )
         "var clojupyter_loaded_marker_plotly"
         ))
 

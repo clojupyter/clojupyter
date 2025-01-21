@@ -79,6 +79,23 @@
       )]))
 
 
+(defn resolve-deps-tree [kinds options]
+  (case (first kinds)
+    :kind/cytoscape [{:js ["https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.30.4/cytoscape.min.js"]}]
+    :kind/echarts [{:js ["https://cdn.jsdelivr.net/npm/echarts@5.4.1/dist/echarts.min.js"]}]
+    :kind/reagent [{:js 
+                    ["https://cdn.jsdelivr.net/npm/scittle@0.6.22/dist/scittle.js"
+                     "https://unpkg.com/react@18/umd/react.production.min.js"
+                     "https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"
+                     "https://cdn.jsdelivr.net/npm/d3-require@1"
+                     "https://cdn.jsdelivr.net/npm/scittle@0.6.22/dist/scittle.reagent.js"
+                     "https://cdn.jsdelivr.net/npm/scittle@0.6.22/dist/scittle.reagent.js"]
+                    }]
+    (js-deps/resolve-deps-tree kinds options))
+  )
+
+
+
 (defn require-scittle [render-cmd]
   (require-js "https://cdn.jsdelivr.net/npm/scittle@0.6.22/dist/scittle.js"
               "scittle"
@@ -105,7 +122,6 @@
                render-cmd)
    ])
   
-  
 
 
 
@@ -123,7 +139,9 @@
     (require-js "https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.30.4/cytoscape.min.js"
                 kind render-cmd))
 
-(defn require-plotly
+
+  
+(defn require-deps-and-render
   "Generates a Hiccup representation to load the Plotly.js library and execute a rendering command after it has been loaded.  
   
    **Parameters:**  
@@ -135,17 +153,18 @@
    - A Hiccup vector that includes a `<script>` tag loading Plotly.js and executing the provided rendering command."
   [render-cmd kind]
   
-  (let [ js-deps (flatten (map :js (js-deps/resolve-deps-tree [kind] {})))]
-    [:div 
+  (let [js-deps (flatten (map :js (resolve-deps-tree [kind] {})))]
+
+    (concat
      (map-indexed
       #(require-js %2
-                   (str (name kind) "_" %1 )
-                   render-cmd)
+                   (str (name kind) "_" %1)
+                   "")
       (drop-last js-deps))
 
-     (require-js (last js-deps)
-                 (name kind)
-                 render-cmd)]))
+     [ (require-js (last js-deps)
+                   (name kind)
+                   render-cmd)])))
 
 (defn require-highcharts
   "Generates a Hiccup representation to load the Highcharts library and execute a rendering command after it has been loaded.  
@@ -191,7 +210,7 @@
   [note]
   [:div {:style {:height "500px"
                  :width "500px"}}
-   (require-highcharts (format "Highcharts.chart(currentScript_%s.parentElement, %s);"
+   (require-deps-and-render (format "Highcharts.chart(currentScript_%s.parentElement, %s);"
                                (name (:kind note))
                                (cheshire/encode (:value note)))
                        (:kind note))])
@@ -209,7 +228,7 @@
   [note]
   [:div {:style {:height "500px"
                  :width "500px"}}
-   (require-plotly (format "Plotly.newPlot(currentScript_%s.parentElement, %s);"
+   (require-deps-and-render (format "Plotly.newPlot(currentScript_%s.parentElement, %s);"
                            (name (:kind note))
                            (cheshire/encode (:value note)))
                    (:kind note))])
@@ -227,12 +246,10 @@
   [note]
   [:div {:style {:height "500px"
                  :width "500px"}}
-   (require-cytoscape (format "  
-                            {  
+   (require-deps-and-render (format "  
                             value = %s;  
                             value['container'] = currentScript_%s.parentElement;  
-                            cytoscape(value);  
-                            };"
+                            cytoscape(value);"
                               (cheshire/encode (:value note))
                               (name (:kind note))
                               )
@@ -251,25 +268,28 @@
   [note]
   [:div {:style {:height "500px"
                  :width "500px"}}
-   (require-echarts (format "  
-                                    {  
+   (require-deps-and-render (format "  
                                     var myChart = echarts.init(currentScript_%s.parentElement);  
-                                    myChart.setOption(%s);  
-                                    };"
+                                    myChart.setOption(%s);"
                             (name (:kind note))
                             (cheshire/encode (:value note)))
                     (:kind note))])
 (defn scittle->hiccup [note]
   [:div
-   (require-scittle (format "scittle.core.eval_string('%s')" (str (:value note))))])
+   (require-deps-and-render (format "scittle.core.eval_string('%s')" (str (:value note)))
+                            (:kind note)
+                            )])
+
 
 (defn reagent->hiccup [note]
   (let [id (gensym)]
     [:div
      
-     (require-reagent (format "scittle.core.eval_string('(require (quote [reagent.dom]))(reagent.dom/render %s (js/document.getElementById \"%s\"))')" 
+     (require-deps-and-render (format "scittle.core.eval_string('(require (quote [reagent.dom]))(reagent.dom/render %s (js/document.getElementById \"%s\"))')" 
                               (str (:value note))
-                              (str id)))
+                              (str id))
+                              (:kind note)
+                              )
      [:div {:id (str id)}]
      ])
   )
@@ -418,14 +438,13 @@
 
 (defmethod render-advice :kind/scittle
   [{:as note :keys [value]}]
-  (def note note)
   (render-js note  scittle->hiccup))
 
 (defmethod render-advice :kind/reagent
   [{:as note :keys [value]}]
   (render-js note  reagent->hiccup))
 
-(reagent->hiccup 1)
+
 
 (defmethod render-advice :kind/image
   [{:as note :keys [value]}]

@@ -189,11 +189,11 @@
    **Returns:**  
   
    - A Hiccup vector containing a `<div>` with specified dimensions and a script that initializes the Plotly chart with the provided configuration."
-  [value]
+  [note]
   [:div {:style {:height "500px"
                  :width "500px"}}
    (require-plotly (format "Plotly.newPlot(currentScript_Plotly.parentElement, %s);"
-                           (cheshire/encode value)
+                           (cheshire/encode (:value note))
                            )
                    "Plotly")])
 
@@ -207,7 +207,7 @@
    **Returns:**  
   
    - A Hiccup vector containing a `<div>` with specified dimensions and a script that initializes the Cytoscape graph with the provided configuration."
-  [value]
+  [note]
   [:div {:style {:height "500px"
                  :width "500px"}}
    (require-cytoscape (format "  
@@ -216,7 +216,7 @@
                             value['container'] = currentScript_cytoscape.parentElement;  
                             cytoscape(value);  
                             };"
-                              (cheshire/encode value))
+                              (cheshire/encode (:value note)))
                       "cytoscape")])
 
 (defn echarts->hiccup
@@ -229,7 +229,7 @@
    **Returns:**  
   
    - A Hiccup vector containing a `<div>` with specified dimensions and a script that initializes the ECharts chart with the provided configuration."
-  [value]
+  [note]
   [:div {:style {:height "500px"
                  :width "500px"}}
    (require-echarts (format "  
@@ -237,18 +237,18 @@
                                     var myChart = echarts.init(currentScript_echarts.parentElement);  
                                     myChart.setOption(%s);  
                                     };"
-                            (cheshire/encode value))
+                            (cheshire/encode (:value note)))
                     "echarts")])
-(defn scittle->hiccup [value]
+(defn scittle->hiccup [note]
   [:div
-   (require-scittle (format "scittle.core.eval_string('%s')" (str value)))])
+   (require-scittle (format "scittle.core.eval_string('%s')" (str (:value note))))])
 
-(defn reagent->hiccup [value]
+(defn reagent->hiccup [note]
   (let [id (gensym)]
     [:div
      
      (require-reagent (format "scittle.core.eval_string('(require (quote [reagent.dom]))(reagent.dom/render %s (js/document.getElementById \"%s\"))')" 
-                              (str value)
+                              (str (:value note))
                               (str id)))
      [:div {:id (str id)}]
      ])
@@ -346,10 +346,10 @@
    **Returns:**  
   
    - The `note` map augmented with `:clojupyter` containing the rendered HTML, and `:hiccup` containing the Hiccup representation."
-  [note value ->hiccup-fn]
+  [note ->hiccup-fn]
   (let [hiccup
         (->
-         (->hiccup-fn value))]
+         (->hiccup-fn note))]
     (assoc note
            :clojupyter (display/hiccup-html hiccup)
            :hiccup hiccup)))
@@ -382,27 +382,28 @@
 
 (defmethod render-advice :kind/plotly
   [{:as note :keys [value]}]
-  (render-js note value plotly->hiccup))
+  (render-js note  plotly->hiccup))
 
 (defmethod render-advice :kind/cytoscape
   [{:as note :keys [value]}]
-  (render-js note value cytoscape>hiccup))
+  (render-js note  cytoscape>hiccup))
 
 (defmethod render-advice :kind/highcharts
   [{:as note :keys [value]}]
-  (render-js note value  highcharts->hiccup))
+  (render-js note   highcharts->hiccup))
 
 (defmethod render-advice :kind/echarts
   [{:as note :keys [value]}]
-  (render-js note value echarts->hiccup))
+  (render-js note  echarts->hiccup))
 
 (defmethod render-advice :kind/scittle
   [{:as note :keys [value]}]
-  (render-js note value scittle->hiccup))
+  (def note note)
+  (render-js note  scittle->hiccup))
 
 (defmethod render-advice :kind/reagent
   [{:as note :keys [value]}]
-  (render-js note value reagent->hiccup))
+  (render-js note  reagent->hiccup))
 
 (reagent->hiccup 1)
 

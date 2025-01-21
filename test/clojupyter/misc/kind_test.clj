@@ -195,19 +195,6 @@
         "class clojupyter.misc.display$render_mime"
         ) => true)
 
-(k/kind-eval 
- '(kind/reagent
-  ['(fn [{:keys [initial-value
-                 background-color]}]
-      (let [*click-count (reagent.core/atom initial-value)]
-        (fn []
-          [:div {:style {:background-color background-color}}
-           "The atom " [:code "*click-count"] " has value: "
-           @*click-count ". "
-           [:input {:type "button" :value "Click me!"
-                    :on-click #(swap! *click-count inc)}]])))
-   {:initial-value 9
-    :background-color "#d4ebe9"}]))
 
 ;; Getting these pass would increase the "kind compatibility"
 
@@ -337,4 +324,19 @@
   to-hiccup-js/*id-counter*
   
   to-hiccup-js/*id-prefix*
+
+  (k/kind-eval
+   '(kind/reagent
+     ['(fn [{:keys [initial-value
+                    background-color]}]
+         (let [*click-count (reagent.core/atom initial-value)]
+           (fn []
+             [:div {:style {:background-color background-color}}
+              "The atom " [:code "*click-count"] " has value: "
+              @*click-count ". "
+              [:input {:type "button" :value "Click me!"
+                       :on-click #(swap! *click-count inc)}]])))
+      {:initial-value 9
+       :background-color "#d4ebe9"}]))
+
   )

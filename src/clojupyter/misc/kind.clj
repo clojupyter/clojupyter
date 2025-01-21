@@ -89,22 +89,18 @@
 
 (defn resolve-deps-tree [kinds options]
   (case (first kinds)
-    :kind/cytoscape [{:js ["https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.30.4/cytoscape.min.js"]}]
-    :kind/echarts [{:js ["https://cdn.jsdelivr.net/npm/echarts@5.4.1/dist/echarts.min.js"]}]
     :kind/reagent [{:js
                     ["https://cdn.jsdelivr.net/npm/scittle@0.6.22/dist/scittle.js"
                      "https://unpkg.com/react@18/umd/react.production.min.js"
                      "https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"
                      "https://cdn.jsdelivr.net/npm/d3-require@1"
-                     "https://cdn.jsdelivr.net/npm/scittle@0.6.22/dist/scittle.reagent.js"
-                     "https://cdn.jsdelivr.net/npm/scittle@0.6.22/dist/scittle.reagent.js"]}]
+                     "https://cdn.jsdelivr.net/npm/scittle@0.6.22/dist/scittle.reagent.js" 
+                     ]}]
     :kind/scittle [{:js ["https://cdn.jsdelivr.net/npm/scittle@0.6.22/dist/scittle.js"
                          "https://cdn.jsdelivr.net/npm/scittle@0.6.22/dist/scittle.cljs-ajax.js"
                          "https://cdn.jsdelivr.net/npm/scittle@0.6.22/dist/scittle.reagent.js"
-                         "https://cdn.jsdelivr.net/npm/scittle@0.6.22/dist/scittle.re-frame.js"
-                         "https://cdn.jsdelivr.net/npm/scittle@0.6.22/dist/scittle.promesa.js"
-                         "https://cdn.jsdelivr.net/npm/scittle@0.6.22/dist/scittle.pprint.js"
-                         "https://cdn.jsdelivr.net/npm/scittle@0.6.22/dist/scittle.nrepl.js"]}]
+                         ]}
+                   ]
     (js-deps/resolve-deps-tree kinds options)))
 
 
@@ -120,7 +116,13 @@
   
    - A Hiccup vector that includes a `<script>` tag loading Plotly.js and executing the provided rendering command."
   [render-cmd kind]
-  (let [js-deps (flatten (map :js (resolve-deps-tree [kind] {})))]
+  (let [js-deps 
+        (->> (resolve-deps-tree [kind] {})
+             (map :js)
+             flatten
+             (remove nil?)
+             )
+        ]
 
     (concat
      (map-indexed

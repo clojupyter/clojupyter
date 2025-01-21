@@ -212,7 +212,7 @@
          (k/kind-eval '(kind/scittle '(.log js/console "hello")))
          :html-data
          second
-         (nth 6)
+         (nth 4)
          second
          )
         "scittle.core.eval_string('(.log js/console \"hello\")')"

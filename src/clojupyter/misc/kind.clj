@@ -7,7 +7,9 @@
    [scicloj.kindly-render.note.to-hiccup :as to-hiccup]
    [scicloj.kindly-render.shared.walk :as walk]
    [scicloj.kindly-advice.v1.api :as kindly-advice]
-   [clojure.string :as str])
+   [clojure.string :as str]
+   [scicloj.kindly.v4.kind :as kind]
+   [scicloj.kindly-render.notes.js-deps :as js-deps])
   (:import
    [javax.imageio ImageIO]))
 
@@ -25,10 +27,11 @@
    **Returns:**  
   
    - A Hiccup vector representing a `<script>` tag containing JavaScript code that loads the library and executes `render-cmd` once the library is loaded."
-  [url js-object render-cmd]
-  [:script
-   (format
-    "  
+  [url unique-name render-cmd]
+  (let [js-object (name unique-name)]
+    [:script
+     (format
+      "  
   var clojupyter_loaded_marker_%s;  
   
   var currentScript_%s = document.currentScript;
@@ -56,24 +59,25 @@
      
   
  "
-    js-object
-    js-object
-    js-object
-    js-object
-    js-object
-    js-object
-    js-object 
-    js-object 
-    js-object 
-    js-object
-    js-object url 
-    js-object 
-    js-object 
-    js-object 
-    render-cmd
-    js-object
-    render-cmd
-    )])
+      js-object
+      js-object
+      js-object
+      js-object
+      js-object
+      js-object
+      js-object 
+      js-object 
+      js-object 
+      js-object
+      js-object url 
+      js-object 
+      js-object 
+      js-object 
+      render-cmd
+      js-object
+      render-cmd
+      )]))
+
 
 (defn require-scittle [render-cmd]
   (require-js "https://cdn.jsdelivr.net/npm/scittle@0.6.22/dist/scittle.js"
@@ -115,9 +119,9 @@
    **Returns:**  
   
    - A Hiccup vector that includes a `<script>` tag loading Cytoscape.js and executing the provided rendering command."
-    [render-cmd key]
+    [render-cmd kind]
     (require-js "https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.30.4/cytoscape.min.js"
-                key render-cmd))
+                kind render-cmd))
 
 (defn require-plotly
   "Generates a Hiccup representation to load the Plotly.js library and execute a rendering command after it has been loaded.  
@@ -129,10 +133,19 @@
    **Returns:**  
   
    - A Hiccup vector that includes a `<script>` tag loading Plotly.js and executing the provided rendering command."
-  [render-cmd key]
-  (require-js "https://cdn.plot.ly/plotly-2.35.2.min.js"
-              key
-              render-cmd))
+  [render-cmd kind]
+  
+  (let [ js-deps (flatten (map :js (js-deps/resolve-deps-tree [kind] {})))]
+    [:div 
+     (map-indexed
+      #(require-js %2
+                   (str (name kind) "_" %1 )
+                   render-cmd)
+      (drop-last js-deps))
+
+     (require-js (last js-deps)
+                 (name kind)
+                 render-cmd)]))
 
 (defn require-highcharts
   "Generates a Hiccup representation to load the Highcharts library and execute a rendering command after it has been loaded.  
@@ -144,9 +157,12 @@
    **Returns:**  
   
    - A Hiccup vector that includes a `<script>` tag loading Highcharts and executing the provided rendering command."
-  [render-cmd key]
+  [render-cmd kind]
+
+
+
   (require-js "https://code.highcharts.com/highcharts.js"
-             key render-cmd))
+             kind render-cmd))
 
 (defn require-echarts
   "Creates a Hiccup representation to load the ECharts library and execute a rendering command after it has been loaded.  
@@ -158,9 +174,9 @@
    **Returns:**  
   
    - A Hiccup vector that includes a `<script>` tag loading ECharts and executing the provided rendering command."
-  [render-cmd key]
+  [render-cmd kind]
   (require-js "https://cdn.jsdelivr.net/npm/echarts@5.4.1/dist/echarts.min.js"
-              key render-cmd))
+              kind render-cmd))
 
 (defn highcharts->hiccup
   "Converts Highcharts chart data into a Hiccup vector that can render the chart within a Jupyter notebook using the Highcharts library. It sets up a `<div>` container and includes the necessary scripts to render the chart.  
@@ -172,12 +188,13 @@
    **Returns:**  
   
    - A Hiccup vector containing a `<div>` with specified dimensions and a script that initializes the Highcharts chart with the provided configuration."
-  [value]
+  [note]
   [:div {:style {:height "500px"
                  :width "500px"}}
-   (require-highcharts (format "Highcharts.chart(currentScript_highcharts.parentElement, %s);"
-                               (cheshire/encode value))
-                       "highcharts")])
+   (require-highcharts (format "Highcharts.chart(currentScript_%s.parentElement, %s);"
+                               (name (:kind note))
+                               (cheshire/encode (:value note)))
+                       (:kind note))])
 
 (defn plotly->hiccup
   "Converts Plotly chart data into a Hiccup vector that can render the chart within a Jupyter notebook using the Plotly library.  
@@ -192,10 +209,10 @@
   [note]
   [:div {:style {:height "500px"
                  :width "500px"}}
-   (require-plotly (format "Plotly.newPlot(currentScript_Plotly.parentElement, %s);"
-                           (cheshire/encode (:value note))
-                           )
-                   "Plotly")])
+   (require-plotly (format "Plotly.newPlot(currentScript_%s.parentElement, %s);"
+                           (name (:kind note))
+                           (cheshire/encode (:value note)))
+                   (:kind note))])
 
 (defn cytoscape>hiccup
   "Converts Cytoscape graph data into a Hiccup vector that can render the graph within a Jupyter notebook using the Cytoscape.js library.  
@@ -213,11 +230,13 @@
    (require-cytoscape (format "  
                             {  
                             value = %s;  
-                            value['container'] = currentScript_cytoscape.parentElement;  
+                            value['container'] = currentScript_%s.parentElement;  
                             cytoscape(value);  
                             };"
-                              (cheshire/encode (:value note)))
-                      "cytoscape")])
+                              (cheshire/encode (:value note))
+                              (name (:kind note))
+                              )
+                      (:kind note))])
 
 (defn echarts->hiccup
   "Converts ECharts chart data into a Hiccup vector that can render the chart within a Jupyter notebook using the ECharts library.  
@@ -234,11 +253,12 @@
                  :width "500px"}}
    (require-echarts (format "  
                                     {  
-                                    var myChart = echarts.init(currentScript_echarts.parentElement);  
+                                    var myChart = echarts.init(currentScript_%s.parentElement);  
                                     myChart.setOption(%s);  
                                     };"
+                            (name (:kind note))
                             (cheshire/encode (:value note)))
-                    "echarts")])
+                    (:kind note))])
 (defn scittle->hiccup [note]
   [:div
    (require-scittle (format "scittle.core.eval_string('%s')" (str (:value note))))])

@@ -9,7 +9,8 @@
    [scicloj.tableplot.v1.plotly :as plotly]
    [tablecloth.api :as tc]
    [reagent.core]
-   [scicloj.kindly-advice.v1.api :as kindly-advice]))
+   [scicloj.kindly-advice.v1.api :as kindly-advice]
+   [hiccup.core :as hiccup]))
 
 (def raw-image
   (->  "https://upload.wikimedia.org/wikipedia/commons/e/eb/Ash_Tree_-_geograph.org.uk_-_590710.jpg"
@@ -93,6 +94,24 @@
 
   )
 
+(def plotly-data
+ (let [n 20
+       walk (fn [bias]
+              (->> (repeatedly n #(-> (rand)
+                                      (- 0.5)
+                                      (+ bias)))
+                   (reductions +)))]
+   {:data [{:x (walk 1)
+            :y (walk -1)
+            :z (map #(* % %)
+                    (walk 2))
+            :type :scatter3d
+            :mode :lines+markers
+            :opacity 0.2
+            :line {:width 10}
+            :marker {:size 20
+                     :colorscale :Viridis}}]}))
+
 (defn fetch-dataset [dataset-name]
   (-> dataset-name
       (->> (format "https://vincentarelbundock.github.io/Rdatasets/csv/%s.csv"))
@@ -128,8 +147,8 @@
         (->
          (k/kind-eval  '^:kind/cytoscape cs)
          :html-data
-         (nth 2)
-         second) "cytoscape") => true)
+         
+         (nth 2)) "cytoscape") => true)
 
 
 (facts "kind/fn works as expected"
@@ -142,7 +161,8 @@
                                                  :=mark-size 10})))
          :html-data
          (nth 2)
-         second) "Plotly") => true)
+         (nth 2)
+         ) "plotly") => true)
 
 (facts "kind/table works"
        (->
@@ -193,11 +213,20 @@
        (str/starts-with? 
         (str (class (k/kind-eval '(kind/vega vega-spec))))
         "class clojupyter.misc.display$render_mime"
+
         ) => true)
 
+(facts "kind/plotly works"
+       (str/includes?
+        (->
+         (k/kind-eval '(kind/plotly plotly-data))
+         :html-data
+         (nth 2)
+         second)
+        "var clojupyter_loaded_marker_plotly"
+        ))
 
 ;; Getting these pass would increase the "kind compatibility"
-
 
 
 (facts "kind/fragment works"

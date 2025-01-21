@@ -9,7 +9,8 @@
    [scicloj.kindly-advice.v1.api :as kindly-advice]
    [clojure.string :as str]
    [scicloj.kindly.v4.kind :as kind]
-   [scicloj.kindly-render.notes.js-deps :as js-deps])
+   [scicloj.kindly-render.notes.js-deps :as js-deps]
+   [scicloj.kindly-render.note.to-hiccup-js :as to-hiccup-js])
   (:import
    [javax.imageio ImageIO]
    [java.security MessageDigest]))
@@ -208,26 +209,31 @@
                                     myChart.setOption(%s);"
                                     (cheshire/encode (:value note)))
                     (:kind note))])
+
 (defn scittle->hiccup [note]
   [:div
    (require-deps-and-render (format "scittle.core.eval_string('%s')" (str (:value note)))
                             (:kind note)
                             )])
 
+(defn scittle->hiccup-2 [note]
+  (concat
+   (require-deps-and-render "" :kind/scittle)
+   [(->
+     (to-hiccup-js/render {:value (:value note)})
+     :hiccup)]
+   [[:script "scittle.core.eval_script_tags()"]]))
+
 
 (defn reagent->hiccup [note]
   (let [id (gensym)]
     [:div
-     
-     (require-deps-and-render (format "scittle.core.eval_string('(require (quote [reagent.dom]))(reagent.dom/render %s (js/document.getElementById \"%s\"))')" 
-                              (str (:value note))
-                              (str id))
-                              (:kind note)
-                              )
-     [:div {:id (str id)}]
-     ])
-  )
 
+     (require-deps-and-render (format "scittle.core.eval_string('(require (quote [reagent.dom]))(reagent.dom/render %s (js/document.getElementById \"%s\"))')"
+                                      (str (:value note))
+                                      (str id))
+                              (:kind note))
+     [:div {:id (str id)}]]))
 
 (defn- default-to-hiccup-render
   "Provides a default rendering for notes by converting them into Hiccup format and preparing them for display in Clojupyter. It's a helper function used when no specific rendering method is available for a given kind.  
@@ -372,7 +378,7 @@
 
 (defmethod render-advice :kind/scittle
   [note]
-  (render-js note  scittle->hiccup))
+  (render-js note  scittle->hiccup-2))
 
 (defmethod render-advice :kind/reagent
   [note]
@@ -526,3 +532,4 @@
       value
       (:clojupyter (render {:value value
                             :form form})))))  
+

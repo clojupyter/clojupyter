@@ -207,16 +207,24 @@
        {:html-data nil})
 
 (facts "kind/scittle works"
-       (str/includes?        
+       (str/includes?
         (->
          (k/kind-eval '(kind/scittle '(.log js/console "hello")))
          :html-data
-         second
-         (nth 4)
-         second
+         (nth 3)
          )
-        "scittle.core.eval_string('(.log js/console \"hello\")')"
-        )=> true)
+        ".log js/console") => true
+
+       (->
+        (k/kind-eval '(kind/scittle '(print "hello")))
+        :html-data
+        (nth 3)) => [:script {:type "application/x-scittle", :class "kind-scittle"} "(print \"hello\")\n"]
+
+       (->
+
+        (k/kind-eval '(kind/scittle '(print "hello")))
+        :html-data
+        (nth 4)) => [:script "scittle.core.eval_script_tags()"])
        
 (facts "kind/vega works"
        (str/starts-with? 
@@ -232,10 +240,11 @@
          :html-data
          (nth 2)
          first
-         second
-         )
-        "var clojupyter_loaded_marker_plotly"
-        ))
+         second)
+        "Plotly.newPlot") => true)
+
+(facts "kind/scittle is working"
+)
 
 ;; Getting these pass would increase the "kind compatibility"
 
@@ -308,9 +317,7 @@
        ;       {:youtube-id "DAQnvAgBma8"}
        )
 
-(facts "kind/scittle is working"
-  ; (k/kind-eval '(kind/scittle '(print "hello")))       
-       )
+
 
 (facts "kind/htmlwidgets-ggplotly is woking"
        ;; (k/kind-eval

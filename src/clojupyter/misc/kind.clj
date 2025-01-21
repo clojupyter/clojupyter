@@ -34,8 +34,8 @@
   
    - A Hiccup vector representing a `<script>` tag containing JavaScript code that loads the library and executes `render-cmd` once the library is loaded."
   [url render-cmd]
-  (let [js-object (md5 url)
-        render-cmd (str/replace render-cmd "XXXXX" js-object)
+  (let [url-md5 (md5 url)
+        render-cmd (str/replace render-cmd "XXXXX" url-md5)
         ]
     [:script
      (format
@@ -67,22 +67,22 @@
      
   
  "
-      js-object
-      js-object
-      js-object
-      js-object
-      js-object
-      js-object
-      js-object 
-      js-object 
-      js-object 
-      js-object
-      js-object url 
-      js-object 
-      js-object 
-      js-object 
+      url-md5
+      url-md5
+      url-md5
+      url-md5
+      url-md5
+      url-md5
+      url-md5 
+      url-md5 
+      url-md5 
+      url-md5
+      url-md5 url 
+      url-md5 
+      url-md5 
+      url-md5 
       render-cmd
-      js-object
+      url-md5
       render-cmd
       )]))
 
@@ -91,84 +91,37 @@
   (case (first kinds)
     :kind/cytoscape [{:js ["https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.30.4/cytoscape.min.js"]}]
     :kind/echarts [{:js ["https://cdn.jsdelivr.net/npm/echarts@5.4.1/dist/echarts.min.js"]}]
-    :kind/reagent [{:js 
+    :kind/reagent [{:js
                     ["https://cdn.jsdelivr.net/npm/scittle@0.6.22/dist/scittle.js"
                      "https://unpkg.com/react@18/umd/react.production.min.js"
                      "https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"
                      "https://cdn.jsdelivr.net/npm/d3-require@1"
                      "https://cdn.jsdelivr.net/npm/scittle@0.6.22/dist/scittle.reagent.js"
-                     "https://cdn.jsdelivr.net/npm/scittle@0.6.22/dist/scittle.reagent.js"]
-                    }]
-    :kind/scittle [{:js [
-                         "https://cdn.jsdelivr.net/npm/scittle@0.6.22/dist/scittle.js"
+                     "https://cdn.jsdelivr.net/npm/scittle@0.6.22/dist/scittle.reagent.js"]}]
+    :kind/scittle [{:js ["https://cdn.jsdelivr.net/npm/scittle@0.6.22/dist/scittle.js"
                          "https://cdn.jsdelivr.net/npm/scittle@0.6.22/dist/scittle.cljs-ajax.js"
                          "https://cdn.jsdelivr.net/npm/scittle@0.6.22/dist/scittle.reagent.js"
                          "https://cdn.jsdelivr.net/npm/scittle@0.6.22/dist/scittle.re-frame.js"
                          "https://cdn.jsdelivr.net/npm/scittle@0.6.22/dist/scittle.promesa.js"
                          "https://cdn.jsdelivr.net/npm/scittle@0.6.22/dist/scittle.pprint.js"
-                         "https://cdn.jsdelivr.net/npm/scittle@0.6.22/dist/scittle.nrepl.js"
-                         
-                         ]}]
-    (js-deps/resolve-deps-tree kinds options))
-  )
-
-(js-deps/resolve-deps-tree [:kind/scittle] {})
-
-(defn require-scittle [render-cmd]
-  (require-js "https://cdn.jsdelivr.net/npm/scittle@0.6.22/dist/scittle.js"
-              render-cmd))
-
-(defn require-reagent [render-cmd]
-  [:div 
-   (require-scittle "")   
-   (require-js "https://unpkg.com/react@18/umd/react.production.min.js"
-               "")
-   (require-js "https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"
-               "")
-   (require-js  "https://cdn.jsdelivr.net/npm/d3-require@1"
-                "")
-   
-   (require-js "https://cdn.jsdelivr.net/npm/scittle@0.6.22/dist/scittle.reagent.js"
-               "")
-   (require-js "https://cdn.jsdelivr.net/npm/scittle@0.6.22/dist/scittle.reagent.js"
-               render-cmd)
-   ])
-  
+                         "https://cdn.jsdelivr.net/npm/scittle@0.6.22/dist/scittle.nrepl.js"]}]
+    (js-deps/resolve-deps-tree kinds options)))
 
 
 
-  (defn require-cytoscape
-    "Creates a Hiccup representation to load the Cytoscape.js library and execute a rendering command after it has been loaded.  
-  
-   **Parameters:**  
-  
-   - `render-cmd` (String): The JavaScript command to execute after Cytoscape.js has been loaded.  
-  
-   **Returns:**  
-  
-   - A Hiccup vector that includes a `<script>` tag loading Cytoscape.js and executing the provided rendering command."
-    [render-cmd kind]
-    (require-js "https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.30.4/cytoscape.min.js"
-                render-cmd))
-
-
-  
 (defn require-deps-and-render
-  "Generates a Hiccup representation to load the Plotly.js library and execute a rendering command after it has been loaded.  
+  "Generates a Hiccup representation to load the a JS library and execute a rendering command after it has been loaded.  
   
    **Parameters:**  
   
-   - `render-cmd` (String): The JavaScript command to execute after Plotly.js has been loaded.  
+   - `render-cmd` (String): The JavaScript command to execute after js has been loaded.  
   
    **Returns:**  
   
    - A Hiccup vector that includes a `<script>` tag loading Plotly.js and executing the provided rendering command."
   [render-cmd kind]
-  (def render-cmd render-cmd)
-  (def kind kind)
   (let [js-deps (flatten (map :js (resolve-deps-tree [kind] {})))]
 
-    (def js-deps js-deps)
     (concat
      (map-indexed
       #(require-js %2
@@ -178,36 +131,7 @@
      [ (require-js (last js-deps)
                    render-cmd)])))
 
-(defn require-highcharts
-  "Generates a Hiccup representation to load the Highcharts library and execute a rendering command after it has been loaded.  
-  
-   **Parameters:**  
-  
-   - `render-cmd` (String): The JavaScript command to execute after Highcharts has been loaded.  
-  
-   **Returns:**  
-  
-   - A Hiccup vector that includes a `<script>` tag loading Highcharts and executing the provided rendering command."
-  [render-cmd kind]
 
-
-
-  (require-js "https://code.highcharts.com/highcharts.js"
-              render-cmd))
-
-(defn require-echarts
-  "Creates a Hiccup representation to load the ECharts library and execute a rendering command after it has been loaded.  
-  
-   **Parameters:**  
-  
-   - `render-cmd` (String): The JavaScript command to execute after ECharts has been loaded.  
-  
-   **Returns:**  
-  
-   - A Hiccup vector that includes a `<script>` tag loading ECharts and executing the provided rendering command."
-  [render-cmd kind]
-  (require-js "https://cdn.jsdelivr.net/npm/echarts@5.4.1/dist/echarts.min.js"
-              render-cmd))
 
 (defn highcharts->hiccup
   "Converts Highcharts chart data into a Hiccup vector that can render the chart within a Jupyter notebook using the Highcharts library. It sets up a `<div>` container and includes the necessary scripts to render the chart.  
@@ -429,27 +353,27 @@
            :hiccup hiccup)))
 
 (defmethod render-advice :kind/plotly
-  [{:as note :keys [value]}]
+  [note]
   (render-js note  plotly->hiccup))
 
 (defmethod render-advice :kind/cytoscape
-  [{:as note :keys [value]}]
+  [note]
   (render-js note  cytoscape>hiccup))
 
 (defmethod render-advice :kind/highcharts
-  [{:as note :keys [value]}]
+  [note]
   (render-js note   highcharts->hiccup))
 
 (defmethod render-advice :kind/echarts
-  [{:as note :keys [value]}]
+  [note]
   (render-js note  echarts->hiccup))
 
 (defmethod render-advice :kind/scittle
-  [{:as note :keys [value]}]
+  [note]
   (render-js note  scittle->hiccup))
 
 (defmethod render-advice :kind/reagent
-  [{:as note :keys [value]}]
+  [note]
   (render-js note  reagent->hiccup))
 
 

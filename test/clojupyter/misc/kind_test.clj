@@ -8,6 +8,7 @@
    [scicloj.kindly.v4.kind :as kind]
    [scicloj.tableplot.v1.plotly :as plotly]
    [tablecloth.api :as tc]
+   [reagent.core]
    [scicloj.kindly-advice.v1.api :as kindly-advice]))
 
 (def raw-image
@@ -299,3 +300,41 @@
        ;;   (k/kind-eval
        ;;    '(kind/smile-model {}))
        )
+
+
+(comment
+  (k/kind-eval '(kind/scittle
+                 '(.log js/console "hello")))
+  
+
+
+  (to-hiccup-js/render {:form
+                        '(kind/scittle
+                          '(.log js/console "hello"))
+                        
+                        })
+  
+
+
+  (to-hiccup-js/render {:form
+
+                        '(kind/reagent
+                          ['(fn [{:keys [initial-value
+                                         background-color]}]
+                              
+                              (let [*click-count (reagent.core/atom initial-value)]
+                                (fn []
+                                  [:div {:style {:background-color background-color}}
+                                   "The atom " [:code "*click-count"] " has value: "
+                                   @*click-count ". "
+                                   [:input {:type "button" :value "Click me!"
+                                            :on-click #(swap! *click-count inc)}]])))
+                           {:initial-value 9
+                            :background-color "#d4ebe9"}])})
+  
+
+
+  to-hiccup-js/*id-counter*
+  
+  to-hiccup-js/*id-prefix*
+  )

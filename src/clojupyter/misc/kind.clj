@@ -475,10 +475,7 @@
 
 (defmethod render-advice :kind/fn
   [{:keys [value form] :as note }]
-  (def value value)
-  (def form form)
-  (def note note)
-
+  
   (let [new-note
         (if (vector? value)
           (let [f (first value)]
@@ -487,17 +484,16 @@
           
           (let [f (or (:kindly/f value)
                       (-> note :kindly/options :kindly/f))]
-            (render {:value (f value)
+            (render {:value (f (dissoc value :kindly/f ))
                      :form form})))
         
         ]
-    (def new-note new-note)
-
+    
     (assoc note
            :hiccup (:hiccup new-note)
            :clojupyter (display/hiccup-html (:hiccup new-note)))))
 
-(apply f (rest value))
+
 
 (defn- render-as-clojupyter
   "Determines whether a given value should be rendered directly by Clojupyter without further processing. It checks if the value is `nil`, a known displayable type, or already a rendered MIME type.  

@@ -351,9 +351,24 @@
         :html-data
         (nth 2)) => [:p "_unnamed [3 2]:"]
 
-(k/kind-eval       
- '(kind/fn
-   [+ 1 2]))
+       
+       (-> '(kind/fn
+              [+ 1 2])
+           k/kind-eval
+           :html-data
+           ) => "3"
+
+                    
+
+       (-> '(kind/fn
+              {:kindly/f tc/dataset
+               :x (range 3)
+               :y (repeatedly 3 rand)})
+           
+           k/kind-eval
+           :html-data
+           (nth 2)
+           ) => [:p "_unnamed [3 2]:"]                  
 
        )
 

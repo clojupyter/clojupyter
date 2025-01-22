@@ -493,7 +493,13 @@
            :hiccup (:hiccup new-note)
            :clojupyter (display/hiccup-html (:hiccup new-note)))))
 
-
+(defmethod render-advice :kind/var
+  [{:keys [value form] :as note}]
+    (let [sym (second value)
+        s (str "#'" (str *ns*) "/" sym)]
+    (assoc note
+           :hiccup s
+           :clojupyter (display/hiccup-html s))))
 
 (defn- render-as-clojupyter
   "Determines whether a given value should be rendered directly by Clojupyter without further processing. It checks if the value is `nil`, a known displayable type, or already a rendered MIME type.  

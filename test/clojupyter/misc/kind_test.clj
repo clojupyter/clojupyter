@@ -351,27 +351,29 @@
         :html-data
         (nth 2)) => [:p "_unnamed [3 2]:"]
 
-       
+
        (-> '(kind/fn
               [+ 1 2])
            k/kind-eval
-           :html-data
-           ) => "3"
+           :html-data) => "3"
 
-                    
+
 
        (-> '(kind/fn
               {:kindly/f tc/dataset
                :x (range 3)
                :y (repeatedly 3 rand)})
-           
+
            k/kind-eval
            :html-data
-           (nth 2)
-           ) => [:p "_unnamed [3 2]:"]                  
+           (nth 2)) => [:p "_unnamed [3 2]:"])
 
-       )
 
+(facts "kind/var works"
+       (-> '(kind/var '(def a 1))
+           k/kind-eval
+           :html-data)
+       => "#'clojupyter.misc.kind-test/a")
 
 ;; Getting these pass would increase the "kind compatibility"
 

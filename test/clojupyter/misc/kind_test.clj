@@ -300,16 +300,14 @@
 
 (facts "nested image rendred as unsupported"
        (str/starts-with?
-        (-> 
+        (->
          (k/kind-eval
           '(kind/hiccup [:div.clay-limit-image-width
                          raw-image]))
          :html-data
          second
-         (nth 2)
-         )
-        "nested rendering of :kind/image not possible"
-        ) => true
+         (nth 2))
+        "nested rendering of :kind/image not possible") => true
        (str/starts-with?
         (->
          (k/kind-eval
@@ -320,19 +318,45 @@
          (nth 2))
         "nested rendering of :kind/image not possible")
 
+
+       (str/starts-with?
+        (->
+         (k/kind-eval
+          '[raw-image raw-image])
+         :html-data
+         (nth 2)
+         (nth 2)
+         (nth 2)
+         )
+        "nested rendering of :kind/image not possible"))
+
+(facts "kind/fn works as expected "
+
+       (->
+        (k/kind-eval
+         '(kind/fn
+            {:kindly/f (fn [{:keys [x y]}]
+                         (+ x y))
+             :x 1
+             :y 2}))
+        :html-data) => "3"
+
+
+       (->
+        (k/kind-eval
+         '(kind/fn
+            {:x (range 3)
+             :y (repeatedly 3 rand)}
+            {:kindly/f tc/dataset}))
+        :html-data
+        (nth 2)) => [:p "_unnamed [3 2]:"]
+
+(k/kind-eval       
+ '(kind/fn
+   [+ 1 2]))
+
        )
 
-
-(str/starts-with?
- (->
-  (k/kind-eval
-   '[raw-image raw-image])
-  :html-data
-  (nth 2)
-  (nth 2)
-  (nth 2)
-  )
- "nested rendering of :kind/image not possible")
 
 ;; Getting these pass would increase the "kind compatibility"
 
@@ -371,28 +395,10 @@
        ;;    :hiccup [:pre {:class "kind-code"} [:code {:class "sourceCode"} nil]]}
        )
 
+ 
 
 
 
-
-(facts "kind/fn works as expected - 2"
-
-      ;; Getting these pass would brings us closer to "kind compliancy"
-
-      ;;  (k/kind-eval
-      ;;   '(kind/fn
-      ;;      {:kindly/f (fn [{:keys [x y]}]
-      ;;                   (+ x y))
-      ;;       :x 1
-      ;;       :y 2}))
-
-
-      ;;  (k/kind-eval
-      ;;   '(kind/fn
-      ;;      {:x (range 3)
-      ;;       :y (repeatedly 3 rand)}
-      ;;      {:kindly/f tc/dataset}))
-       )
 
 
 (facts "kind/video is working"

@@ -10,7 +10,8 @@
    [tablecloth.api :as tc]
    [reagent.core]
    [scicloj.kindly-advice.v1.api :as kindly-advice]
-   [hiccup.core :as hiccup]))
+   [hiccup.core :as hiccup]
+   [clojure.string :as s]))
 
 (def raw-image
   (->  "https://upload.wikimedia.org/wikipedia/commons/e/eb/Ash_Tree_-_geograph.org.uk_-_590710.jpg"
@@ -287,6 +288,52 @@
          (nth 5))
         "leaflet.js") => true)
 
+(facts "kind/image works"
+       (str/starts-with?
+        (->
+         (k/kind-eval '(kind/image raw-image))
+         class
+         .getName
+         )
+        "clojupyter.misc.display$render_mime$reify"
+        ))
+
+(facts "nested image rendred as unsupported"
+       (str/starts-with?
+        (-> 
+         (k/kind-eval
+          '(kind/hiccup [:div.clay-limit-image-width
+                         raw-image]))
+         :html-data
+         second
+         (nth 2)
+         )
+        "nested rendering of :kind/image not possible"
+        ) => true
+       (str/starts-with?
+        (->
+         (k/kind-eval
+          '[raw-image raw-image])
+         :html-data
+         (nth 2)
+         (nth 2)
+         (nth 2))
+        "nested rendering of :kind/image not possible")
+
+       )
+
+
+(str/starts-with?
+ (->
+  (k/kind-eval
+   '[raw-image raw-image])
+  :html-data
+  (nth 2)
+  (nth 2)
+  (nth 2)
+  )
+ "nested rendering of :kind/image not possible")
+
 ;; Getting these pass would increase the "kind compatibility"
 
 
@@ -325,11 +372,7 @@
        )
 
 
-(facts "image inside hiccup should not crash"
-      ;;  (k/kind-eval
-      ;;   '(kind/hiccup [:div.clay-limit-image-width
-      ;;                 raw-image]))
-       )
+
 
 
 (facts "kind/fn works as expected - 2"

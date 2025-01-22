@@ -392,7 +392,10 @@
 (defmethod render-advice :kind/image
   [{:as note :keys [value]}]
   (let [out (io/java.io.ByteArrayOutputStream.)
-        v (first value)
+        v
+        (if (sequential? value)
+          (first value)
+          value)
         clojupyter (do (ImageIO/write v "png" out)
                        (display/render-mime :image/png
                                             (-> out .toByteArray b64/encode String.)))]

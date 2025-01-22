@@ -440,7 +440,22 @@
            :html-data)
        => "#'clojupyter.misc.kind-test/a")
 
+
 ;; Getting these pass would increase the "kind compatibility"
+
+(facts "kind/pprint works"
+       ;; bug: https://github.com/scicloj/kindly-render/issues/31
+       ;; (->
+       ;;  (to-hiccup/render {:form '(->> (range 30)
+       ;;                                 (apply array-map)
+       ;;                                 kind/pprint)})
+       ;;  :hiccup
+       ;;  (nth 2)
+       ;;  second
+
+       ;;  (nth 2))
+       ;; => "{0 1,\n 2 3,\n 4 5,\n 6 7,\n 8 9,\n 10 11,\n 12 13,\n 14 15,\n 16 17,\n 18 19,\n 20 21,\n 22 23,\n 24 25,\n 26 27,\n 28 29}\n"
+       )
 
 
 (facts "kind/fragment works"
@@ -506,58 +521,5 @@
        ;;   (k/kind-eval
        ;;    '(kind/smile-model {}))
        )
-
-
-(comment
-  (k/kind-eval '(kind/scittle
-                 '(.log js/console "hello")))
-  
-
-
-  (to-hiccup-js/render {:form
-                        '(kind/scittle
-                          '(.log js/console "hello"))
-                        
-                        })
-  
-
-
-  (to-hiccup-js/render {:form
-
-                        '(kind/reagent
-                          ['(fn [{:keys [initial-value
-                                         background-color]}]
-                              
-                              (let [*click-count (reagent.core/atom initial-value)]
-                                (fn []
-                                  [:div {:style {:background-color background-color}}
-                                   "The atom " [:code "*click-count"] " has value: "
-                                   @*click-count ". "
-                                   [:input {:type "button" :value "Click me!"
-                                            :on-click #(swap! *click-count inc)}]])))
-                           {:initial-value 9
-                            :background-color "#d4ebe9"}])})
-  
-
-
-  to-hiccup-js/*id-counter*
-  
-  to-hiccup-js/*id-prefix*
-
-  (k/kind-eval
-   '(kind/reagent
-     ['(fn [{:keys [initial-value
-                    background-color]}]
-         (let [*click-count (reagent.core/atom initial-value)]
-           (fn []
-             [:div {:style {:background-color background-color}}
-              "The atom " [:code "*click-count"] " has value: "
-              @*click-count ". "
-              [:input {:type "button" :value "Click me!"
-                       :on-click #(swap! *click-count inc)}]])))
-      {:initial-value 9
-       :background-color "#d4ebe9"}]))
-
-  )
 
 

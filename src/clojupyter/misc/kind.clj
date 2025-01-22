@@ -9,10 +9,31 @@
    [scicloj.kindly-advice.v1.api :as kindly-advice]
    [clojure.string :as str]
    [scicloj.kindly-render.notes.js-deps :as js-deps]
-   [scicloj.kindly-render.note.to-hiccup-js :as to-hiccup-js])
+   [scicloj.kindly-render.note.to-hiccup-js :as to-hiccup-js]
+   [malli.core :as m]
+   [malli.error :as me]
+   [scicloj.kindly.v4.kind :as kind]
+   [malli.experimental.describe :as med])
   (:import
    [javax.imageio ImageIO]
    [java.security MessageDigest]))
+
+
+
+
+(defn- malli-schema-for [kind]
+  (m/schema
+   (case kind
+     :kind/fn  [:map {:closed true}  [:kindly/f {:optional true} fn?]]
+     :kind/reagent  [:map {:closed true}  [:html/deps {:optional true} [:sequential keyword?]]]
+     [:map {:closed true}])))
+  
+
+
+(defn- validate-options [note]
+  (-> (malli-schema-for
+       (:kind note))
+      (m/validate (:kindly/options note))))
 
 (defn md5 [string]
   (let [digest (.digest (MessageDigest/getInstance "MD5") (.getBytes string "UTF-8"))]
@@ -103,6 +124,40 @@
                    ]
     (js-deps/resolve-deps-tree kinds options)))
 
+(defn render-error-if-invalid-options [note]
+  (if 
+   (validate-options note)
+    nil
+    [:div
+     {:style "color:red"}
+     (format
+      "invalid options '%s' for kind %s : %s"
+      (:kindly/options note)
+      (:kind note)
+      (me/humanize (m/explain
+                    (malli-schema-for (:kind note))
+                    (:kindly/options note))))]))
+
+(defn render-with-js [note render-cmd]
+  (let [js-deps
+        (->> (resolve-deps-tree
+              (concat
+               (-> note :kindly/options :html/deps)
+               [(:kind note)])
+              {})
+             (map :js)
+             flatten
+             (remove nil?))]
+    
+    (concat
+     (map-indexed
+      #(require-js %2
+                   "")
+      (drop-last js-deps))
+     
+     [(require-js (last js-deps)
+                  render-cmd)]))
+  )
 
 (defn require-deps-and-render
   "Generates a Hiccup representation to load the a JS library and execute a rendering command after it has been loaded.  
@@ -115,26 +170,8 @@
   
    - A Hiccup vector that includes a `<script>` tag loading Plotly.js and executing the provided rendering command."
   [render-cmd note]
-  
-  (let [js-deps
-        (->> (resolve-deps-tree
-              (concat
-               (-> note :kindly/options :html/deps)
-               [(:kind note)])
-              {})
-             (map :js)
-             flatten
-             (remove nil?))]
-
-    (concat
-     (map-indexed
-      #(require-js %2
-                   "")
-      (drop-last js-deps))
-
-     [(require-js (last js-deps)
-                  render-cmd)])))
-
+  (render-with-js note render-cmd)
+  )
 
 
 
@@ -167,6 +204,7 @@
   
    - A Hiccup vector containing a `<div>` with specified dimensions and a script that initializes the Plotly chart with the provided configuration."
   [note]
+  
   [:div {:style {:height "500px"
                  :width "500px"}}
    (require-deps-and-render (format "Plotly.newPlot(currentScript_XXXXX.parentElement, %s);"
@@ -350,7 +388,17 @@
   
    - The result of applying the appropriate `render-advice` method to the note."
   [note]
-  (walk/advise-render-style note render-advice))
+
+  (let
+
+   [advised-note (walk/advise-render-style note render-advice)
+
+    error-hiccup-or-nil (render-error-if-invalid-options advised-note)]
+    (if error-hiccup-or-nil
+      (assoc note
+             :clojupyter (display/hiccup-html error-hiccup-or-nil)
+             :hiccup error-hiccup-or-nil)
+      advised-note)))
 
 (defmethod render-advice :default
   [{:as note :keys [value kind]}]
@@ -558,3 +606,16 @@
                             :form form})))))  
 
 
+(comment
+ [:map {:closed true} [:width :int?
+                       :height :int?]]
+ 
+ (m/explain (m/schema  [:map {:closed true}
+                        [:style [:map  {:closed true
+                                        :description "HTML styling of the plot"}
+                                 [:width {:description "Width in px of the plot"} int?]
+                                 [:height {:description "Height in px of the plot"} int?]]]])
+            {:style {:width 1
+                     :height 2}})  
+
+ )

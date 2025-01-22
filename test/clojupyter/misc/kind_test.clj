@@ -170,22 +170,30 @@
          
          ) "cytoscape") => true)
 
-
+(facts "options are checked"
+       (str/starts-with? 
+        (->
+         (k/kind-eval '(kind/html "" {:invalid-option 1}) )
+         :html-data
+         (nth 2)
+         
+         )
+        "invalid options"
+        )
+       
+       )
 
 
 (facts "kind/fn works as expected"
-       (str/includes?
-        (->
-         (k/kind-eval  '(-> iris
-                            (plotly/layer-point {:=x :sepal-width
-                                                 :=y :sepal-length
-                                                 :=color :species
-                                                 :=mark-size 10})))
-         :html-data
-         (nth 2)
-         first
-        second 
-         ) "plotly") => true)
+       (->
+        
+        (k/kind-eval  '(kind/fn {:x 1
+                                 :y 2}
+                         {:kindly/f (fn [{:keys [x y]}]
+                                      (+ x y))}))
+        :html-data
+        
+        )=> "3")
 
 (facts "kind/table works"
        (->
@@ -202,7 +210,8 @@
 
 
          (-> hiccup :html-data second) => [:thead [:tr ":preferred-language" ":age"]]
-         (-> hiccup :html-data (nth 2) second) => [:tr [:td "clojurescript"] [:td "26"]])
+         (-> hiccup :html-data (nth 2) count) => 6)
+       
        
 
        ;https://github.com/scicloj/kindly-render/issues/29
@@ -307,7 +316,19 @@
          (nth 2)
          first
          second)
-        "Plotly.newPlot") => true)
+        "Plotly.newPlot") => true
+
+       (str/starts-with?
+        (->
+         (k/kind-eval '(kind/plotly plotly-data {:style {:width 100
+                                                         :height 100}}))
+         :html-data
+         (nth 2)
+         )
+        "invalid options"
+        ) => true
+       
+       )
 
 (facts "kind/reagent works"
        (str/includes?

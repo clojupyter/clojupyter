@@ -11,7 +11,8 @@
    [reagent.core]
    [scicloj.kindly-advice.v1.api :as kindly-advice]
    [hiccup.core :as hiccup]
-   [clojure.string :as s]))
+   [clojure.string :as s]
+   [scicloj.kindly-render.shared.walk :as walk]))
 
 (def raw-image
   (->  "https://upload.wikimedia.org/wikipedia/commons/e/eb/Ash_Tree_-_geograph.org.uk_-_590710.jpg"
@@ -113,6 +114,20 @@
             :marker {:size 20
                      :colorscale :Viridis}}]}))
 
+(def people-as-maps
+  (->> (range 29)
+       (mapv (fn [_]
+               {:preferred-language (["clojure" "clojurescript" "babashka"]
+                                     (rand-int 3))
+                :age (rand-int 100)}))))
+
+(def people-as-vectors
+  (->> people-as-maps
+       (mapv (juxt :preferred-language :age))))
+
+(def people-as-dataset
+  (tc/dataset people-as-maps))
+
 (defn fetch-dataset [dataset-name]
   (-> dataset-name
       (->> (format "https://vincentarelbundock.github.io/Rdatasets/csv/%s.csv"))
@@ -176,9 +191,59 @@
        (->
         (k/kind-eval '(kind/table {:column-names [:a :b] :row-vectors [[1 2]]}))
         :html-data
-        first) => :table)
+        first) => :table
 
 
+       (let [hiccup
+             (k/kind-eval
+              '(kind/table
+                {:column-names [:preferred-language :age]
+                 :row-vectors (take 5 people-as-vectors)}))]
+
+
+         (-> hiccup :html-data second) => [:thead [:tr ":preferred-language" ":age"]]
+         (-> hiccup :html-data (nth 2) second) => [:tr [:td "clojurescript"] [:td "26"]])
+       
+
+       ;https://github.com/scicloj/kindly-render/issues/29
+       ;https://github.com/scicloj/kindly-render/issues/30
+
+       ;; (k/kind-eval '(kind/table (take 5 people-as-vectors)))
+
+       ;; (k/kind-eval '(kind/table (take 5 people-as-maps)))
+
+
+       ;; (k/kind-eval '(kind/table {:x (range 6)
+       ;;                            :y [:A :B :C :A :B :C]}))
+
+       ;; (k/kind-eval '(-> people-as-maps
+       ;;                   tc/dataset
+       ;;                   (kind/table {:use-datatables true})))
+       
+       ;; (k/kind-eval '(-> people-as-dataset
+       ;;                   (kind/table {:use-datatables true})))
+       
+       ;; (k/kind-eval '(-> people-as-dataset
+       ;;                   kind/table))
+       
+       ;; (k/kind-eval '(-> people-as-dataset
+       ;;                   (kind/table {:element/max-height "300px"})))
+       
+       ;; (k/kind-eval '(-> people-as-maps
+       ;;                   tc/dataset
+       ;;                   (kind/table {:use-datatables true})))
+
+       ;; (k/kind-eval '(-> people-as-dataset
+       ;;                   (kind/table {:use-datatables true})))
+       
+       ;; (k/kind-eval '(-> people-as-dataset
+       ;;                   (kind/table {:use-datatables true
+       ;;                                :datatables {:scrollY 200}})))
+
+       
+
+
+       )
 
 
 
@@ -426,7 +491,7 @@
 
 
 
-(facts "kind/htmlwidgets-ggplotly is woking"
+(facts "kind/htmlwidgets-ggplotly is working"
        ;; (k/kind-eval
        ;;  '(kind/htmlwidgets-ggplotly {}))
        
@@ -494,3 +559,5 @@
        :background-color "#d4ebe9"}]))
 
   )
+
+

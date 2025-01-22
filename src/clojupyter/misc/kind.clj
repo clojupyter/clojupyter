@@ -8,7 +8,6 @@
    [scicloj.kindly-render.shared.walk :as walk]
    [scicloj.kindly-advice.v1.api :as kindly-advice]
    [clojure.string :as str]
-   [scicloj.kindly.v4.kind :as kind]
    [scicloj.kindly-render.notes.js-deps :as js-deps]
    [scicloj.kindly-render.note.to-hiccup-js :as to-hiccup-js])
   (:import
@@ -105,7 +104,6 @@
     (js-deps/resolve-deps-tree kinds options)))
 
 
-
 (defn require-deps-and-render
   "Generates a Hiccup representation to load the a JS library and execute a rendering command after it has been loaded.  
   
@@ -116,14 +114,17 @@
    **Returns:**  
   
    - A Hiccup vector that includes a `<script>` tag loading Plotly.js and executing the provided rendering command."
-  [render-cmd kind]
-  (let [js-deps 
-        (->> (resolve-deps-tree [kind] {})
+  [render-cmd note]
+  
+  (let [js-deps
+        (->> (resolve-deps-tree
+              (concat
+               (-> note :kindly/options :html/deps)
+               [(:kind note)])
+              {})
              (map :js)
              flatten
-             (remove nil?)
-             )
-        ]
+             (remove nil?))]
 
     (concat
      (map-indexed
@@ -131,8 +132,10 @@
                    "")
       (drop-last js-deps))
 
-     [ (require-js (last js-deps)
-                   render-cmd)])))
+     [(require-js (last js-deps)
+                  render-cmd)])))
+
+
 
 
 
@@ -151,7 +154,7 @@
                  :width "500px"}}
    (require-deps-and-render (format "Highcharts.chart(currentScript_XXXXX.parentElement, %s);"
                                     (cheshire/encode (:value note)))
-                       (:kind note))])
+                       note )])
 
 (defn plotly->hiccup
   "Converts Plotly chart data into a Hiccup vector that can render the chart within a Jupyter notebook using the Plotly library.  
@@ -168,7 +171,7 @@
                  :width "500px"}}
    (require-deps-and-render (format "Plotly.newPlot(currentScript_XXXXX.parentElement, %s);"
                                     (cheshire/encode (:value note)))
-                   (:kind note))])
+                            note)])
 
 (defn cytoscape>hiccup
   "Converts Cytoscape graph data into a Hiccup vector that can render the graph within a Jupyter notebook using the Cytoscape.js library.  
@@ -189,7 +192,7 @@
                             cytoscape(value);"
                                     (cheshire/encode (:value note))
                                     )
-                      (:kind note))])
+                            note)])
 
 (defn echarts->hiccup
   "Converts ECharts chart data into a Hiccup vector that can render the chart within a Jupyter notebook using the ECharts library.  
@@ -208,17 +211,17 @@
                                     var myChart = echarts.init(currentScript_XXXXX.parentElement);  
                                     myChart.setOption(%s);"
                                     (cheshire/encode (:value note)))
-                    (:kind note))])
+                    note)])
 
 (defn scittle->hiccup [note]
   [:div
    (require-deps-and-render (format "scittle.core.eval_string('%s')" (str (:value note)))
-                            (:kind note)
+                            note
                             )])
 
 (defn scittle->hiccup-2 [note]
   (concat
-   (require-deps-and-render "" :kind/scittle)
+   (require-deps-and-render "" note)
    [(->
      (to-hiccup-js/render {:value (:value note)})
      :hiccup)]
@@ -232,7 +235,7 @@
      (require-deps-and-render (format "scittle.core.eval_string('(require (quote [reagent.dom]))(reagent.dom/render %s (js/document.getElementById \"%s\"))')"
                                       (str (:value note))
                                       (str id))
-                              (:kind note))
+                              note)
      [:div {:id (str id)}]]))
 
 (defn- default-to-hiccup-render

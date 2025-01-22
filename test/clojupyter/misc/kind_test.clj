@@ -243,8 +243,49 @@
          second)
         "Plotly.newPlot") => true)
 
-(facts "kind/scittle is working"
-)
+(facts "kind/reagent works"
+       (str/includes?
+        (->
+         (k/kind-eval 
+          '(kind/reagent
+            ['(fn [numbers]
+                [:p {:style {:background "#d4ebe9"}}
+                 (pr-str (map inc numbers))])
+             (vec (range 10))]))
+         :html-data
+         second
+         (nth 4)
+         )
+        "reagent.dom/render"
+        )) => true
+
+(facts "kind/reagent supports deps"
+       (str/includes?
+        (->
+         (k/kind-eval
+          '(kind/reagent
+            ['(fn []
+                [:div {:style {:height "200px"}
+                       :ref (fn [el]
+                              (let [m (-> js/L
+                                          (.map el)
+                                          (.setView (clj->js [51.505 -0.09])
+                                                    13))]
+                                (-> js/L
+                                    .-tileLayer
+                                    (.provider "OpenStreetMap.Mapnik")
+                                    (.addTo m))
+                                (-> js/L
+                                    (.marker (clj->js [51.5 -0.09]))
+                                    (.addTo m)
+                                    (.bindPopup "A pretty CSS popup.<br> Easily customizable.")
+                                    (.openPopup))))}])]
+    ;; Note we need to mention the dependency:
+            {:html/deps [:leaflet]}))
+         :html-data
+         second
+         (nth 5))
+        "leaflet.js") => true)
 
 ;; Getting these pass would increase the "kind compatibility"
 

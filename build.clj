@@ -67,8 +67,7 @@
   (write-pom!)
   (b/compile-clj {:basis basis
                   :src-dirs ["src"]
-                  :class-dir class-dir
-                  :java-opts  ["-Djava.awt.headless=true"] }))
+                  :class-dir class-dir}))
 
 (defn jar [_]
   (build-common)

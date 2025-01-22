@@ -135,7 +135,7 @@
 
 (defn kernel-spec
   [dest-jar kernel-id-string]
-  {:argv ["java" "-Djava.awt.headless=true" "-cp" (str dest-jar) "clojupyter.kernel.core" "{connection_file}"]
+  {:argv ["java" "-cp" (str dest-jar) "clojupyter.kernel.core" "{connection_file}"]
    :display_name (kernel-full-identifier kernel-id-string)
    :language "clojure"
    :interrupt_mode "message"})

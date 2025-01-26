@@ -1,5 +1,11 @@
 # Changelog
 
+## unreleased
+* Added [kindly](https://github.com/scicloj/kindly)
+  [compatible](https://scicloj.github.io/kindly-noted/kind_compatibility.html)
+  rendering.
+  
+
 ## v0.3.2
 
 * Reintroduce AOT compilation of `clojupyter.cmdline` (unintentionally dropped in transition to

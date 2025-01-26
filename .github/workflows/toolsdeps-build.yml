@@ -2,9 +2,9 @@ name: Build with tools.deps https://github.com/clojure/tools.deps.alpha
 
 on:
   push:
-    branches: [ master ]
+    branches: [ main ]
   pull_request:
-    branches: [ master ]
+    branches: [ main ]
   workflow_dispatch:
   
 jobs:

@@ -43,12 +43,6 @@ You can also use existing JVM charting libraries since you can render any Java B
 <img src="./images/incanter-demo.png" width="100%"/>
 
 ## Installation
-From [clojupyter/releases](https://github.com/clojupyter/clojupyter/releases), download the latest version of the file `clojupyter-<VERSION>.jar`. Then (Java being ready), run a Clojure "hello, world" on the command line, e.g.
-```
-java -cp clojupyter-0.4.332-standalone.jar clojupyter.cmdline eval '(str "Hello " "Jupyter!")'
-```
-Not only does the command line interface support `eval` for running "hello, world". With just having Java on your computer, you will use it to install and remove Clojupyter kernels (see below).
-
 Clojupyter can be used in several ways, please read [Usage Scenarios](doc/usage-scenarios.md) to
 find out which type of use model best fits you needs, and how to install Clojupyter in that
 scenario.

@@ -60,12 +60,7 @@
        (cmdline/outputs res)
        (cmdline/set-exit-code 0))))
 
-(defn- s*file
-  [name]
-  (s*eval (str "(do \n"
-               (try (slurp name)
-                    (catch Throwable e (str "Error: " e)))
-               ")")))
+(defn- s*file [name] (load-file name))
 
 (defn- s*getenv
   [env-var]

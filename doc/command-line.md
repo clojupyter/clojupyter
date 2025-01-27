@@ -334,8 +334,8 @@ The example is analogue to the `eval` option:
 ```
 where the Clojure file `hello.clj` has e.g. the following content:
 ```
-(print "Hello ")
-(print "Jupyter!\n")
+(defn -main [args]
+  (println "Hello Jupyter!"))
 ```
 
 ### `list-installs`

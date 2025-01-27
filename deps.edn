@@ -33,8 +33,13 @@
         org.slf4j/log4j-over-slf4j  {:mvn/version "2.0.16"}
         org.slf4j/jul-to-slf4j      {:mvn/version "2.0.16"}
         org.slf4j/jcl-over-slf4j    {:mvn/version "2.0.16"}
+        org.scicloj/kindly          {:mvn/version "4-beta14"}
         org.scicloj/kindly-advice   {:mvn/version "1-beta12"}
         org.scicloj/kindly-render   {:mvn/version "0.1.1-alpha"}
+        cljsjs/react                {:mvn/version "17.0.2-0"}
+        cljsjs/react-dom            {:mvn/version "17.0.2-0"}
+        reagent/reagent             {:mvn/version "1.2.0"}
+        metosin/malli               {:mvn/version "0.17.0"}
         }
  :aliases
  {:build

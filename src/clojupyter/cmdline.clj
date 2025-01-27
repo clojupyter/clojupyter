@@ -60,6 +60,13 @@
        (cmdline/outputs res)
        (cmdline/set-exit-code 0))))
 
+(defn- s*file
+  [name]
+  (s*eval (str "(do \n"
+               (try (slurp name)
+                    (catch Throwable e (str "Error: " e)))
+               ")")))
+
 (defn- s*getenv
   [env-var]
   (C (cmdline/set-header "GETENV")
@@ -374,6 +381,8 @@
   {"help"           [nil s*help]
    "install"            [nil s*install]
    "list-commands"      [0 (s*list-commands CMDS)]
+   "eval"               [1 s*eval]
+   "file"               [1 s*file]
    "list-installs"      [0 s*list-installs]
    "list-installs-matching" [1 s*list-installs-matching 1
                              "Usage: Specify a regular expression to match with kernel identifier."]
@@ -388,7 +397,6 @@
   {"conda-build"        [nil s*conda-build]     ;; Build package for distribution via conda
    "conda-link"         [nil s*conda-link]      ;; Used by conda install procedure on end-user machine
    "conda-unlink"       [nil s*conda-unlink]        ;; Used by conda uninastall procedure on end-user machine
-   "eval"           [1 s*eval]          ;; For debugging
    "getenv"         [1 s*getenv]            ;; For debugging
    "list-dvl-commands"      [0 (s*list-commands DVL-CMDS)]  ;; In case you forget
    "supported-os?"      [0 s*supported-os?]     ;; Not really used

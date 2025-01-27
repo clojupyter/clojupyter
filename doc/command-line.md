@@ -15,6 +15,8 @@ Clojupyter kernel using Anaconda, see [Conda-installing Clojupyter](conda-instal
   * [help](#help)
   * [install](#install)
   * [list-commands](#list-commands)
+  * [eval](#eval)
+  * [file](#file)
   * [list-installs-matching](#list-installs-matching)
   * [list-installs](#list-installs)
   * [remove-install](#remove-install)
@@ -304,6 +306,36 @@ Clojupyter v0.2.3 - List commands
 
 exit(0)
 >
+```
+
+### `eval`
+
+Evaluate a Clojure expression.
+
+Example (assume that from [clojupyter/releases](https://github.com/clojupyter/clojupyter/releases), you download the file `clojupyter-<VERSION>.jar`, where`<VERSION>` stands for your choice, e.g. `0.5.424-SNAPSHOT-standalone`)
+```
+> java -cp target/clojupyter-0.5.424-SNAPSHOT-standalone.jar clojupyter.cmdline eval '(str "Hello " "Jupyter!")'
+Clojupyter v0.5.424-SNAPSHOT@424 - EVAL
+
+       (str "Hello " "Jupyter!") => 
+       
+       "Hello Jupyter!"
+
+exit(0)
+```
+
+### `file`
+
+Run a Clojure file.
+
+The example is analogue to the `eval` option:
+```
+> java -cp target/clojupyter-0.5.424-SNAPSHOT-standalone.jar clojupyter.cmdline file hello.clj
+```
+where the Clojure file `hello.clj` has e.g. the following content:
+```
+(print "Hello ")
+(print "Jupyter!\n")
 ```
 
 ### `list-installs`

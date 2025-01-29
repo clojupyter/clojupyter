@@ -581,9 +581,6 @@
     ;(println :kind-eval--value value)  
     ;(println :kind-eval--value-class (class value))  
     ;(println :kind-eval--advise kindly-advice)  
-    (def value value)
-    (def form form)
-
     (if (or (render-as-clojupyter form value)
             (var? value))
       value
@@ -595,14 +592,3 @@
        dis/->HiccupHTML))))
 
 
-(comment
-  [:map {:closed true} [:width :int?
-                        :height :int?]]
-
-  (m/explain (m/schema  [:map {:closed true}
-                         [:style [:map  {:closed true
-                                         :description "HTML styling of the plot"}
-                                  [:width {:description "Width in px of the plot"} int?]
-                                  [:height {:description "Height in px of the plot"} int?]]]])
-             {:style {:width 1
-                      :height 2}}))

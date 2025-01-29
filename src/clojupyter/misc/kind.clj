@@ -13,7 +13,8 @@
     [malli.core :as m]
     [malli.error :as me]
     [scicloj.kindly.v4.kind :as kind]
-    [malli.experimental.describe :as med])
+    [malli.experimental.describe :as med]
+    [clojupyter.misc.display :as dis])
    (:import
     [javax.imageio ImageIO]
     [java.security MessageDigest]))
@@ -296,31 +297,10 @@
   
    - The `note` map augmented with `:clojupyter` and `:hiccup` keys, where `:clojupyter` contains the rendered HTML using `hiccup-html`, and `:hiccup` contains the Hiccup representation."
    [note]
-   (let [hiccup
-         (->
-          (to-hiccup/render note)
-          :hiccup)]
-     (assoc note
-            :clojupyter (display/hiccup-html hiccup)
-            :hiccup hiccup)))
+   (to-hiccup/render note))
+ 
 
- (defn- render-non-nestable
-   "Handles rendering for notes that cannot be nested within other renderings in Clojupyter. This function adds a message indicating that nested rendering is not possible for the given kind.  
-  
-   **Parameters:**  
-  
-   - `note` (Map): The note to render.  
-   - `clojupyter` (Any): The rendering output suitable for direct display in Clojupyter.  
-  
-   **Returns:**  
-  
-   - The `note` map augmented with `:clojupyter` containing the rendering output, and `:hiccup` containing a message about the inability to nest the rendering."
-   [note clojupyter]
-   (assoc note
-          :clojupyter clojupyter
-          :hiccup [:div {:style "color:red"} (format "nested rendering of %s not possible in Clojupyter" (:kind note))]))
-
- (defn- render-recursively
+  (defn- render-recursively
    "Recursively renders a data structure into Hiccup format, applying a rendering function to each element in the structure. It is used for rendering collections like vectors, maps, sets, and sequences.  
   
    **Parameters:**  
@@ -337,7 +317,6 @@
    (let [hiccup
          (:hiccup (walk/render-data-recursively note {:class css-class} value render))]
      (assoc note
-            :clojupyter (display/hiccup-html hiccup)
             :hiccup hiccup)))
 
  (defn- render-table-recursively
@@ -360,9 +339,7 @@
    (let [hiccup
         ;; TODO: https://github.com/scicloj/kindly-render/issues/23  
          (:hjccup (walk/render-table-recursively note render))]
-     (assoc note
-            :clojupyter (display/hiccup-html hiccup)
-            :hiccup hiccup)))
+     (assoc note :hiccup hiccup)))
 
  (defn render-js
    "Renders JavaScript-based visualizations by converting the visualization data into Hiccup format and preparing it for display in Clojupyter.  
@@ -378,10 +355,8 @@
    - The `note` map augmented with `:clojupyter` containing the rendered HTML, and `:hiccup` containing the Hiccup representation."
    [note ->hiccup-fn]
    (let [hiccup
-         (->
-          (->hiccup-fn note))]
+         (->hiccup-fn note)]
      (assoc note
-            :clojupyter (display/hiccup-html hiccup)
             :hiccup hiccup)))
 
  (defmulti render-advice :kind)
@@ -405,7 +380,6 @@
      error-hiccup-or-nil (render-error-if-invalid-options advised-note)]
      (if error-hiccup-or-nil
        (assoc note
-              :clojupyter (display/hiccup-html error-hiccup-or-nil)
               :hiccup error-hiccup-or-nil)
        advised-note)))
 
@@ -417,7 +391,6 @@
                    [:code (pr-str value)]]
                   (str value))]
      (assoc note
-            :clojupyter (display/hiccup-html hiccup)
             :hiccup hiccup)))
 
  (defmethod render-advice :kind/plotly
@@ -453,10 +426,15 @@
          (if (sequential? value)
            (first value)
            value)
-         clojupyter (do (ImageIO/write v "png" out)
-                        (display/render-mime :image/png
-                                             (-> out .toByteArray b64/encode String.)))]
-     (render-non-nestable note clojupyter)))
+         _ (ImageIO/write v "png" out)
+         hiccup [:img {:src (str "data:image/png;base64,"
+                                 (-> out .toByteArray b64/encode String.))}]]
+
+
+     (assoc note
+            :hiccup hiccup)))
+
+ 
 
  (defmethod render-advice :kind/vega-lite
    [note]
@@ -506,7 +484,6 @@
 (defmethod render-advice :kind/html
   [{:as note :keys [value]}]
   (assoc note
-         :clojupyter (display/html (first value))
          :hiccup (first value)))
 
 (defmethod render-advice :kind/hiccup
@@ -514,7 +491,6 @@
   (let [hiccup
         (:hiccup (walk/render-hiccup-recursively note render))]
     (assoc note
-           :clojupyter (display/hiccup-html hiccup)
            :hiccup hiccup)))
 
 (defmethod render-advice :kind/vector
@@ -552,16 +528,14 @@
                      :form form})))]
 
     (assoc note
-           :hiccup (:hiccup new-note)
-           :clojupyter (display/hiccup-html (:hiccup new-note)))))
+           :hiccup (:hiccup new-note))))
 
 (defmethod render-advice :kind/var
   [{:keys [value form] :as note}]
   (let [sym (second value)
         s (str "#'" (str *ns*) "/" sym)]
     (assoc note
-           :hiccup s
-           :clojupyter (display/hiccup-html s))))
+           :hiccup s)))
 
 (defn- render-as-clojupyter
   "Determines whether a given value should be rendered directly by Clojupyter without further processing. It checks if the value is `nil`, a known displayable type, or already a rendered MIME type.  
@@ -608,16 +582,23 @@
    4. Otherwise, it constructs a `note` with `:value` and `:form`, renders it with the `render` function, and returns the `:clojupyter` rendering."
   [form]
   ;(println :kind-eval--form form)  
-
+  
   (let [value (eval form)]
     ;(println :kind-eval--value value)  
     ;(println :kind-eval--value-class (class value))  
     ;(println :kind-eval--advise kindly-advice)  
+    (def value value)
+    (def form form)
+
     (if (or (render-as-clojupyter form value)
             (var? value))
       value
-      (:clojupyter (render {:value value
-                            :form form})))))
+      (->
+
+       (render {:value value
+                :form form})
+       :hiccup
+       dis/->HiccupHTML))))
 
 
 (comment

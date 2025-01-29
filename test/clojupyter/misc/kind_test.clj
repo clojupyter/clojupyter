@@ -158,17 +158,15 @@
 
        (k/kind-eval '(kind/md "# 123")) => {:html-data [:div {:class "kind-md"} [:h1 {:id "123"} "123"]]}
 
+       
        (str/starts-with?
-        (-> (k/kind-eval '(kind/image image)) class (.getName))
-        "clojupyter.misc.display$render_mime") => true
+        (-> (k/kind-eval '(kind/image image))
+            :html-data
+            second
+            :src)
+        "data:image/png;base64,") => true
 
-       (-> (k/kind-eval '[(kind/image image) (kind/image image)])
-           :html-data
-           (nth 3)
-           (nth 2)
-           (nth 2))
-       => "nested rendering of :kind/image not possible in Clojupyter"
-
+       
 
        (str/includes?
         (->
@@ -180,6 +178,7 @@
          second
          
          )"cytoscape") => true)
+
 
 (facts "options are checked"
        (str/starts-with? 
@@ -220,8 +219,8 @@
                  :row-vectors (take 5 people-as-vectors)}))]
 
 
-         (-> hiccup :html-data second) => [:thead [:tr ":preferred-language" ":age"]]
-         (-> hiccup :html-data (nth 2) count) => 6)
+         (-> hiccup :html-data (nth 2)) => [:thead [:tr ":preferred-language" ":age"]]
+         (-> hiccup :html-data (nth 3) count) => 6)
        
        
 
@@ -318,7 +317,7 @@
         (->
          (k/kind-eval '(kind/vega vega-spec))
          :html-data
-         second
+         (nth 2)
          (nth 2)
          second)
         "vega")
@@ -331,9 +330,10 @@
         (->
          (k/kind-eval '(kind/vega-lite vl-spec))
          :html-data
-         second
+        (nth 2)
          (nth 2)
-         second)
+         second
+         )
         "vega")
        => true)
 
@@ -370,7 +370,7 @@
                  (pr-str (map inc numbers))])
              (vec (range 10))]))
          :html-data
-         second
+         (nth 2)
          (nth 4)
          )
         "reagent.dom/render"
@@ -400,51 +400,43 @@
     ;; Note we need to mention the dependency:
             {:html/deps [:leaflet]}))
          :html-data
-         second
+         (nth 2)
          (nth 5))
         "leaflet.js") => true)
 
 (facts "kind/image works"
        (str/starts-with?
-        (->
-         (k/kind-eval '(kind/image raw-image))
-         class
-         .getName
-         )
-        "clojupyter.misc.display$render_mime$reify"
-        ))
+        (-> (k/kind-eval '(kind/image image))
+            :html-data
+            second
+            :src)
+        "data:image/png;base64,") => true)
 
-(facts "nested image rendred as unsupported"
+
+
+(facts "nested image rendred is supported"
        (str/starts-with?
         (->
          (k/kind-eval
           '(kind/hiccup [:div.clay-limit-image-width
                          raw-image]))
          :html-data
+         (nth 2)
          second
-         (nth 2))
-        "nested rendering of :kind/image not possible") => true
-       (str/starts-with?
-        (->
-         (k/kind-eval
-          '[raw-image raw-image])
-         :html-data
-         (nth 2)
-         (nth 2)
-         (nth 2))
-        "nested rendering of :kind/image not possible")
-
+         :src) "data:image/png;base64,")
 
        (str/starts-with?
-        (->
-         (k/kind-eval
-          '[raw-image raw-image])
-         :html-data
-         (nth 2)
-         (nth 2)
-         (nth 2)
-         )
-        "nested rendering of :kind/image not possible"))
+         (->
+          (k/kind-eval
+           '[raw-image raw-image])
+          :html-data
+          (nth 2)
+          (nth 2)
+          second
+          :src)
+         "data:image/png;base64,") => true)
+
+
 
 (facts "kind/fn works as expected "
 

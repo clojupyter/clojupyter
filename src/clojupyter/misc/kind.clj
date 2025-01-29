@@ -301,7 +301,7 @@
  
 
   (defn- render-recursively
-   "Recursively renders a data structure into Hiccup format, applying a rendering function to each element in the structure. It is used for rendering collections like vectors, maps, sets, and sequences.  
+    "Recursively renders a data structure into Hiccup format, applying a rendering function to each element in the structure. It is used for rendering collections like vectors, maps, sets, and sequences.  
   
    **Parameters:**  
   
@@ -313,11 +313,8 @@
    **Returns:**  
   
    - The `note` map augmented with `:clojupyter` containing the rendered HTML, and `:hiccup` containing the Hiccup representation."
-   [note value css-class render]
-   (let [hiccup
-         (:hiccup (walk/render-data-recursively note {:class css-class} value render))]
-     (assoc note
-            :hiccup hiccup)))
+    [note value css-class render]
+    (walk/render-data-recursively note {:class css-class} value render))
 
  (defn- render-table-recursively
    "Recursively renders table data structures into Hiccup format.  
@@ -354,10 +351,7 @@
   
    - The `note` map augmented with `:clojupyter` containing the rendered HTML, and `:hiccup` containing the Hiccup representation."
    [note ->hiccup-fn]
-   (let [hiccup
-         (->hiccup-fn note)]
-     (assoc note
-            :hiccup hiccup)))
+   (assoc note :hiccup (->hiccup-fn note)))
 
  (defmulti render-advice :kind)
 

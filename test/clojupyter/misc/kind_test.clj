@@ -22,6 +22,17 @@
 (def image
   (kind/image raw-image))
 
+(def vl-spec
+  {:encoding
+   {:y {:field "y", :type "quantitative"},
+    :size {:value 400},
+    :x {:field "x", :type "quantitative"}},
+   :mark {:type "circle", :tooltip true},
+   :width 400,
+   :background "floralwhite",
+   :height 100,
+   :data {:values "x,y\n1,1\n2,-4\n3,9\n", :format {:type "csv"}}})
+
 (def cs
   (kind/cytoscape
    {:elements {:nodes [{:data {:id "a" :parent "b"} :position {:x 215 :y 85}}
@@ -145,7 +156,7 @@
 (facts "eval works for different kinds"
        (k/kind-eval '(+ 1 1)) => {:html-data "2"}
 
-       (k/kind-eval '(kind/md "# 123")) => {:markdown ["# 123"]}
+       (k/kind-eval '(kind/md "# 123")) => {:html-data [:div {:class "kind-md"} [:h1 {:id "123"} "123"]]}
 
        (str/starts-with?
         (-> (k/kind-eval '(kind/image image)) class (.getName))
@@ -168,7 +179,7 @@
          first
          second
          
-         ) "cytoscape") => true)
+         )"cytoscape") => true)
 
 (facts "options are checked"
        (str/starts-with? 
@@ -302,11 +313,30 @@
         (nth 4)) => [:script "scittle.core.eval_script_tags()"])
        
 (facts "kind/vega works"
-       (str/starts-with? 
-        (str (class (k/kind-eval '(kind/vega vega-spec))))
-        "class clojupyter.misc.display$render_mime"
+       
+       (str/includes?
+        (->
+         (k/kind-eval '(kind/vega vega-spec))
+         :html-data
+         second
+         (nth 2)
+         second)
+        "vega")
 
-        ) => true)
+       => true)
+
+
+(facts "kind/vega-lite works"
+       (str/includes?
+        (->
+         (k/kind-eval '(kind/vega-lite vl-spec))
+         :html-data
+         second
+         (nth 2)
+         second)
+        "vega")
+       => true)
+
 
 (facts "kind/plotly works"
        (str/includes?
@@ -461,6 +491,16 @@
            :html-data)
        => "#'clojupyter.misc.kind-test/a")
 
+(facts "kind/tex works"
+      (str/includes?
+       (->
+        (k/kind-eval '(kind/tex "x^2 + y^2 = z^2"))
+        :html-data
+        second
+        first
+        second)
+       "katex"
+       ))
 
 ;; Getting these pass would increase the "kind compatibility"
 

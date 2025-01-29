@@ -1,47 +1,47 @@
 (ns clojupyter.misc.kind
-  (:require
-   [cheshire.core :as cheshire]
-   [clojupyter.display :as display]
-   [clojure.data.codec.base64 :as b64]
-   [clojure.java.io :as io]
-   [scicloj.kindly-render.note.to-hiccup :as to-hiccup]
-   [scicloj.kindly-render.shared.walk :as walk]
-   [scicloj.kindly-advice.v1.api :as kindly-advice]
-   [clojure.string :as str]
-   [scicloj.kindly-render.notes.js-deps :as js-deps]
-   [scicloj.kindly-render.note.to-hiccup-js :as to-hiccup-js]
-   [malli.core :as m]
-   [malli.error :as me]
-   [scicloj.kindly.v4.kind :as kind]
-   [malli.experimental.describe :as med])
-  (:import
-   [javax.imageio ImageIO]
-   [java.security MessageDigest]))
+   (:require
+    [cheshire.core :as cheshire]
+    [clojupyter.display :as display]
+    [clojure.data.codec.base64 :as b64]
+    [clojure.java.io :as io]
+    [scicloj.kindly-render.note.to-hiccup :as to-hiccup]
+    [scicloj.kindly-render.shared.walk :as walk]
+    [scicloj.kindly-advice.v1.api :as kindly-advice]
+    [clojure.string :as str]
+    [scicloj.kindly-render.notes.js-deps :as js-deps]
+    [scicloj.kindly-render.note.to-hiccup-js :as to-hiccup-js]
+    [malli.core :as m]
+    [malli.error :as me]
+    [scicloj.kindly.v4.kind :as kind]
+    [malli.experimental.describe :as med])
+   (:import
+    [javax.imageio ImageIO]
+    [java.security MessageDigest]))
 
 
 
 
-(defn- malli-schema-for [kind]
-  (m/schema
-   (case kind
-     :kind/fn  [:map {:closed true}  [:kindly/f {:optional true} fn?]]
-     :kind/reagent  [:map {:closed true}  [:html/deps {:optional true} [:sequential keyword?]]]
-     [:map {:closed true}])))
-  
+ (defn- malli-schema-for [kind]
+   (m/schema
+    (case kind
+      :kind/fn  [:map {:closed true}  [:kindly/f {:optional true} fn?]]
+      :kind/reagent  [:map {:closed true}  [:html/deps {:optional true} [:sequential keyword?]]]
+      [:map {:closed true}])))
 
 
-(defn- validate-options [note]
-  (-> (malli-schema-for
-       (:kind note))
-      (m/validate (:kindly/options note))))
 
-(defn md5 [string]
-  (let [digest (.digest (MessageDigest/getInstance "MD5") (.getBytes string "UTF-8"))]
-    (apply str (map (partial format "%02x") digest))))
+ (defn- validate-options [note]
+   (-> (malli-schema-for
+        (:kind note))
+       (m/validate (:kindly/options note))))
+
+ (defn md5 [string]
+   (let [digest (.digest (MessageDigest/getInstance "MD5") (.getBytes string "UTF-8"))]
+     (apply str (map (partial format "%02x") digest))))
 
 
-(defn require-js
-  "Generates a Hiccup representation of a `<script>` tag that dynamically loads a JavaScript library from  
+ (defn require-js
+   "Generates a Hiccup representation of a `<script>` tag that dynamically loads a JavaScript library from  
    a given URL and ensures that a specific JavaScript object provided by the library is available before  
    executing a rendering command. This is used to include external JavaScript libraries in a Jupyter notebook environment.  
   
@@ -54,13 +54,12 @@
    **Returns:**  
   
    - A Hiccup vector representing a `<script>` tag containing JavaScript code that loads the library and executes `render-cmd` once the library is loaded."
-  [url render-cmd]
-  (let [url-md5 (md5 url)
-        render-cmd (str/replace render-cmd "XXXXX" url-md5)
-        ]
-    [:script
-     (format
-      "  
+   [url render-cmd]
+   (let [url-md5 (md5 url)
+         render-cmd (str/replace render-cmd "XXXXX" url-md5)]
+     [:script
+      (format
+       "  
   var clojupyter_loaded_marker_%s;  
   
   var currentScript_%s = document.currentScript;
@@ -88,79 +87,75 @@
      
   
  "
-      url-md5
-      url-md5
-      url-md5
-      url-md5
-      url-md5
-      url-md5
-      url-md5 
-      url-md5 
-      url-md5 
-      url-md5
-      url-md5 url 
-      url-md5 
-      url-md5 
-      url-md5 
-      render-cmd
-      url-md5
-      render-cmd
-      )]))
+       url-md5
+       url-md5
+       url-md5
+       url-md5
+       url-md5
+       url-md5
+       url-md5
+       url-md5
+       url-md5
+       url-md5
+       url-md5 url
+       url-md5
+       url-md5
+       url-md5
+       render-cmd
+       url-md5
+       render-cmd)]))
 
 
-(defn resolve-deps-tree [kinds options]
-  (case (first kinds)
-    :kind/reagent [{:js
-                    ["https://cdn.jsdelivr.net/npm/scittle@0.6.22/dist/scittle.js"
-                     "https://unpkg.com/react@18/umd/react.production.min.js"
-                     "https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"
-                     "https://cdn.jsdelivr.net/npm/d3-require@1"
-                     "https://cdn.jsdelivr.net/npm/scittle@0.6.22/dist/scittle.reagent.js" 
-                     ]}]
-    :kind/scittle [{:js ["https://cdn.jsdelivr.net/npm/scittle@0.6.22/dist/scittle.js"
-                         "https://cdn.jsdelivr.net/npm/scittle@0.6.22/dist/scittle.cljs-ajax.js"
-                         "https://cdn.jsdelivr.net/npm/scittle@0.6.22/dist/scittle.reagent.js"
-                         ]}
-                   ]
-    (js-deps/resolve-deps-tree kinds options)))
+ (defn resolve-deps-tree [kinds options]
+   (case (first kinds)
+     :kind/reagent [{:js
+                     ["https://cdn.jsdelivr.net/npm/scittle@0.6.22/dist/scittle.js"
+                      "https://unpkg.com/react@18/umd/react.production.min.js"
+                      "https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"
+                      "https://cdn.jsdelivr.net/npm/d3-require@1"
+                      "https://cdn.jsdelivr.net/npm/scittle@0.6.22/dist/scittle.reagent.js"]}]
+     :kind/scittle [{:js ["https://cdn.jsdelivr.net/npm/scittle@0.6.22/dist/scittle.js"
+                          "https://cdn.jsdelivr.net/npm/scittle@0.6.22/dist/scittle.cljs-ajax.js"
+                          "https://cdn.jsdelivr.net/npm/scittle@0.6.22/dist/scittle.reagent.js"]}]
+     (js-deps/resolve-deps-tree kinds options)))
 
-(defn render-error-if-invalid-options [note]
-  (if 
-   (validate-options note)
-    nil
-    [:div
-     {:style "color:red"}
-     (format
-      "invalid options '%s' for kind %s : %s"
-      (:kindly/options note)
-      (:kind note)
-      (me/humanize (m/explain
-                    (malli-schema-for (:kind note))
-                    (:kindly/options note))))]))
 
-(defn render-with-js [note render-cmd]
-  (let [js-deps
-        (->> (resolve-deps-tree
-              (concat
-               (-> note :kindly/options :html/deps)
-               [(:kind note)])
-              {})
-             (map :js)
-             flatten
-             (remove nil?))]
-    
-    (concat
-     (map-indexed
-      #(require-js %2
-                   "")
-      (drop-last js-deps))
-     
-     [(require-js (last js-deps)
-                  render-cmd)]))
-  )
+ (defn render-error-if-invalid-options [note]
+   (if
+    (validate-options note)
+     nil
+     [:div
+      {:style "color:red"}
+      (format
+       "invalid options '%s' for kind %s : %s"
+       (:kindly/options note)
+       (:kind note)
+       (me/humanize (m/explain
+                     (malli-schema-for (:kind note))
+                     (:kindly/options note))))]))
 
-(defn require-deps-and-render
-  "Generates a Hiccup representation to load the a JS library and execute a rendering command after it has been loaded.  
+ (defn render-with-js [note render-cmd]
+   (let [js-deps
+         (->> (resolve-deps-tree
+               (concat
+                (-> note :kindly/options :html/deps)
+                [(:kind note)])
+               {})
+              (map :js)
+              flatten
+              (remove nil?))]
+
+     (concat
+      (map-indexed
+       #(require-js %2
+                    "")
+       (drop-last js-deps))
+
+      [(require-js (last js-deps)
+                   render-cmd)])))
+
+ (defn require-deps-and-render
+   "Generates a Hiccup representation to load the a JS library and execute a rendering command after it has been loaded.  
   
    **Parameters:**  
   
@@ -169,15 +164,14 @@
    **Returns:**  
   
    - A Hiccup vector that includes a `<script>` tag loading Plotly.js and executing the provided rendering command."
-  [render-cmd note]
-  (render-with-js note render-cmd)
-  )
+   [render-cmd note]
+   (render-with-js note render-cmd))
 
 
 
 
-(defn highcharts->hiccup
-  "Converts Highcharts chart data into a Hiccup vector that can render the chart within a Jupyter notebook using the Highcharts library. It sets up a `<div>` container and includes the necessary scripts to render the chart.  
+ (defn highcharts->hiccup
+   "Converts Highcharts chart data into a Hiccup vector that can render the chart within a Jupyter notebook using the Highcharts library. It sets up a `<div>` container and includes the necessary scripts to render the chart.  
   
    **Parameters:**  
   
@@ -186,15 +180,15 @@
    **Returns:**  
   
    - A Hiccup vector containing a `<div>` with specified dimensions and a script that initializes the Highcharts chart with the provided configuration."
-  [note]
-  [:div {:style {:height "500px"
-                 :width "500px"}}
-   (require-deps-and-render (format "Highcharts.chart(currentScript_XXXXX.parentElement, %s);"
-                                    (cheshire/encode (:value note)))
-                       note )])
+   [note]
+   [:div {:style {:height "500px"
+                  :width "500px"}}
+    (require-deps-and-render (format "Highcharts.chart(currentScript_XXXXX.parentElement, %s);"
+                                     (cheshire/encode (:value note)))
+                             note)])
 
-(defn plotly->hiccup
-  "Converts Plotly chart data into a Hiccup vector that can render the chart within a Jupyter notebook using the Plotly library.  
+ (defn plotly->hiccup
+   "Converts Plotly chart data into a Hiccup vector that can render the chart within a Jupyter notebook using the Plotly library.  
   
    **Parameters:**  
   
@@ -203,16 +197,22 @@
    **Returns:**  
   
    - A Hiccup vector containing a `<div>` with specified dimensions and a script that initializes the Plotly chart with the provided configuration."
-  [note]
-  
-  [:div {:style {:height "500px"
-                 :width "500px"}}
-   (require-deps-and-render (format "Plotly.newPlot(currentScript_XXXXX.parentElement, %s);"
-                                    (cheshire/encode (:value note)))
-                            note)])
+   [note]
 
-(defn cytoscape>hiccup
-  "Converts Cytoscape graph data into a Hiccup vector that can render the graph within a Jupyter notebook using the Cytoscape.js library.  
+   [:div {:style {:height "500px"
+                  :width "500px"}}
+    (require-deps-and-render (format "Plotly.newPlot(currentScript_XXXXX.parentElement, %s);"
+                                     (cheshire/encode (:value note)))
+                             note)])
+
+ (defn vega->hiccup [note]
+   [:div
+    (require-deps-and-render (format "vegaEmbed(currentScript_XXXXX.parentElement, %s);"
+                                     (cheshire/encode (:value note)))
+                             note)])
+
+ (defn cytoscape>hiccup
+   "Converts Cytoscape graph data into a Hiccup vector that can render the graph within a Jupyter notebook using the Cytoscape.js library.  
   
    **Parameters:**  
   
@@ -221,19 +221,18 @@
    **Returns:**  
   
    - A Hiccup vector containing a `<div>` with specified dimensions and a script that initializes the Cytoscape graph with the provided configuration."
-  [note]
-  [:div {:style {:height "500px"
-                 :width "500px"}}
-   (require-deps-and-render (format "  
+   [note]
+   [:div {:style {:height "500px"
+                  :width "500px"}}
+    (require-deps-and-render (format "  
                             value = %s;  
                             value['container'] = currentScript_XXXXX.parentElement;  
                             cytoscape(value);"
-                                    (cheshire/encode (:value note))
-                                    )
-                            note)])
+                                     (cheshire/encode (:value note)))
+                             note)])
 
-(defn echarts->hiccup
-  "Converts ECharts chart data into a Hiccup vector that can render the chart within a Jupyter notebook using the ECharts library.  
+ (defn echarts->hiccup
+   "Converts ECharts chart data into a Hiccup vector that can render the chart within a Jupyter notebook using the ECharts library.  
   
    **Parameters:**  
   
@@ -242,42 +241,52 @@
    **Returns:**  
   
    - A Hiccup vector containing a `<div>` with specified dimensions and a script that initializes the ECharts chart with the provided configuration."
-  [note]
-  [:div {:style {:height "500px"
-                 :width "500px"}}
-   (require-deps-and-render (format "  
+   [note]
+   [:div {:style {:height "500px"
+                  :width "500px"}}
+    (require-deps-and-render (format "  
                                     var myChart = echarts.init(currentScript_XXXXX.parentElement);  
                                     myChart.setOption(%s);"
-                                    (cheshire/encode (:value note)))
-                    note)])
+                                     (cheshire/encode (:value note)))
+ 
+                             note)])
 
-(defn scittle->hiccup [note]
-  [:div
-   (require-deps-and-render (format "scittle.core.eval_string('%s')" (str (:value note)))
-                            note
-                            )])
+ (defn tex->hiccup [note]
+   [:div
+    (require-deps-and-render (format
+                              "katex.render(%s, currentScript_XXXXX.parentElement, {throwOnError: false});"
+                              (cheshire/encode (format "$%s$"(first (:value note)))))
+                             note)
+    ])
 
-(defn scittle->hiccup-2 [note]
-  (concat
-   (require-deps-and-render "" note)
-   [(->
-     (to-hiccup-js/render {:value (:value note)})
-     :hiccup)]
-   [[:script "scittle.core.eval_script_tags()"]]))
+ 
+
+ (defn scittle->hiccup [note]
+   [:div
+    (require-deps-and-render (format "scittle.core.eval_string('%s')" (str (:value note)))
+                             note)])
+
+ (defn scittle->hiccup-2 [note]
+   (concat
+    (require-deps-and-render "" note)
+    [(->
+      (to-hiccup-js/render {:value (:value note)})
+      :hiccup)]
+    [[:script "scittle.core.eval_script_tags()"]]))
 
 
-(defn reagent->hiccup [note]
-  (let [id (gensym)]
-    [:div
+ (defn reagent->hiccup [note]
+   (let [id (gensym)]
+     [:div
 
-     (require-deps-and-render (format "scittle.core.eval_string('(require (quote [reagent.dom]))(reagent.dom/render %s (js/document.getElementById \"%s\"))')"
-                                      (str (:value note))
-                                      (str id))
-                              note)
-     [:div {:id (str id)}]]))
+      (require-deps-and-render (format "scittle.core.eval_string('(require (quote [reagent.dom]))(reagent.dom/render %s (js/document.getElementById \"%s\"))')"
+                                       (str (:value note))
+                                       (str id))
+                               note)
+      [:div {:id (str id)}]]))
 
-(defn- default-to-hiccup-render
-  "Provides a default rendering for notes by converting them into Hiccup format and preparing them for display in Clojupyter. It's a helper function used when no specific rendering method is available for a given kind.  
+ (defn- default-to-hiccup-render
+   "Provides a default rendering for notes by converting them into Hiccup format and preparing them for display in Clojupyter. It's a helper function used when no specific rendering method is available for a given kind.  
   
    **Parameters:**  
   
@@ -286,17 +295,17 @@
    **Returns:**  
   
    - The `note` map augmented with `:clojupyter` and `:hiccup` keys, where `:clojupyter` contains the rendered HTML using `hiccup-html`, and `:hiccup` contains the Hiccup representation."
-  [note]
-  (let [hiccup
-        (->
-         (to-hiccup/render note)
-         :hiccup)]
-    (assoc note
-           :clojupyter (display/hiccup-html hiccup)
-           :hiccup hiccup)))
+   [note]
+   (let [hiccup
+         (->
+          (to-hiccup/render note)
+          :hiccup)]
+     (assoc note
+            :clojupyter (display/hiccup-html hiccup)
+            :hiccup hiccup)))
 
-(defn- render-non-nestable
-  "Handles rendering for notes that cannot be nested within other renderings in Clojupyter. This function adds a message indicating that nested rendering is not possible for the given kind.  
+ (defn- render-non-nestable
+   "Handles rendering for notes that cannot be nested within other renderings in Clojupyter. This function adds a message indicating that nested rendering is not possible for the given kind.  
   
    **Parameters:**  
   
@@ -306,13 +315,13 @@
    **Returns:**  
   
    - The `note` map augmented with `:clojupyter` containing the rendering output, and `:hiccup` containing a message about the inability to nest the rendering."
-  [note clojupyter]
-  (assoc note
-         :clojupyter clojupyter
-         :hiccup [:div {:style "color:red"} (format "nested rendering of %s not possible in Clojupyter" (:kind note))]))
+   [note clojupyter]
+   (assoc note
+          :clojupyter clojupyter
+          :hiccup [:div {:style "color:red"} (format "nested rendering of %s not possible in Clojupyter" (:kind note))]))
 
-(defn- render-recursively
-  "Recursively renders a data structure into Hiccup format, applying a rendering function to each element in the structure. It is used for rendering collections like vectors, maps, sets, and sequences.  
+ (defn- render-recursively
+   "Recursively renders a data structure into Hiccup format, applying a rendering function to each element in the structure. It is used for rendering collections like vectors, maps, sets, and sequences.  
   
    **Parameters:**  
   
@@ -324,15 +333,15 @@
    **Returns:**  
   
    - The `note` map augmented with `:clojupyter` containing the rendered HTML, and `:hiccup` containing the Hiccup representation."
-  [note value css-class render]
-  (let [hiccup
-        (:hiccup (walk/render-data-recursively note {:class css-class} value render))]
-    (assoc note
-           :clojupyter (display/hiccup-html hiccup)
-           :hiccup hiccup)))
+   [note value css-class render]
+   (let [hiccup
+         (:hiccup (walk/render-data-recursively note {:class css-class} value render))]
+     (assoc note
+            :clojupyter (display/hiccup-html hiccup)
+            :hiccup hiccup)))
 
-(defn- render-table-recursively
-  "Recursively renders table data structures into Hiccup format.  
+ (defn- render-table-recursively
+   "Recursively renders table data structures into Hiccup format.  
   
    **Parameters:**  
   
@@ -347,16 +356,16 @@
   
    - There is a typo fixed in the implementation where `:hjccup` is corrected to `:hiccup`.  
    - There is a TODO to address any known issues."
-  [note render]
-  (let [hiccup
+   [note render]
+   (let [hiccup
         ;; TODO: https://github.com/scicloj/kindly-render/issues/23  
-        (:hjccup (walk/render-table-recursively note render))]
-    (assoc note
-           :clojupyter (display/hiccup-html hiccup)
-           :hiccup hiccup)))
+         (:hjccup (walk/render-table-recursively note render))]
+     (assoc note
+            :clojupyter (display/hiccup-html hiccup)
+            :hiccup hiccup)))
 
-(defn render-js
-  "Renders JavaScript-based visualizations by converting the visualization data into Hiccup format and preparing it for display in Clojupyter.  
+ (defn render-js
+   "Renders JavaScript-based visualizations by converting the visualization data into Hiccup format and preparing it for display in Clojupyter.  
   
    **Parameters:**  
   
@@ -367,18 +376,18 @@
    **Returns:**  
   
    - The `note` map augmented with `:clojupyter` containing the rendered HTML, and `:hiccup` containing the Hiccup representation."
-  [note ->hiccup-fn]
-  (let [hiccup
-        (->
-         (->hiccup-fn note))]
-    (assoc note
-           :clojupyter (display/hiccup-html hiccup)
-           :hiccup hiccup)))
+   [note ->hiccup-fn]
+   (let [hiccup
+         (->
+          (->hiccup-fn note))]
+     (assoc note
+            :clojupyter (display/hiccup-html hiccup)
+            :hiccup hiccup)))
 
-(defmulti render-advice :kind)
+ (defmulti render-advice :kind)
 
-(defn render
-  "Used to dispatch rendering to the appropriate `render-advice` method based on the `:kind` of the note.  
+ (defn render
+   "Used to dispatch rendering to the appropriate `render-advice` method based on the `:kind` of the note.  
   
    **Parameters:**  
   
@@ -387,85 +396,90 @@
    **Returns:**  
   
    - The result of applying the appropriate `render-advice` method to the note."
-  [note]
+   [note]
 
-  (let
+   (let
 
-   [advised-note (walk/advise-render-style note render-advice)
+    [advised-note (walk/advise-render-style note render-advice)
 
-    error-hiccup-or-nil (render-error-if-invalid-options advised-note)]
-    (if error-hiccup-or-nil
-      (assoc note
-             :clojupyter (display/hiccup-html error-hiccup-or-nil)
-             :hiccup error-hiccup-or-nil)
-      advised-note)))
+     error-hiccup-or-nil (render-error-if-invalid-options advised-note)]
+     (if error-hiccup-or-nil
+       (assoc note
+              :clojupyter (display/hiccup-html error-hiccup-or-nil)
+              :hiccup error-hiccup-or-nil)
+       advised-note)))
 
-(defmethod render-advice :default
-  [{:as note :keys [value kind]}]
-  (let [hiccup (if kind
-                 [:div
-                  [:div "Unimplemented: " [:code (pr-str kind)]]
-                  [:code (pr-str value)]]
-                 (str value))]
-    (assoc note
-           :clojupyter (display/hiccup-html hiccup)
-           :hiccup hiccup)))
+ (defmethod render-advice :default
+   [{:as note :keys [value kind]}]
+   (let [hiccup (if kind
+                  [:div
+                   [:div "Unimplemented: " [:code (pr-str kind)]]
+                   [:code (pr-str value)]]
+                  (str value))]
+     (assoc note
+            :clojupyter (display/hiccup-html hiccup)
+            :hiccup hiccup)))
 
-(defmethod render-advice :kind/plotly
-  [note]
-  (render-js note  plotly->hiccup))
+ (defmethod render-advice :kind/plotly
+   [note]
+   (render-js note  plotly->hiccup))
 
-(defmethod render-advice :kind/cytoscape
-  [note]
-  (render-js note  cytoscape>hiccup))
+ (defmethod render-advice :kind/cytoscape
+   [note]
+   (render-js note  cytoscape>hiccup))
 
-(defmethod render-advice :kind/highcharts
-  [note]
-  (render-js note   highcharts->hiccup))
+ (defmethod render-advice :kind/highcharts
+   [note]
+   (render-js note   highcharts->hiccup))
 
-(defmethod render-advice :kind/echarts
-  [note]
-  (render-js note  echarts->hiccup))
+ (defmethod render-advice :kind/echarts
+   [note]
+   (render-js note  echarts->hiccup))
 
-(defmethod render-advice :kind/scittle
-  [note]
-  (render-js note  scittle->hiccup-2))
+ (defmethod render-advice :kind/scittle
+   [note]
+   (render-js note  scittle->hiccup-2))
 
-(defmethod render-advice :kind/reagent
-  [note]
-  (render-js note  reagent->hiccup))
-
-
-
-(defmethod render-advice :kind/image
-  [{:as note :keys [value]}]
-  (let [out (io/java.io.ByteArrayOutputStream.)
-        v
-        (if (sequential? value)
-          (first value)
-          value)
-        clojupyter (do (ImageIO/write v "png" out)
-                       (display/render-mime :image/png
-                                            (-> out .toByteArray b64/encode String.)))]
-    (render-non-nestable note clojupyter)))
-
-(defmethod render-advice :kind/vega-lite
-  [{:as note :keys [value]}]
-  (render-non-nestable note (display/render-mime :application/vnd.vegalite.v3+json value)))
+ (defmethod render-advice :kind/reagent
+   [note]
+   (render-js note  reagent->hiccup))
 
 
-(defmethod render-advice :kind/vega
-  [{:as note :keys [value]}]
-  (render-non-nestable note (display/render-mime :application/vnd.vega.v5+json value)))
+
+ (defmethod render-advice :kind/image
+   [{:as note :keys [value]}]
+   (let [out (io/java.io.ByteArrayOutputStream.)
+         v
+         (if (sequential? value)
+           (first value)
+           value)
+         clojupyter (do (ImageIO/write v "png" out)
+                        (display/render-mime :image/png
+                                             (-> out .toByteArray b64/encode String.)))]
+     (render-non-nestable note clojupyter)))
+
+ (defmethod render-advice :kind/vega-lite
+   [note]
+   (render-js
+    (assoc note :kind :kind/vega)
+    vega->hiccup))
+
+
+ (defmethod render-advice :kind/vega
+   [note]
+   (render-js note  vega->hiccup))
 
 
 (defmethod render-advice :kind/md
-  [{:as note :keys [value]}]
-  (render-non-nestable note (display/markdown value)))
+  [note]
+  (default-to-hiccup-render note))
 
 (defmethod render-advice :kind/tex
-  [{:as note :keys [value]}]
-  (render-non-nestable note (display/latex value)))
+  [note]
+  (render-js note tex->hiccup))
+  
+
+ 
 
 (defmethod render-advice :kind/dataset
   [note]
@@ -486,6 +500,8 @@
 (defmethod render-advice :kind/video
   [note]
   (default-to-hiccup-render note))
+
+
 
 (defmethod render-advice :kind/html
   [{:as note :keys [value]}]
@@ -522,28 +538,26 @@
   (render-table-recursively note render))
 
 (defmethod render-advice :kind/fn
-  [{:keys [value form] :as note }]
-  
+  [{:keys [value form] :as note}]
+
   (let [new-note
         (if (vector? value)
           (let [f (first value)]
             (render {:value (apply f (rest value))
                      :form form}))
-          
+
           (let [f (or (:kindly/f value)
                       (-> note :kindly/options :kindly/f))]
-            (render {:value (f (dissoc value :kindly/f ))
-                     :form form})))
-        
-        ]
-    
+            (render {:value (f (dissoc value :kindly/f))
+                     :form form})))]
+
     (assoc note
            :hiccup (:hiccup new-note)
            :clojupyter (display/hiccup-html (:hiccup new-note)))))
 
 (defmethod render-advice :kind/var
   [{:keys [value form] :as note}]
-    (let [sym (second value)
+  (let [sym (second value)
         s (str "#'" (str *ns*) "/" sym)]
     (assoc note
            :hiccup s
@@ -603,19 +617,17 @@
             (var? value))
       value
       (:clojupyter (render {:value value
-                            :form form})))))  
+                            :form form})))))
 
 
 (comment
- [:map {:closed true} [:width :int?
-                       :height :int?]]
- 
- (m/explain (m/schema  [:map {:closed true}
-                        [:style [:map  {:closed true
-                                        :description "HTML styling of the plot"}
-                                 [:width {:description "Width in px of the plot"} int?]
-                                 [:height {:description "Height in px of the plot"} int?]]]])
-            {:style {:width 1
-                     :height 2}})  
+  [:map {:closed true} [:width :int?
+                        :height :int?]]
 
- )
+  (m/explain (m/schema  [:map {:closed true}
+                         [:style [:map  {:closed true
+                                         :description "HTML styling of the plot"}
+                                  [:width {:description "Width in px of the plot"} int?]
+                                  [:height {:description "Height in px of the plot"} int?]]]])
+             {:style {:width 1
+                      :height 2}}))

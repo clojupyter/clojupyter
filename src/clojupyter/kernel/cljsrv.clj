@@ -129,7 +129,6 @@
 
   (nrepl-eval
     [cljsrv code]
-    ;(println :nrepl-eval--code code) 
     (->> {:id (u!/uuid), :op "eval", :code code :eval 'clojupyter.misc.kind/kind-eval}
          (nrepl/message nrepl-client_)
          (nrepl-continue-eval cljsrv)))

@@ -2,22 +2,31 @@
   (:require
    [clojupyter.misc.kind :as k]
    [clojure.string :as str]
+   [clojure.string :as s]
+   [hiccup.core :as hiccup]
    [midje.sweet                    :refer [=> facts]]
-   [scicloj.kindly-render.note.to-hiccup :as to-hiccup]
-   [scicloj.kindly-render.note.to-hiccup-js :as to-hiccup-js]
-   [scicloj.kindly.v4.kind :as kind]
-   [scicloj.tableplot.v1.plotly :as plotly]
-   [tablecloth.api :as tc]
    [reagent.core]
    [scicloj.kindly-advice.v1.api :as kindly-advice]
-   [hiccup.core :as hiccup]
-   [clojure.string :as s]
-   [scicloj.kindly-render.shared.walk :as walk]))
+   [scicloj.kindly-render.note.to-hiccup :as to-hiccup]
+   [scicloj.kindly-render.note.to-hiccup-js :as to-hiccup-js]
+   [scicloj.kindly-render.shared.walk :as walk]
+   [scicloj.kindly.v4.kind :as kind]
+   [scicloj.tableplot.v1.plotly :as plotly]
+   [tablecloth.api :as tc]))
+
 
 (def raw-image
   (->  "https://upload.wikimedia.org/wikipedia/commons/e/eb/Ash_Tree_-_geograph.org.uk_-_590710.jpg"
        (java.net.URL.)
        (javax.imageio.ImageIO/read)))
+
+(defn multi-nth
+  [v indexes]
+  (reduce (fn [coll idx]
+            (nth coll idx))
+          v
+          indexes))
+
 
 (def image
   (kind/image raw-image))
@@ -170,10 +179,37 @@
         (->
          (k/kind-eval  '^:kind/cytoscape cs)
          :html-data
-
          (nth 2)
          first
          second) "cytoscape") => true)
+
+(facts "kind/md works"
+
+       (k/kind-eval '(kind/md "# 123"))
+       => {:html-data [:div {:class "kind-md"} [:h1 {:id "123"} "123"]]}
+
+       (k/kind-eval '(do (def m (kind/md "# 123")) m))
+       => {:html-data [:div {:class "kind-md"} [:h1 {:id "123"} "123"]]}
+       
+       
+       (->
+        (k/kind-eval
+         '(kind/md
+
+           "
+* This is [markdown](https://www.markdownguide.org/).
+  * *Isn't it??*
+    * Here is **some more** markdown.
+"))
+        :html-data
+        (multi-nth [2 1 2 1 1])
+        
+        )
+       => '([:em "Isn't it??"])
+       )
+
+
+
 
 
 (facts "options are checked"
@@ -184,6 +220,12 @@
          (nth 2))
         "invalid options"))
 
+(facts "html returns html"
+       (-> 
+        (k/kind-eval '(kind/html
+                       "<div style='height:40px; width:40px; background:purple'></div> "))
+        :html-data
+        )=> "<div style='height:40px; width:40px; background:purple'></div> ")
 
 (facts "kind/fn works as expected"
        (->
@@ -290,7 +332,6 @@
         (nth 3)) => [:script {:type "application/x-scittle", :class "kind-scittle"} "(print \"hello\")\n"]
 
        (->
-
         (k/kind-eval '(kind/scittle '(print "hello")))
         :html-data
         (nth 4)) => [:script "scittle.core.eval_script_tags()"])
@@ -391,7 +432,7 @@
 
 
 
-(facts "nested image rendred is supported"
+(facts "nested image rendering is supported"
        (str/starts-with?
         (->
          (k/kind-eval
@@ -400,7 +441,10 @@
          :html-data
          (nth 2)
          second
-         :src) "data:image/png;base64,")
+         :src
+         )
+         
+         "data:image/png;base64,") => true
 
        (str/starts-with?
         (->
@@ -410,7 +454,8 @@
          (nth 2)
          (nth 2)
          second
-         :src)
+         :src
+         )
         "data:image/png;base64,") => true)
 
 
@@ -465,10 +510,9 @@
         (->
          (k/kind-eval '(kind/tex "x^2 + y^2 = z^2"))
          :html-data
-         second
-         first
-         second)
-        "katex"))
+         (multi-nth [])
+         )
+        "katex") => true)
 
 ;; Getting these pass would increase the "kind compatibility"
 

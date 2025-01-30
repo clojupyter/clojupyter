@@ -1,19 +1,18 @@
 (ns clojupyter.misc.kind
    (:require
     [cheshire.core :as cheshire]
-    [clojupyter.display :as display]
     [clojure.data.codec.base64 :as b64]
     [clojure.java.io :as io]
     [scicloj.kindly-render.note.to-hiccup :as to-hiccup]
     [scicloj.kindly-render.shared.walk :as walk]
     [scicloj.kindly-advice.v1.api :as kindly-advice]
+
+    [scicloj.kindly.v4.kind :as kind]
     [clojure.string :as str]
     [scicloj.kindly-render.notes.js-deps :as js-deps]
     [scicloj.kindly-render.note.to-hiccup-js :as to-hiccup-js]
     [malli.core :as m]
     [malli.error :as me]
-    [scicloj.kindly.v4.kind :as kind]
-    [malli.experimental.describe :as med]
     [clojupyter.misc.display :as dis])
    (:import
     [javax.imageio ImageIO]
@@ -387,28 +386,22 @@
      (assoc note
             :hiccup hiccup)))
 
- (defmethod render-advice :kind/plotly
-   [note]
+ (defmethod render-advice :kind/plotly [note]
    (render-js note  plotly->hiccup))
 
- (defmethod render-advice :kind/cytoscape
-   [note]
+ (defmethod render-advice :kind/cytoscape [note]
    (render-js note  cytoscape>hiccup))
 
- (defmethod render-advice :kind/highcharts
-   [note]
+ (defmethod render-advice :kind/highcharts [note]
    (render-js note   highcharts->hiccup))
 
- (defmethod render-advice :kind/echarts
-   [note]
+ (defmethod render-advice :kind/echarts [note]
    (render-js note  echarts->hiccup))
 
- (defmethod render-advice :kind/scittle
-   [note]
+ (defmethod render-advice :kind/scittle [note]
    (render-js note  scittle->hiccup-2))
 
- (defmethod render-advice :kind/reagent
-   [note]
+ (defmethod render-advice :kind/reagent [note]
    (render-js note  reagent->hiccup))
 
 
@@ -430,82 +423,71 @@
 
  
 
- (defmethod render-advice :kind/vega-lite
-   [note]
+ (defmethod render-advice :kind/vega-lite [note]
    (render-js
     (assoc note :kind :kind/vega)
     vega->hiccup))
 
 
- (defmethod render-advice :kind/vega
-   [note]
+ (defmethod render-advice :kind/vega [note]
    (render-js note  vega->hiccup))
-
-
-(defmethod render-advice :kind/md
-  [note]
-  (default-to-hiccup-render note))
 
 (defmethod render-advice :kind/tex
   [note]
-  (render-js note tex->hiccup))
+  (render-js note tex->hiccup)
+  )
   
+
+(defmethod render-advice :kind/md [note]
+  (to-hiccup/render note)
+  )
 
  
 
-(defmethod render-advice :kind/dataset
-  [note]
-  (default-to-hiccup-render note))
+(defmethod render-advice :kind/dataset [note]
+  (to-hiccup/render note))
 
-(defmethod render-advice :kind/code
-  [note]
-  (default-to-hiccup-render note))
+ (defmethod render-advice :kind/md [note]
+   (to-hiccup/render note))
 
-(defmethod render-advice :kind/pprint
-  [note]
-  (default-to-hiccup-render note))
+(defmethod render-advice :kind/code [note]
+  (to-hiccup/render note))
 
-(defmethod render-advice :kind/hidden
-  [note]
-  (default-to-hiccup-render note))
+(defmethod render-advice :kind/pprint [note]
+  (to-hiccup/render note)
+  )
 
-(defmethod render-advice :kind/video
-  [note]
-  (default-to-hiccup-render note))
+(defmethod render-advice :kind/hidden [note]
+  (to-hiccup/render note)
+  )
 
-
+(defmethod render-advice :kind/video [note]
+  (to-hiccup/render note))
 
 (defmethod render-advice :kind/html
   [{:as note :keys [value]}]
-  (assoc note
-         :hiccup (first value)))
+  (assoc note :hiccup (first value)))
 
-(defmethod render-advice :kind/hiccup
-  [note]
-  (let [hiccup
-        (:hiccup (walk/render-hiccup-recursively note render))]
-    (assoc note
-           :hiccup hiccup)))
 
-(defmethod render-advice :kind/vector
-  [{:as note :keys [value]}]
-  (render-recursively note value "kind-vector" render))
+(defmethod render-advice :kind/vector [{:as note :keys [value]}]
+  (walk/render-data-recursively note {:class "kind-vector"} value render))
 
-(defmethod render-advice :kind/map
-  [{:as note :keys [value]}]
-  (render-recursively note (apply concat value) "kind-map" render))
+(defmethod render-advice :kind/map [{:as note :keys [value]}]
+  ;; kindly.css puts kind-map in a grid
+  (walk/render-data-recursively note {:class "kind-map"} (apply concat value) render))
 
-(defmethod render-advice :kind/set
-  [{:as note :keys [value]}]
-  (render-recursively note value "kind-set" render))
+(defmethod render-advice :kind/set [{:as note :keys [value]}]
+  (walk/render-data-recursively note {:class "kind-set"} value render))
 
-(defmethod render-advice :kind/seq
-  [{:as note :keys [value]}]
-  (render-recursively note value "kind-seq" render))
+(defmethod render-advice :kind/seq [{:as note :keys [value]}]
+  (walk/render-data-recursively note {:class "kind-seq"} value render))
 
-(defmethod render-advice :kind/table
-  [note]
+(defmethod render-advice :kind/hiccup [note]
+  (walk/render-hiccup-recursively note render))
+
+(defmethod render-advice :kind/table [note]
   (render-table-recursively note render))
+
 
 (defmethod render-advice :kind/fn
   [{:keys [value form] :as note}]
@@ -575,17 +557,11 @@
    3. If `value` is suitable for direct display or is a Clojure var, it is returned.  
    4. Otherwise, it constructs a `note` with `:value` and `:form`, renders it with the `render` function, and returns the `:clojupyter` rendering."
   [form]
-  ;(println :kind-eval--form form)  
-  
   (let [value (eval form)]
-    ;(println :kind-eval--value value)  
-    ;(println :kind-eval--value-class (class value))  
-    ;(println :kind-eval--advise kindly-advice)  
     (if (or (render-as-clojupyter form value)
             (var? value))
       value
       (->
-
        (render {:value value
                 :form form})
        :hiccup

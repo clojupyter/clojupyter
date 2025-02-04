@@ -2,25 +2,45 @@
   (:require
    [clojupyter.misc.kind :as k]
    [clojure.string :as str]
+   [clojure.string :as s]
+   [hiccup.core :as hiccup]
    [midje.sweet                    :refer [=> facts]]
-   [scicloj.kindly-render.note.to-hiccup :as to-hiccup]
-   [scicloj.kindly-render.note.to-hiccup-js :as to-hiccup-js]
-   [scicloj.kindly.v4.kind :as kind]
-   [scicloj.tableplot.v1.plotly :as plotly]
-   [tablecloth.api :as tc]
    [reagent.core]
    [scicloj.kindly-advice.v1.api :as kindly-advice]
-   [hiccup.core :as hiccup]
-   [clojure.string :as s]
-   [scicloj.kindly-render.shared.walk :as walk]))
+   [scicloj.kindly-render.note.to-hiccup :as to-hiccup]
+   [scicloj.kindly-render.note.to-hiccup-js :as to-hiccup-js]
+   [scicloj.kindly-render.shared.walk :as walk]
+   [scicloj.kindly.v4.kind :as kind]
+   [scicloj.tableplot.v1.plotly :as plotly]
+   [tablecloth.api :as tc]))
+
 
 (def raw-image
   (->  "https://upload.wikimedia.org/wikipedia/commons/e/eb/Ash_Tree_-_geograph.org.uk_-_590710.jpg"
        (java.net.URL.)
        (javax.imageio.ImageIO/read)))
 
+(defn multi-nth
+  [v indexes]
+  (reduce (fn [coll idx]
+            (nth coll idx))
+          v
+          indexes))
+
+
 (def image
   (kind/image raw-image))
+
+(def vl-spec
+  {:encoding
+   {:y {:field "y", :type "quantitative"},
+    :size {:value 400},
+    :x {:field "x", :type "quantitative"}},
+   :mark {:type "circle", :tooltip true},
+   :width 400,
+   :background "floralwhite",
+   :height 100,
+   :data {:values "x,y\n1,1\n2,-4\n3,9\n", :format {:type "csv"}}})
 
 (def cs
   (kind/cytoscape
@@ -92,27 +112,25 @@
                     :update {:fill
                              {:value :steelblue}}
                     :hover {:fill
-                            {:value :red}}}}}
-
-  )
+                            {:value :red}}}}})
 
 (def plotly-data
- (let [n 20
-       walk (fn [bias]
-              (->> (repeatedly n #(-> (rand)
-                                      (- 0.5)
-                                      (+ bias)))
-                   (reductions +)))]
-   {:data [{:x (walk 1)
-            :y (walk -1)
-            :z (map #(* % %)
-                    (walk 2))
-            :type :scatter3d
-            :mode :lines+markers
-            :opacity 0.2
-            :line {:width 10}
-            :marker {:size 20
-                     :colorscale :Viridis}}]}))
+  (let [n 20
+        walk (fn [bias]
+               (->> (repeatedly n #(-> (rand)
+                                       (- 0.5)
+                                       (+ bias)))
+                    (reductions +)))]
+    {:data [{:x (walk 1)
+             :y (walk -1)
+             :z (map #(* % %)
+                     (walk 2))
+             :type :scatter3d
+             :mode :lines+markers
+             :opacity 0.2
+             :line {:width 10}
+             :marker {:size 20
+                      :colorscale :Viridis}}]}))
 
 (def people-as-maps
   (->> (range 29)
@@ -145,55 +163,78 @@
 (facts "eval works for different kinds"
        (k/kind-eval '(+ 1 1)) => {:html-data "2"}
 
-       (k/kind-eval '(kind/md "# 123")) => {:markdown ["# 123"]}
+       (k/kind-eval '(kind/md "# 123")) => {:html-data [:div {:class "kind-md"} [:h1 {:id "123"} "123"]]}
+
 
        (str/starts-with?
-        (-> (k/kind-eval '(kind/image image)) class (.getName))
-        "clojupyter.misc.display$render_mime") => true
+        (-> (k/kind-eval '(kind/image image))
+            :html-data
+            second
+            :src)
+        "data:image/png;base64,") => true
 
-       (-> (k/kind-eval '[(kind/image image) (kind/image image)])
-           :html-data
-           (nth 3)
-           (nth 2)
-           (nth 2))
-       => "nested rendering of :kind/image not possible in Clojupyter"
 
 
        (str/includes?
         (->
          (k/kind-eval  '^:kind/cytoscape cs)
          :html-data
-         
          (nth 2)
          first
-         second
-         
-         ) "cytoscape") => true)
+         second) "cytoscape") => true)
 
-(facts "options are checked"
-       (str/starts-with? 
-        (->
-         (k/kind-eval '(kind/html "" {:invalid-option 1}) )
-         :html-data
-         (nth 2)
-         
-         )
-        "invalid options"
-        )
+(facts "kind/md works"
+
+       (k/kind-eval '(kind/md "# 123"))
+       => {:html-data [:div {:class "kind-md"} [:h1 {:id "123"} "123"]]}
+
+       (k/kind-eval '(do (def m (kind/md "# 123")) m))
+       => {:html-data [:div {:class "kind-md"} [:h1 {:id "123"} "123"]]}
        
+       
+       (->
+        (k/kind-eval
+         '(kind/md
+
+           "
+* This is [markdown](https://www.markdownguide.org/).
+  * *Isn't it??*
+    * Here is **some more** markdown.
+"))
+        :html-data
+        (multi-nth [2 1 2 1 1])
+        
+        )
+       => '([:em "Isn't it??"])
        )
 
 
+
+
+
+(facts "options are checked"
+       (str/starts-with?
+        (->
+         (k/kind-eval '(kind/html "" {:invalid-option 1}))
+         :html-data
+         (nth 2))
+        "invalid options"))
+
+(facts "html returns html"
+       (-> 
+        (k/kind-eval '(kind/html
+                       "<div style='height:40px; width:40px; background:purple'></div> "))
+        :html-data
+        )=> "<div style='height:40px; width:40px; background:purple'></div> ")
+
 (facts "kind/fn works as expected"
        (->
-        
+
         (k/kind-eval  '(kind/fn {:x 1
                                  :y 2}
                          {:kindly/f (fn [{:keys [x y]}]
                                       (+ x y))}))
-        :html-data
-        
-        )=> "3")
+        :html-data) => "3")
 
 (facts "kind/table works"
        (->
@@ -209,10 +250,10 @@
                  :row-vectors (take 5 people-as-vectors)}))]
 
 
-         (-> hiccup :html-data second) => [:thead [:tr ":preferred-language" ":age"]]
-         (-> hiccup :html-data (nth 2) count) => 6)
-       
-       
+         (-> hiccup :html-data (nth 2)) => [:thead [:tr ":preferred-language" ":age"]]
+         (-> hiccup :html-data (nth 3) count) => 6)
+
+
 
        ;https://github.com/scicloj/kindly-render/issues/29
        ;https://github.com/scicloj/kindly-render/issues/30
@@ -228,30 +269,26 @@
        ;; (k/kind-eval '(-> people-as-maps
        ;;                   tc/dataset
        ;;                   (kind/table {:use-datatables true})))
-       
+
        ;; (k/kind-eval '(-> people-as-dataset
        ;;                   (kind/table {:use-datatables true})))
-       
+
        ;; (k/kind-eval '(-> people-as-dataset
        ;;                   kind/table))
-       
+
        ;; (k/kind-eval '(-> people-as-dataset
        ;;                   (kind/table {:element/max-height "300px"})))
-       
+
        ;; (k/kind-eval '(-> people-as-maps
        ;;                   tc/dataset
        ;;                   (kind/table {:use-datatables true})))
 
        ;; (k/kind-eval '(-> people-as-dataset
        ;;                   (kind/table {:use-datatables true})))
-       
+
        ;; (k/kind-eval '(-> people-as-dataset
        ;;                   (kind/table {:use-datatables true
        ;;                                :datatables {:scrollY 200}})))
-
-       
-
-
        )
 
 
@@ -261,14 +298,14 @@
 
 
 (facts "kind/map works"
-       (k/kind-eval '(kind/map {:a 1})) 
+       (k/kind-eval '(kind/map {:a 1}))
        =>
        {:html-data
         [:div
          {:class "kind-map"}
          [:div {:style {:border "1px solid grey", :padding "2px"}} ":a"]
          [:div {:style {:border "1px solid grey", :padding "2px"}} "1"]]}
-       
+
        (k/kind-eval '{:a 1})
        => {:html-data
            [:div
@@ -286,8 +323,7 @@
         (->
          (k/kind-eval '(kind/scittle '(.log js/console "hello")))
          :html-data
-         (nth 3)
-         )
+         (nth 3))
         ".log js/console") => true
 
        (->
@@ -296,17 +332,35 @@
         (nth 3)) => [:script {:type "application/x-scittle", :class "kind-scittle"} "(print \"hello\")\n"]
 
        (->
-
         (k/kind-eval '(kind/scittle '(print "hello")))
         :html-data
         (nth 4)) => [:script "scittle.core.eval_script_tags()"])
-       
-(facts "kind/vega works"
-       (str/starts-with? 
-        (str (class (k/kind-eval '(kind/vega vega-spec))))
-        "class clojupyter.misc.display$render_mime"
 
-        ) => true)
+(facts "kind/vega works"
+
+       (str/includes?
+        (->
+         (k/kind-eval '(kind/vega vega-spec))
+         :html-data
+         (nth 2)
+         (nth 2)
+         second)
+        "vega")
+
+       => true)
+
+
+(facts "kind/vega-lite works"
+       (str/includes?
+        (->
+         (k/kind-eval '(kind/vega-lite vl-spec))
+         :html-data
+         (nth 2)
+         (nth 2)
+         second)
+        "vega")
+       => true)
+
 
 (facts "kind/plotly works"
        (str/includes?
@@ -323,28 +377,22 @@
          (k/kind-eval '(kind/plotly plotly-data {:style {:width 100
                                                          :height 100}}))
          :html-data
-         (nth 2)
-         )
-        "invalid options"
-        ) => true
-       
-       )
+         (nth 2))
+        "invalid options") => true)
 
 (facts "kind/reagent works"
        (str/includes?
         (->
-         (k/kind-eval 
+         (k/kind-eval
           '(kind/reagent
             ['(fn [numbers]
                 [:p {:style {:background "#d4ebe9"}}
                  (pr-str (map inc numbers))])
              (vec (range 10))]))
          :html-data
-         second
-         (nth 4)
-         )
-        "reagent.dom/render"
-        )) => true
+         (nth 2)
+         (nth 4))
+        "reagent.dom/render")) => true
 
 (facts "kind/reagent supports deps"
        (str/includes?
@@ -370,51 +418,47 @@
     ;; Note we need to mention the dependency:
             {:html/deps [:leaflet]}))
          :html-data
-         second
+         (nth 2)
          (nth 5))
         "leaflet.js") => true)
 
 (facts "kind/image works"
        (str/starts-with?
-        (->
-         (k/kind-eval '(kind/image raw-image))
-         class
-         .getName
-         )
-        "clojupyter.misc.display$render_mime$reify"
-        ))
+        (-> (k/kind-eval '(kind/image image))
+            :html-data
+            second
+            :src)
+        "data:image/png;base64,") => true)
 
-(facts "nested image rendred as unsupported"
+
+
+(facts "nested image rendering is supported"
        (str/starts-with?
         (->
          (k/kind-eval
           '(kind/hiccup [:div.clay-limit-image-width
                          raw-image]))
          :html-data
+         (nth 2)
          second
-         (nth 2))
-        "nested rendering of :kind/image not possible") => true
-       (str/starts-with?
-        (->
-         (k/kind-eval
-          '[raw-image raw-image])
-         :html-data
-         (nth 2)
-         (nth 2)
-         (nth 2))
-        "nested rendering of :kind/image not possible")
-
-
-       (str/starts-with?
-        (->
-         (k/kind-eval
-          '[raw-image raw-image])
-         :html-data
-         (nth 2)
-         (nth 2)
-         (nth 2)
+         :src
          )
-        "nested rendering of :kind/image not possible"))
+         
+         "data:image/png;base64,") => true
+
+       (str/starts-with?
+        (->
+         (k/kind-eval
+          '[raw-image raw-image])
+         :html-data
+         (nth 2)
+         (nth 2)
+         second
+         :src
+         )
+        "data:image/png;base64,") => true)
+
+
 
 (facts "kind/fn works as expected "
 
@@ -461,6 +505,14 @@
            :html-data)
        => "#'clojupyter.misc.kind-test/a")
 
+(facts "kind/tex works"
+       (str/includes?
+        (->
+         (k/kind-eval '(kind/tex "x^2 + y^2 = z^2"))
+         :html-data
+         (multi-nth [])
+         )
+        "katex") => true)
 
 ;; Getting these pass would increase the "kind compatibility"
 
@@ -500,7 +552,7 @@
        ;;bug submitted: https://github.com/scicloj/kindly-render/issues/26
        ;(k/kind-eval '(kind/code "(defn f [x] {:y (+  x 9)})"))
 
-       
+
        ;(kindly-advice/advise {:value (kind/code "(defn f [x] {:y (+  x 9)})")})
 
        ;(to-hiccup/render {:value (kind/code "(defn f [x] {:y (+  x 9)})")})
@@ -513,7 +565,7 @@
        ;;    :hiccup [:pre {:class "kind-code"} [:code {:class "sourceCode"} nil]]}
        )
 
- 
+
 
 
 
@@ -530,7 +582,6 @@
 (facts "kind/htmlwidgets-ggplotly is working"
        ;; (k/kind-eval
        ;;  '(kind/htmlwidgets-ggplotly {}))
-       
        )
 
 (facts "kind/edn is working"
@@ -542,5 +593,6 @@
        ;;   (k/kind-eval
        ;;    '(kind/smile-model {}))
        )
+
 
 

@@ -43,7 +43,6 @@ You can also use existing JVM charting libraries since you can render any Java B
 <img src="./images/incanter-demo.png" width="100%"/>
 
 ## Installation
-
 Clojupyter can be used in several ways, please read [Usage Scenarios](doc/usage-scenarios.md) to
 find out which type of use model best fits you needs, and how to install Clojupyter in that
 scenario.
@@ -86,7 +85,7 @@ jupyter-console --kernel=conda-clojupyter
 If you are using Clojupyter as a library, you can use Clojupyter's command line interface to perform
 operations such as listing, installing, and removing Clojupyter kernels.
 
-For example, in a Clojure repository which includes Clojuputer, you can get the list of available
+For example, in a Clojure repository which includes Clojupyter, you can get the list of available
 commands (you can ignore the warning - it's from an older dependency):
 
 ```bash

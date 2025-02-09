@@ -3,7 +3,11 @@
             [clojure.java.io :as io]))
 
 (def lib 'clojupyter/clojupyter)
-(defn new-version [] (format "0.4.%s" (b/git-count-revs nil)))
+(defn new-version []
+  (let [vs (format "0.5.%s" (b/git-count-revs nil))]
+    (if (= (System/getenv "SNAPSHOT") "true")
+      (str vs "-SNAPSHOT")
+      vs)))
 (defn read-version
   []
   (-> (slurp "resources/clojupyter/assets/version.edn")
@@ -26,38 +30,48 @@
     (binding [*print-length* false
               *out* w]
       (pr {:version (new-version), :raw-version (b/git-count-revs nil)})))
-  (reset! version (read-version)))
+  (reset! version (read-version))
+  (println "Updated version to: " @version))
 
 
-(defn- pom-template [version]
+(defn- pom-template []
   [[:description "A Jupyter kernel for Clojure - run Clojure code in Jupyter Lab, Notebook and Console"]
    [:url "https://github.com/clojupyter/clojupyter"]
    [:licenses
     [:license
      [:name "MIT License"]
      [:url "https://github.com/clojupyter/clojupyter/blob/master/LICENSE.txt"]]]
-   [:scm
-    [:url "https://github.com/clojupyter/clojupyter"]
-    [:connection "scm:git:https://github.com/clojupyter/clojupyter.git"]
-    [:developerConnection "scm:git:ssh://git@github.com/clojupyter/clojupyter.git"]
-    [:tag (str "v" version)]]])
+   ])
 
-(defn jar [_]
-  (clean nil)
-  ;(update-version nil)
-  (b/copy-dir {:src-dirs ["resources"]
-               :target-dir class-dir})
-
+(defn- write-pom!
+  []
   (b/write-pom {:class-dir class-dir
                 :lib lib
                 :version @version
                 :basis basis
                 :src-dirs ["src"]
-                :pom-data  (pom-template @version)})
+                :scm {:url "https://github.com/clojupyter/clojupyter"
+                      :connection "scm:git:https://github.com/clojupyter/clojupyter.git"
+                      :developerConnection "scm:git:ssh://git@github.com/clojupyter/clojupyter.git"
+                      :tag (str "v" @version)}
+                :pom-data  (pom-template)}))
 
+
+
+(defn- build-common
+  []
+  (clean nil)
+  (println "Building version: " @version)
+  (b/copy-dir {:src-dirs ["resources"]
+               :target-dir class-dir})
+  (write-pom!)
   (b/compile-clj {:basis basis
                   :src-dirs ["src"]
-                  :class-dir class-dir})
+                  :class-dir class-dir
+                  :java-opts  ["-Djava.awt.headless=true"] }))
+
+(defn jar [_]
+  (build-common)
   (b/jar {:class-dir class-dir
           :jar-file (jar-file)
           :basis basis})
@@ -65,21 +79,7 @@
 
 
 (defn uber [_]
-  (clean nil)
-  ;;(update-version nil)
-  (b/copy-dir {:src-dirs ["resources"]
-               :target-dir class-dir})
-
-  (b/write-pom {:class-dir class-dir
-                :lib lib
-                :version @version
-                :basis basis
-                :src-dirs ["src"]
-                :pom-data  (pom-template @version)})
-
-  (b/compile-clj {:basis basis
-                  :src-dirs ["src"]
-                  :class-dir class-dir})
+  (build-common)
   (b/uber {:class-dir class-dir
            :uber-file (uber-file)
            :basis basis})

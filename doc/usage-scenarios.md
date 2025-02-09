@@ -7,7 +7,8 @@ Scenario overview:
 | Scenario    | What                                           | Description                              | Recommended?
 |-------------|------------------------------------------------|------------------------------------------| -----
 | ~~**CONDA**~~    | ~~Simply do `conda install ...` to get started   | Easiest way to get started with Cλ~~       | N (deprecated)
-| **Uberjar**      | Compile Cλ as uberjar and install as kernel             | Cλ kernel for use in clojure-based notebooks      | Y
+| **Compile Uberjar**      | Compile Cλ as uberjar and install as kernel             | Cλ kernel for use in clojure-based notebooks      | Y
+| **Download Uberjar**      | Download the Cλ uberjar and install as kernel             | Cλ kernel for use in clojure-based notebooks      | Y
 | **LIB**      | Include Cλ in your Clojure project             | Cλ kernel with custom functionality for use in clojure-based notebooks      | Y
 | **ADHOC**    | Connect Cλ to running Clojure image  | Jupyter as ad-hoc interface to Clojure   | Future feature
 
@@ -17,9 +18,9 @@ Details of each scenario described below.
 
 This mode is deprecated and will be removed in a future release.  
 
-## Uberjar: Compile Cλ as uberjar and install as kernel
+## Compile Uberjar: Compile Cλ as uberjar and install as kernel
 
-This is the easiest way to get started with Clojupyter. Follow the
+This is the easiest way to get started with the latest features of Clojupyter. Follow the
 instructions below to compile and install Clojupyter as a kernel.
 
 First install [Clojure CLI](https://clojure.org/guides/install_clojure).
@@ -94,6 +95,29 @@ jupyter lab
 ```
 
 then open a file like: `examples/demo-clojupyter.ipynb` and run all cells.
+
+## Download Uberjar
+If you do not need the latest features of Clojupyter, this is a convenient way to get started.
+
+### Download
+From [clojupyter/releases](https://github.com/clojupyter/clojupyter/releases), download the file `clojupyter-<VERSION>.jar`, where`<VERSION>` stands for your choice, e.g. `0.4.332-standalone`)
+
+### Check with "Hello World"
+Java being ready, run a Clojure "hello, world" on the command line, e.g.
+```
+java -cp clojupyter-0.4.332-standalone.jar clojupyter.cmdline eval '(str "Hello " "Jupyter!")'
+```
+Not only does the command line interface support `eval` for running "hello, world". With just having Java on your computer (no Clojure CLI necessary), you will use it to install and remove Clojupyter kernels (see above).
+
+### JupyterLab installation alternative
+If you just temporarily want to try out JupyterLab, install it using Python's `pip`.
+```
+mkdir python_venv
+python3 -m venv python_venv
+source python_venv/bin/activate
+python3 -m pip install jupyterlab
+jupyter lab
+```
 
 ## LIB: Include Clojupyter in your Clojure project
 

@@ -11,3 +11,6 @@
 pom.xml
 pom.xml.asc
 /docker.new/*/
+.clj-kondo/
+.lsp/
+.calva/

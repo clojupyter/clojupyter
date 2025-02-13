@@ -40,7 +40,7 @@ jobs:
           restore-keys: cljdeps-
       - name: Build artifact
         run: |
-            clojure -X:build
+            clojure -T:build
             cp target/classes/META-INF/maven/clojupyter/clojupyter/pom.xml ./
             echo "TARGET_JAR=$(find target/clojupyter-*.jar)" >> $GITHUB_ENV
 

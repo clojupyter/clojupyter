@@ -1,20 +1,15 @@
-name: Build with tools.deps https://github.com/clojure/tools.deps.alpha
+name: Build, attest, release
 
 on:
-  push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
-  workflow_dispatch:
-  
+  workflow_dispatch:    
+
 jobs:
-
   build:
-    strategy:
-      matrix:
-        os: [ubuntu-latest]
-
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+      attestations: write
 
     steps:
       - name: Checkout
@@ -43,5 +38,13 @@ jobs:
           # key: cljdeps-${{ hashFiles('project.clj') }}
           # key: cljdeps-${{ hashFiles('build.boot') }}
           restore-keys: cljdeps-
-      - name: Run tests
-        run: clojure -X:test
+      - name: Build artifact
+        run: |
+            clojure -X:build
+            cp target/classes/META-INF/maven/clojupyter/clojupyter/pom.xml ./
+            echo "TARGET_JAR=$(find target/clojupyter-*.jar)" >> $GITHUB_ENV
+
+      - name: Attest
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: '${{ github.workspace }}/$TARGET_JAR'

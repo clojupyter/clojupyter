@@ -40,7 +40,7 @@ jobs:
           restore-keys: cljdeps-
       - name: Build artifact
         run: |
-            clojure -T:jar
+            clojure -T:build jar
             cp target/classes/META-INF/maven/clojupyter/clojupyter/pom.xml ./
             echo "TARGET_JAR=$(find target/clojupyter-*.jar)" >> $GITHUB_ENV
 
@@ -48,3 +48,9 @@ jobs:
         uses: actions/attest-build-provenance@v2
         with:
           subject-path: '${{ github.workspace }}/$TARGET_JAR'
+      - name: 'Upload Artifact'
+        uses: actions/upload-artifact@v4
+        with:
+          name: jar
+          path: '${{ github.workspace }}/$TARGET_JAR'
+          retention-days: 5

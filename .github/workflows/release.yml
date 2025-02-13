@@ -47,10 +47,10 @@ jobs:
       - name: Attest
         uses: actions/attest-build-provenance@v2
         with:
-          subject-path: '${{ github.workspace }}/$TARGET_JAR'
+          subject-path: '${{ github.workspace }}/${{ env.TARGET_JAR }}'
       - name: 'Upload Artifact'
         uses: actions/upload-artifact@v4
         with:
           name: jar
-          path: '${{ github.workspace }}/$TARGET_JAR'
+          path: '${{ github.workspace }}/${{ env.TARGET_JAR }}'
           retention-days: 5

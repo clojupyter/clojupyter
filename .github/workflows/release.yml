@@ -42,15 +42,17 @@ jobs:
         run: |
             clojure -T:build jar
             cp target/classes/META-INF/maven/clojupyter/clojupyter/pom.xml ./
-            echo "TARGET_JAR=$(find target/clojupyter-*.jar)" >> $GITHUB_ENV
+            cd target
+            echo "TARGET_JAR=$(find clojupyter-*.jar)" >> $GITHUB_ENV
+            cd ..
 
       - name: Attest
         uses: actions/attest-build-provenance@v2
         with:
-          subject-path: '${{ github.workspace }}/${{ env.TARGET_JAR }}'
+          subject-path: '${{ github.workspace }}/target/${{ env.TARGET_JAR }}'
       - name: 'Upload Artifact'
         uses: actions/upload-artifact@v4
         with:
-          name: jar
-          path: '${{ github.workspace }}/${{ env.TARGET_JAR }}'
+          name: ${{ env.TARGET_JAR }}
+          path: '${{ github.workspace }}/target/${{ env.TARGET_JAR }}'
           retention-days: 5

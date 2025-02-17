@@ -254,47 +254,53 @@
          (-> hiccup :html-data (nth 3) count) => 6)
 
 
+       (->
+        (k/kind-eval '(-> people-as-dataset
+                          (kind/table)))
+        :html-data
+        (nth 3)
+        first) => :table
+
 
        ;https://github.com/scicloj/kindly-render/issues/29
        ;https://github.com/scicloj/kindly-render/issues/30
-
+       ;https://github.com/scicloj/kindly-render/issues/38
+       
        ;; (k/kind-eval '(kind/table (take 5 people-as-vectors)))
-
+       
        ;; (k/kind-eval '(kind/table (take 5 people-as-maps)))
-
+       
 
        ;; (k/kind-eval '(kind/table {:x (range 6)
        ;;                            :y [:A :B :C :A :B :C]}))
-
+       
        ;; (k/kind-eval '(-> people-as-maps
        ;;                   tc/dataset
        ;;                   (kind/table {:use-datatables true})))
-
+       
        ;; (k/kind-eval '(-> people-as-dataset
        ;;                   (kind/table {:use-datatables true})))
-
-       ;; (k/kind-eval '(-> people-as-dataset
-       ;;                   kind/table))
-
+       
+       
        ;; (k/kind-eval '(-> people-as-dataset
        ;;                   (kind/table {:element/max-height "300px"})))
-
+       
        ;; (k/kind-eval '(-> people-as-maps
        ;;                   tc/dataset
        ;;                   (kind/table {:use-datatables true})))
-
+       
        ;; (k/kind-eval '(-> people-as-dataset
        ;;                   (kind/table {:use-datatables true})))
-
+       
        ;; (k/kind-eval '(-> people-as-dataset
        ;;                   (kind/table {:use-datatables true
        ;;                                :datatables {:scrollY 200}})))
-       )
+       
 
 
 
-(facts "nil return nil"
-       (k/kind-eval 'nil) => nil)
+       (facts "nil return nil"
+              (k/kind-eval 'nil) => nil))
 
 
 (facts "kind/map works"

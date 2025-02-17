@@ -486,7 +486,12 @@
   (walk/render-hiccup-recursively note render))
 
 (defmethod render-advice :kind/table [note]
-  (render-table-recursively note render))
+  (def note note)
+  (if (contains?
+       (->> note :advice (map first) set)
+       :kind/dataset)
+    (to-hiccup/render (assoc note :kind :kind/dataset))
+    (render-table-recursively note render)))
 
 
 (defmethod render-advice :kind/fn

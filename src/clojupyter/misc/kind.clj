@@ -6,8 +6,6 @@
     [scicloj.kindly-render.note.to-hiccup :as to-hiccup]
     [scicloj.kindly-render.shared.walk :as walk]
     [scicloj.kindly-advice.v1.api :as kindly-advice]
-
-    [scicloj.kindly.v4.kind :as kind]
     [clojure.string :as str]
     [scicloj.kindly-render.notes.js-deps :as js-deps]
     [scicloj.kindly-render.note.to-hiccup-js :as to-hiccup-js]
@@ -17,8 +15,6 @@
    (:import
     [javax.imageio ImageIO]
     [java.security MessageDigest]))
-
-
 
 
  (defn- malli-schema-for [kind]
@@ -299,43 +295,6 @@
    (to-hiccup/render note))
  
 
-  (defn- render-recursively
-    "Recursively renders a data structure into Hiccup format, applying a rendering function to each element in the structure. It is used for rendering collections like vectors, maps, sets, and sequences.  
-  
-   **Parameters:**  
-  
-   - `note` (Map): The note to render.  
-   - `value` (Collection): The data structure to render recursively.  
-   - `css-class` (String): The CSS class to apply to the rendered elements.  
-   - `render` (Function): The function to apply to each element for rendering.  
-  
-   **Returns:**  
-  
-   - The `note` map augmented with `:clojupyter` containing the rendered HTML, and `:hiccup` containing the Hiccup representation."
-    [note value css-class render]
-    (walk/render-data-recursively note {:class css-class} value render))
-
- (defn- render-table-recursively
-   "Recursively renders table data structures into Hiccup format.  
-  
-   **Parameters:**  
-  
-   - `note` (Map): The note containing the table data.  
-   - `render` (Function): The function to apply to each element for rendering.  
-  
-   **Returns:**  
-  
-   - The `note` map augmented with `:clojupyter` containing the rendered HTML, and `:hiccup` containing the Hiccup representation.  
-  
-   **Note:**  
-  
-   - There is a typo fixed in the implementation where `:hjccup` is corrected to `:hiccup`.  
-   - There is a TODO to address any known issues."
-   [note render]
-   (let [hiccup
-        ;; TODO: https://github.com/scicloj/kindly-render/issues/23  
-         (:hjccup (walk/render-table-recursively note render))]
-     (assoc note :hiccup hiccup)))
 
  (defn render-js
    "Renders JavaScript-based visualizations by converting the visualization data into Hiccup format and preparing it for display in Clojupyter.  
@@ -486,12 +445,11 @@
   (walk/render-hiccup-recursively note render))
 
 (defmethod render-advice :kind/table [note]
-  (def note note)
   (if (contains?
        (->> note :advice (map first) set)
        :kind/dataset)
     (to-hiccup/render (assoc note :kind :kind/dataset))
-    (render-table-recursively note render)))
+    (walk/render-table-recursively note render)))
 
 
 (defmethod render-advice :kind/fn

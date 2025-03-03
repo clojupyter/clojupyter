@@ -520,7 +520,6 @@
          )
         "katex") => true)
 
-;; Getting these pass would increase the "kind compatibility"
 
 (facts "kind/pprint works"
        (->
@@ -532,8 +531,22 @@
         second
 
         (nth 2))
-       => "{0 1,\n 2 3,\n 4 5,\n 6 7,\n 8 9,\n 10 11,\n 12 13,\n 14 15,\n 16 17,\n 18 19,\n 20 21,\n 22 23,\n 24 25,\n 26 27,\n 28 29}\n"
-       )
+       => "{0 1,\n 2 3,\n 4 5,\n 6 7,\n 8 9,\n 10 11,\n 12 13,\n 14 15,\n 16 17,\n 18 19,\n 20 21,\n 22 23,\n 24 25,\n 26 27,\n 28 29}\n")
+
+(facts "kind/code is working"
+       (k/kind-eval '(kind/code "(defn f [x] {:y (+  x 9)})"))
+       => {:html-data [:pre {:class "kind-code"} [:code {:class "sourceCode"} ["(defn f [x] {:y (+  x 9)})"]]]})
+
+
+(facts "kind/video is working"
+       (k/kind-eval '(kind/video
+                      {:youtube-id "DAQnvAgBma8"}))
+       =>
+       {:html-data [:iframe {:src "https://www.youtube.com/embed/DAQnvAgBma8", :allowfullscreen true, :class "kind-video"}]})
+       
+
+
+;; Getting these pass would increase the "kind compatibility"
 
 
 (facts "kind/fragment works"
@@ -552,20 +565,6 @@
       ;;         kind/fragment))
        )
 
-(facts "kind/code is working"
-
-       ;;bug submitted: https://github.com/scicloj/kindly-render/issues/26
-       (k/kind-eval '(kind/code "(defn f [x] {:y (+  x 9)})"))
-       => {:html-data [:pre {:class "kind-code"} [:code {:class "sourceCode"} ["(defn f [x] {:y (+  x 9)})"]]]})
-
-
-(facts "kind/video is working"
-       ;bug report: https://github.com/scicloj/kindly-render/issues/27
-       (k/kind-eval '(kind/video
-                      {:youtube-id "DAQnvAgBma8"}))
-       => 
-       {:html-data [:iframe {:src "https://www.youtube.com/embed/DAQnvAgBma8", :allowfullscreen true, :class "kind-video"}]})
-       
 
 
 (facts "kind/htmlwidgets-ggplotly is working"

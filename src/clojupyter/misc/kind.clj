@@ -164,8 +164,6 @@
    (render-with-js note render-cmd))
 
 
-
-
  (defn highcharts->hiccup
    "Converts Highcharts chart data into a Hiccup vector that can render the chart within a Jupyter notebook using the Highcharts library. It sets up a `<div>` container and includes the necessary scripts to render the chart.  
   
@@ -251,10 +249,8 @@
    [:div
     (require-deps-and-render (format
                               "katex.render(%s, currentScript_XXXXX.parentElement, {throwOnError: false});"
-                              (cheshire/encode (format "$%s$"(first (:value note)))))
-                             note)
-    ])
-
+                              (cheshire/encode (format "$%s$" (first (:value note)))))
+                             note)])
  
 
  (defn scittle->hiccup [note]
@@ -280,21 +276,6 @@
                                        (str id))
                                note)
       [:div {:id (str id)}]]))
-
- (defn- default-to-hiccup-render
-   "Provides a default rendering for notes by converting them into Hiccup format and preparing them for display in Clojupyter. It's a helper function used when no specific rendering method is available for a given kind.  
-  
-   **Parameters:**  
-  
-   - `note` (Map): A note containing information to render.  
-  
-   **Returns:**  
-  
-   - The `note` map augmented with `:clojupyter` and `:hiccup` keys, where `:clojupyter` contains the rendered HTML using `hiccup-html`, and `:hiccup` contains the Hiccup representation."
-   [note]
-   (to-hiccup/render note))
- 
-
 
  (defn render-js
    "Renders JavaScript-based visualizations by converting the visualization data into Hiccup format and preparing it for display in Clojupyter.  
@@ -326,9 +307,7 @@
    [note]
 
    (let
-
     [advised-note (walk/advise-render-style note render-advice)
-
      error-hiccup-or-nil (render-error-if-invalid-options advised-note)]
      (if error-hiccup-or-nil
        (assoc note
@@ -364,7 +343,6 @@
    (render-js note  reagent->hiccup))
 
 
-
  (defmethod render-advice :kind/image
    [{:as note :keys [value]}]
    (let [out (io/java.io.ByteArrayOutputStream.)
@@ -376,11 +354,9 @@
          hiccup [:img {:src (str "data:image/png;base64,"
                                  (-> out .toByteArray b64/encode String.))}]]
 
-
      (assoc note
             :hiccup hiccup)))
 
- 
 
  (defmethod render-advice :kind/vega-lite [note]
    (render-js
@@ -393,16 +369,13 @@
 
 (defmethod render-advice :kind/tex
   [note]
-  (render-js note tex->hiccup)
-  )
+  (render-js note tex->hiccup))
   
 
 (defmethod render-advice :kind/md [note]
-  (to-hiccup/render note)
-  )
+  (to-hiccup/render note))
 
  
-
 (defmethod render-advice :kind/dataset [note]
   (to-hiccup/render note))
 
@@ -413,12 +386,10 @@
   (to-hiccup/render note))
 
 (defmethod render-advice :kind/pprint [note]
-  (to-hiccup/render note)
-  )
+  (to-hiccup/render note))
 
 (defmethod render-advice :kind/hidden [note]
-  (to-hiccup/render note)
-  )
+  (to-hiccup/render note))
 
 (defmethod render-advice :kind/video [note]
   (to-hiccup/render note))

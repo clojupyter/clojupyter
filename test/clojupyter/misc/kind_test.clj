@@ -520,21 +520,33 @@
          )
         "katex") => true)
 
-;; Getting these pass would increase the "kind compatibility"
 
 (facts "kind/pprint works"
-       ;; bug: https://github.com/scicloj/kindly-render/issues/31
-       ;; (->
-       ;;  (to-hiccup/render {:form '(->> (range 30)
-       ;;                                 (apply array-map)
-       ;;                                 kind/pprint)})
-       ;;  :hiccup
-       ;;  (nth 2)
-       ;;  second
+       (->
+        (to-hiccup/render {:form '(->> (range 30)
+                                       (apply array-map)
+                                       kind/pprint)})
+        :hiccup
+        (nth 2)
+        second
 
-       ;;  (nth 2))
-       ;; => "{0 1,\n 2 3,\n 4 5,\n 6 7,\n 8 9,\n 10 11,\n 12 13,\n 14 15,\n 16 17,\n 18 19,\n 20 21,\n 22 23,\n 24 25,\n 26 27,\n 28 29}\n"
-       )
+        (nth 2))
+       => "{0 1,\n 2 3,\n 4 5,\n 6 7,\n 8 9,\n 10 11,\n 12 13,\n 14 15,\n 16 17,\n 18 19,\n 20 21,\n 22 23,\n 24 25,\n 26 27,\n 28 29}\n")
+
+(facts "kind/code is working"
+       (k/kind-eval '(kind/code "(defn f [x] {:y (+  x 9)})"))
+       => {:html-data [:pre {:class "kind-code"} [:code {:class "sourceCode"} ["(defn f [x] {:y (+  x 9)})"]]]})
+
+
+(facts "kind/video is working"
+       (k/kind-eval '(kind/video
+                      {:youtube-id "DAQnvAgBma8"}))
+       =>
+       {:html-data [:iframe {:src "https://www.youtube.com/embed/DAQnvAgBma8", :allowfullscreen true, :class "kind-video"}]})
+       
+
+
+;; Getting these pass would increase the "kind compatibility"
 
 
 (facts "kind/fragment works"
@@ -551,36 +563,6 @@
       ;;  (k/kind-eval
       ;;   '(->> (range 3)
       ;;         kind/fragment))
-       )
-
-(facts "kind/code is working"
-
-       ;;bug submitted: https://github.com/scicloj/kindly-render/issues/26
-       ;(k/kind-eval '(kind/code "(defn f [x] {:y (+  x 9)})"))
-
-
-       ;(kindly-advice/advise {:value (kind/code "(defn f [x] {:y (+  x 9)})")})
-
-       ;(to-hiccup/render {:value (kind/code "(defn f [x] {:y (+  x 9)})")})
-       ;;=> {:value ["(defn f [x] {:y (+  x 9)})"],
-       ;;    :meta-kind :kind/code,
-       ;;    :kindly/options {},
-       ;;    :kind :kind/code,
-       ;;    :advice [[:kind/code {:reason :metadata}] [:kind/vector {:reason :predicate}] [:kind/seq {:reason :predicate}]],
-       ;;    :deps #{:kind/code},
-       ;;    :hiccup [:pre {:class "kind-code"} [:code {:class "sourceCode"} nil]]}
-       )
-
-
-
-
-
-
-
-(facts "kind/video is working"
-       ;bug report: https://github.com/scicloj/kindly-render/issues/27
-       ;(k/kind-eval '(kind/video
-       ;       {:youtube-id "DAQnvAgBma8"}
        )
 
 

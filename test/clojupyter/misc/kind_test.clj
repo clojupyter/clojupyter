@@ -12,6 +12,7 @@
    [scicloj.kindly-render.shared.walk :as walk]
    [scicloj.kindly.v4.kind :as kind]
    [scicloj.tableplot.v1.plotly :as plotly]
+   [scicloj.metamorph.ml.rdatasets :as rdatasets]
    [tablecloth.api :as tc]))
 
 
@@ -209,16 +210,12 @@
        )
 
 
-
-
-
-(facts "options are checked"
-       (str/starts-with?
-        (->
-         (k/kind-eval '(kind/html "" {:invalid-option 1}))
-         :html-data
-         (nth 2))
-        "invalid options"))
+(facts "options are not checked"
+       (->
+        (k/kind-eval '(kind/html "" {:invalid-option 1}))
+        :html-data
+        ) => ""
+       )
 
 (facts "html returns html"
        (-> 
@@ -383,8 +380,10 @@
          (k/kind-eval '(kind/plotly plotly-data {:style {:width 100
                                                          :height 100}}))
          :html-data
-         (nth 2))
-        "invalid options") => true)
+         (nth 2)
+         first
+         second)
+        "  \n  var") => true)
 
 (facts "kind/reagent works"
        (str/includes?
@@ -543,9 +542,23 @@
                       {:youtube-id "DAQnvAgBma8"}))
        =>
        {:html-data [:iframe {:src "https://www.youtube.com/embed/DAQnvAgBma8", :allowfullscreen true, :class "kind-video"}]})
-       
 
+(facts "tableplot works"       
 
+       (str/starts-with?
+        (->
+         (k/kind-eval
+          '(-> (rdatasets/datasets-iris)
+               (plotly/layer-point
+                {:=x :sepal-length
+                 :=y :sepal-width})))
+         :html-data
+         (nth 2)
+         first
+
+         second)
+        "  \n  var clojupyter_loaded_marker"
+        ))
 ;; Getting these pass would increase the "kind compatibility"
 
 

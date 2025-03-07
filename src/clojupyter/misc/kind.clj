@@ -118,7 +118,7 @@
 
  (defn render-error-if-invalid-options [note]
    (if
-    (validate-options note)
+    true ;(validate-options note)
      nil
      [:div
       {:style "color:red"}

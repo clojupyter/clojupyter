@@ -559,6 +559,21 @@
          second)
         "  \n  var clojupyter_loaded_marker"
         ))
+(facts "kind/portal works"
+       (str/includes?
+        (->
+         (k/kind-eval
+          '(kind/portal
+            {:x (range 3)}))
+         :html-data
+         (nth 2)
+         first
+         second)
+        ":portal.viewer/inspector"
+        ) => true)
+       
+       
+
 ;; Getting these pass would increase the "kind compatibility"
 
 

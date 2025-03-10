@@ -41,6 +41,7 @@
         cljsjs/react-dom            {:mvn/version "17.0.2-0"}
         reagent/reagent             {:mvn/version "1.2.0"}
         metosin/malli               {:mvn/version "0.17.0"}
+        org.scicloj/kind-portal     {:mvn/version "1-beta3"}
         }
  :aliases
  {:build

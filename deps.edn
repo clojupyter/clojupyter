@@ -35,13 +35,9 @@
         org.slf4j/jcl-over-slf4j    {:mvn/version "2.0.16"}
         org.scicloj/kindly          {:mvn/version "4-beta14"}
         org.scicloj/kindly-advice   {:mvn/version "1-beta12"}
-        org.scicloj/kindly-render   {:mvn/version "0.1.2-alpha"}
-        io.github.nextjournal/markdown {:mvn/version "0.6.157"}
-        cljsjs/react                {:mvn/version "17.0.2-0"}
-        cljsjs/react-dom            {:mvn/version "17.0.2-0"}
-        reagent/reagent             {:mvn/version "1.2.0"}
-        metosin/malli               {:mvn/version "0.17.0"}
-        org.scicloj/kind-portal     {:mvn/version "1-beta3"}
+        org.scicloj/kindly-render   {:git/url "https://github.com/behrica/kindly-render"
+                                     :git/sha "e022f64a2a69b1da1765c89aebac21efc335470d"}
+        ;{:mvn/version "0.1.2-alpha"}
         }
  :aliases
  {:build

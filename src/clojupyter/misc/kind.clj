@@ -333,15 +333,8 @@
              :hiccup error-hiccup-or-nil)
       advised-note)))
 
-(defmethod render-advice :default
-  [{:as note :keys [value kind]}]
-  (let [hiccup (if kind
-                 [:div
-                  [:div "Unimplemented: " [:code (pr-str kind)]]
-                  [:code (pr-str value)]]
-                 (str value))]
-    (assoc note
-           :hiccup hiccup)))
+(defmethod render-advice :default [note]
+   (to-hiccup/render note))
 
 (defmethod render-advice :kind/plotly [note]
   (render-js note  plotly->hiccup))
@@ -361,17 +354,15 @@
 (defmethod render-advice :kind/reagent [note]
   (render-js note  reagent->hiccup))
 
-
-(defmethod render-advice :kind/image
-  [{:as note :keys [value]}]
-  (let [out (io/java.io.ByteArrayOutputStream.)
-        v
-        (if (sequential? value)
-          (first value)
-          value)
-        _ (ImageIO/write v "png" out)
-        hiccup [:img {:src (str "data:image/png;base64,"
-                                (-> out .toByteArray b64/encode String.))}]]
+ (defmethod render-advice :kind/image [{:as note :keys [value]}]
+   (let [out (io/java.io.ByteArrayOutputStream.)
+         v
+         (if (sequential? value)
+           (first value)
+           value)
+         _ (ImageIO/write v "png" out)
+         hiccup [:img {:src (str "data:image/png;base64,"
+                                 (-> out .toByteArray b64/encode String.))}]]
 
     (assoc note
            :hiccup hiccup)))
@@ -386,8 +377,7 @@
 (defmethod render-advice :kind/vega [note]
   (render-js note  vega->hiccup))
 
-(defmethod render-advice :kind/tex
-  [note]
+(defmethod render-advice :kind/tex [note]
   (render-js note tex->hiccup))
 
 (defmethod render-advice :kind/portal
@@ -417,9 +407,8 @@
 (defmethod render-advice :kind/video [note]
   (to-hiccup/render note))
 
-(defmethod render-advice :kind/html
-  [{:as note :keys [value]}]
-  (assoc note :hiccup (first value)))
+(defmethod render-advice :kind/html [note]
+  (to-hiccup/render note))
 
 
 (defmethod render-advice :kind/vector [{:as note :keys [value]}]
@@ -446,9 +435,7 @@
     (walk/render-table-recursively note render)))
 
 
-(defmethod render-advice :kind/fn
-  [{:keys [value form] :as note}]
-
+(defmethod render-advice :kind/fn [{:keys [value form] :as note}]
   (let [new-note
         (if (vector? value)
           (let [f (first value)]
@@ -463,8 +450,7 @@
     (assoc note
            :hiccup (:hiccup new-note))))
 
-(defmethod render-advice :kind/var
-  [{:keys [value form] :as note}]
+(defmethod render-advice :kind/var [{:keys [value] :as note}]
   (let [sym (second value)
         s (str "#'" (str *ns*) "/" sym)]
     (assoc note

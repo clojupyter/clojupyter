@@ -161,21 +161,405 @@
   (fetch-dataset "datasets/iris"))
 
 
+(facts "eval works for different kinds"
+       (k/kind-eval '(+ 1 1)) => {:html-data "2"}
+
+       (k/kind-eval '(kind/md "# 123")) => {:html-data [:div {:class "kind-md"} [:h1 {:id "123"} "123"]]}
+
+
+       (str/starts-with?
+        (-> (k/kind-eval '(kind/image image))
+            :html-data
+            second
+            :src)
+        "data:image/png;base64,") => true
+
+
+
+       (str/includes?
+        (->
+         (k/kind-eval  '^:kind/cytoscape cs)
+         :html-data
+         (nth 2)
+         first
+         second) "cytoscape") => true)
+
+(facts "kind/md works"
+
+       (k/kind-eval '(kind/md "# 123"))
+       => {:html-data [:div {:class "kind-md"} [:h1 {:id "123"} "123"]]}
+
+       (k/kind-eval '(do (def m (kind/md "# 123")) m))
+       => {:html-data [:div {:class "kind-md"} [:h1 {:id "123"} "123"]]}
+
+
+       (->
+        (k/kind-eval
+         '(kind/md
+
+           "
+* This is [markdown](https://www.markdownguide.org/).
+  * *Isn't it??*
+    * Here is **some more** markdown.
+"))
+        :html-data
+        (multi-nth [2 1 2 1 1]))
+       => '([:em "Isn't it??"]))
+
+
+(facts "options are not checked"
+       (->
+        (k/kind-eval '(kind/html "" {:invalid-option 1}))
+        :html-data) => "")
+
+(facts "html returns html"
+       (->
+        (k/kind-eval '(kind/html
+                       "<div style='height:40px; width:40px; background:purple'></div> "))
+        :html-data) => "<div style='height:40px; width:40px; background:purple'></div> ")
+
+(facts "kind/fn works as expected"
+       (->
+
+        (k/kind-eval  '(kind/fn {:x 1
+                                 :y 2}
+                         {:kindly/f (fn [{:keys [x y]}]
+                                      (+ x y))}))
+        :html-data) => "3")
+
+(facts "kind/table works"
+       (->
+        (k/kind-eval '(kind/table {:column-names [:a :b] :row-vectors [[1 2]]}))
+        :html-data
+        first) => :table
+
+
+       (let [hiccup
+             (k/kind-eval
+              '(kind/table
+                {:column-names [:preferred-language :age]
+                 :row-vectors (take 5 people-as-vectors)}))]
+
+
+         (-> hiccup :html-data (nth 2)) => [:thead [:tr ":preferred-language" ":age"]]
+         (-> hiccup :html-data (nth 3) count) => 6)
+
+
+       (->
+        (k/kind-eval '(-> people-as-dataset
+                          (kind/table)))
+        :html-data
+        (nth 3)
+        first) => :table
+
+
+       ;https://github.com/scicloj/kindly-render/issues/29
+       ;https://github.com/scicloj/kindly-render/issues/30
+       ;https://github.com/scicloj/kindly-render/issues/38
+
+       ;; (k/kind-eval '(kind/table (take 5 people-as-vectors)))
+
+       ;; (k/kind-eval '(kind/table (take 5 people-as-maps)))
+
+
+       ;; (k/kind-eval '(kind/table {:x (range 6)
+       ;;                            :y [:A :B :C :A :B :C]}))
+
+       ;; (k/kind-eval '(-> people-as-maps
+       ;;                   tc/dataset
+       ;;                   (kind/table {:use-datatables true})))
+
+       ;; (k/kind-eval '(-> people-as-dataset
+       ;;                   (kind/table {:use-datatables true})))
+
+
+       ;; (k/kind-eval '(-> people-as-dataset
+       ;;                   (kind/table {:element/max-height "300px"})))
+
+       ;; (k/kind-eval '(-> people-as-maps
+       ;;                   tc/dataset
+       ;;                   (kind/table {:use-datatables true})))
+
+       ;; (k/kind-eval '(-> people-as-dataset
+       ;;                   (kind/table {:use-datatables true})))
+
+       ;; (k/kind-eval '(-> people-as-dataset
+       ;;                   (kind/table {:use-datatables true
+       ;;                                :datatables {:scrollY 200}})))
 
 
 
 
+       (facts "nil return nil"
+              (k/kind-eval 'nil) => nil))
+
+
+(facts "kind/map works"
+       (k/kind-eval '(kind/map {:a 1}))
+       =>
+       {:html-data
+        [:div
+         {:class "kind-map"}
+         [:div {:style {:border "1px solid grey", :padding "2px"}} ":a"]
+         [:div {:style {:border "1px solid grey", :padding "2px"}} "1"]]}
+
+       (k/kind-eval '{:a 1})
+       => {:html-data
+           [:div
+            {:class "kind-map"}
+            [:div {:style {:border "1px solid grey", :padding "2px"}} ":a"]
+            [:div {:style {:border "1px solid grey", :padding "2px"}} "1"]]})
+
+(facts "kind/hidden returns nothing"
+       (k/kind-eval
+        '(kind/hidden "(+ 1 1)")) =>
+       {:html-data nil})
+
+(facts "kind/scittle works"
+       (str/includes?
+        (->
+         (k/kind-eval '(kind/scittle '(.log js/console "hello")))
+         :html-data
+         (nth 3))
+        ".log js/console") => true
+
+       (->
+        (k/kind-eval '(kind/scittle '(print "hello")))
+        :html-data
+        (nth 3)) => [:script {:type "application/x-scittle", :class "kind-scittle"} "(print \"hello\")\n"]
+
+       (->
+        (k/kind-eval '(kind/scittle '(print "hello")))
+        :html-data
+        (nth 4)) => [:script "scittle.core.eval_script_tags()"])
+
+(facts "kind/vega works"
+
+       (str/includes?
+        (->
+         (k/kind-eval '(kind/vega vega-spec))
+         :html-data
+         (nth 2)
+         (nth 2)
+         second)
+        "vega")
+
+       => true)
+
+
+(facts "kind/vega-lite works"
+       (str/includes?
+        (->
+         (k/kind-eval '(kind/vega-lite vl-spec))
+         :html-data
+         (nth 2)
+         (nth 2)
+         second)
+        "vega")
+       => true)
+
+
+(facts "kind/plotly works"
+       (str/includes?
+        (->
+         (k/kind-eval '(kind/plotly plotly-data))
+         :html-data
+         (nth 2)
+         first
+         second)
+        "Plotly.newPlot") => true
+
+       (str/starts-with?
+        (->
+         (k/kind-eval '(kind/plotly plotly-data {:style {:width 100
+                                                         :height 100}}))
+         :html-data
+         (nth 2)
+         first
+         second)
+        "  \n  var") => true)
+
+(facts "kind/reagent works"
+       (str/includes?
+        (->
+         (k/kind-eval
+          '(kind/reagent
+            ['(fn [numbers]
+                [:p {:style {:background "#d4ebe9"}}
+                 (pr-str (map inc numbers))])
+             (vec (range 10))]))
+         :html-data
+         (nth 2)
+         (nth 4))
+        "reagent.dom/render")) => true
+
+(facts "kind/reagent supports deps"
+       (str/includes?
+        (->
+         (k/kind-eval
+          '(kind/reagent
+            ['(fn []
+                [:div {:style {:height "200px"}
+                       :ref (fn [el]
+                              (let [m (-> js/L
+                                          (.map el)
+                                          (.setView (clj->js [51.505 -0.09])
+                                                    13))]
+                                (-> js/L
+                                    .-tileLayer
+                                    (.provider "OpenStreetMap.Mapnik")
+                                    (.addTo m))
+                                (-> js/L
+                                    (.marker (clj->js [51.5 -0.09]))
+                                    (.addTo m)
+                                    (.bindPopup "A pretty CSS popup.<br> Easily customizable.")
+                                    (.openPopup))))}])]
+    ;; Note we need to mention the dependency:
+            {:html/deps [:leaflet]}))
+         :html-data
+         (nth 2)
+         (nth 5))
+        "leaflet.js") => true)
+
+(facts "kind/image works"
+       (str/starts-with?
+        (-> (k/kind-eval '(kind/image image))
+            :html-data
+            second
+            :src)
+        "data:image/png;base64,") => true)
 
 
 
+(facts "nested image rendering is supported"
+       (str/starts-with?
+        (->
+         (k/kind-eval
+          '(kind/hiccup [:div.clay-limit-image-width
+                         raw-image]))
+         :html-data
+         (nth 2)
+         second
+         :src)
+
+        "data:image/png;base64,") => true
+
+       (str/starts-with?
+        (->
+         (k/kind-eval
+          '[raw-image raw-image])
+         :html-data
+         (nth 2)
+         (nth 2)
+         second
+         :src)
+        "data:image/png;base64,") => true)
 
 
 
+(facts "kind/fn works as expected "
+
+       (->
+        (k/kind-eval
+         '(kind/fn
+            {:kindly/f (fn [{:keys [x y]}]
+                         (+ x y))
+             :x 1
+             :y 2}))
+        :html-data) => "3"
+
+
+       (->
+        (k/kind-eval
+         '(kind/fn
+            {:x (range 3)
+             :y (repeatedly 3 rand)}
+            {:kindly/f tc/dataset}))
+        :html-data
+        (nth 2)) => [:p "_unnamed [3 2]:"]
+
+
+       (-> '(kind/fn
+              [+ 1 2])
+           k/kind-eval
+           :html-data) => "3"
 
 
 
+       (-> '(kind/fn
+              {:kindly/f tc/dataset
+               :x (range 3)
+               :y (repeatedly 3 rand)})
+
+           k/kind-eval
+           :html-data
+           (nth 2)) => [:p "_unnamed [3 2]:"])
 
 
+(facts "kind/var works"
+       (-> '(kind/var '(def a 1))
+           k/kind-eval
+           :html-data)
+       => "#'clojupyter.misc.kind-test/a")
+
+(facts "kind/tex works"
+       (str/includes?
+        (->
+         (k/kind-eval '(kind/tex "x^2 + y^2 = z^2"))
+         :html-data
+         (multi-nth []))
+        "katex") => true)
+
+
+(facts "kind/pprint works"
+       (->
+        (to-hiccup/render {:form '(->> (range 30)
+                                       (apply array-map)
+                                       kind/pprint)})
+        :hiccup
+        (nth 2)
+        second
+
+        (nth 2))
+       => "{0 1,\n 2 3,\n 4 5,\n 6 7,\n 8 9,\n 10 11,\n 12 13,\n 14 15,\n 16 17,\n 18 19,\n 20 21,\n 22 23,\n 24 25,\n 26 27,\n 28 29}\n")
+
+(facts "kind/code is working"
+       (k/kind-eval '(kind/code "(defn f [x] {:y (+  x 9)})"))
+       => {:html-data [:pre {:class "kind-code"} [:code {:class "sourceCode"} ["(defn f [x] {:y (+  x 9)})"]]]})
+
+
+(facts "kind/video is working"
+       (k/kind-eval '(kind/video
+                      {:youtube-id "DAQnvAgBma8"}))
+       =>
+       {:html-data [:iframe {:src "https://www.youtube.com/embed/DAQnvAgBma8", :allowfullscreen true, :class "kind-video"}]})
+
+(facts "tableplot works"
+
+       (str/starts-with?
+        (->
+         (k/kind-eval
+          '(-> (rdatasets/datasets-iris)
+               (plotly/layer-point
+                {:=x :sepal-length
+                 :=y :sepal-width})))
+         :html-data
+         (nth 2)
+         first
+
+         second)
+        "  \n  var clojupyter_loaded_marker"))
+(facts "kind/portal works"
+       (str/includes?
+        (->
+         (k/kind-eval
+          '(kind/portal
+            {:x (range 3)}))
+         :html-data
+         (nth 2)
+         first
+         second)
+        ":portal.viewer/inspector") => true)
 
 
 
@@ -214,6 +598,5 @@
        ;;   (k/kind-eval
        ;;    '(kind/smile-model {}))
        )
-
 
 

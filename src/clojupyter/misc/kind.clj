@@ -7,7 +7,7 @@
     [scicloj.kindly-render.note.to-hiccup-inline-js :as to-hiccup-inline-js]
     [scicloj.kindly-render.shared.walk :as walk]))
 
-
+ 
  (defmulti render-advice :kind)
 
  (defn render [note]
@@ -32,6 +32,9 @@
    (to-hiccup-inline-js/render note))
 
  (defmethod render-advice :kind/reagent [note]
+   (to-hiccup-inline-js/render note))
+ 
+ (defmethod render-advice :kind/portal [note]
    (to-hiccup-inline-js/render note))
 
  (defmethod render-advice :kind/image [note]

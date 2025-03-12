@@ -35,8 +35,8 @@
         org.slf4j/jcl-over-slf4j    {:mvn/version "2.0.16"}
         org.scicloj/kindly          {:mvn/version "4-beta14"}
         org.scicloj/kindly-advice   {:mvn/version "1-beta12"}
-        org.scicloj/kindly-render   {:git/url "https://github.com/behrica/kindly-render"
-                                     :git/sha "e022f64a2a69b1da1765c89aebac21efc335470d"}
+        org.scicloj/kindly-render   {:git/url "https://github.com/scicloj/kindly-render"
+                                     :git/sha "00a0220419b06a15bde02ca10f5239a52fc66ad7"}
         ;{:mvn/version "0.1.2-alpha"}
         }
  :aliases

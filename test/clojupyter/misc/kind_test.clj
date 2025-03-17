@@ -3,7 +3,6 @@
    [clojupyter.misc.kind :as k]
    [clojure.string :as str]
    [midje.sweet  :refer [=> facts]]
-   [reagent.core]
    [scicloj.kindly.v4.kind :as kind]
    ))
 

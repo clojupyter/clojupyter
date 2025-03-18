@@ -2,9 +2,7 @@
    (:require
     [clojupyter.misc.display :as dis]
     [clojure.string :as str]
-    [scicloj.kindly-advice.v1.api :as kindly-advice]
-    [scicloj.kindly-render.note.to-hiccup-inline-js :as to-hiccup-inline-js]
-    [scicloj.kindly-render.shared.walk :as walk]))
+    [scicloj.kindly-render.note.to-hiccup-inline-js :as to-hiccup-inline-js]))
 
  
 

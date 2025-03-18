@@ -33,12 +33,7 @@
         org.slf4j/log4j-over-slf4j  {:mvn/version "2.0.16"}
         org.slf4j/jul-to-slf4j      {:mvn/version "2.0.16"}
         org.slf4j/jcl-over-slf4j    {:mvn/version "2.0.16"}
-        org.scicloj/kindly          {:mvn/version "4-beta14"}
-        org.scicloj/kindly-advice   {:mvn/version "1-beta12"}
-        org.scicloj/kindly-render   {:git/url "https://github.com/behrica/kindly-render"
-                                     :git/sha "be861f98da62a4631df4ecdeae184c2e02307ea3"}
-        ;{:mvn/version "0.1.2-alpha"}
-        }
+        org.scicloj/kindly-render   {:mvn/version "0.1.5-alpha"}}
  :aliases
  {:build
   {:deps
@@ -48,7 +43,6 @@
 
   :test {:extra-paths ["test"]
          :extra-deps {midje/midje {:mvn/version "1.10.10"}
-                      org.scicloj/noj {:mvn/version "2-beta9.1"} ;; to test all kinds
                       }
          :jvm-opts ["-Djava.awt.headless=true"]
          :exec-fn clojupyter.run-tests/run-tests-and-exit}
